@@ -1,0 +1,227 @@
+.twofa-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(10px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 3000;
+  padding: 1rem;
+}
+
+.twofa-modal {
+  background: var(--surface);
+  border-radius: 24px;
+  max-width: 500px;
+  width: 100%;
+  padding: 3rem 2.5rem;
+  position: relative;
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--border-light);
+}
+
+.twofa-close {
+  position: absolute;
+  top: 1.5rem;
+  right: 1.5rem;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: none;
+  background: var(--surface-alt);
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.twofa-close:hover {
+  background: var(--danger-color);
+  color: white;
+  transform: rotate(90deg);
+}
+
+.twofa-header {
+  text-align: center;
+  margin-bottom: 2.5rem;
+}
+
+.twofa-icon {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: var(--gradient-primary);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  margin: 0 auto 1.5rem;
+  box-shadow: 0 10px 30px rgba(37, 99, 235, 0.3);
+}
+
+.twofa-header h2 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 0.75rem;
+}
+
+.twofa-header p {
+  color: var(--text-secondary);
+  font-size: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.twofa-email {
+  color: var(--primary-color);
+  font-weight: 600;
+  font-size: 1.05rem;
+}
+
+.twofa-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.code-inputs {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+}
+
+.code-input {
+  width: 50px;
+  height: 60px;
+  font-size: 1.75rem;
+  font-weight: 700;
+  text-align: center;
+  border: 2px solid var(--border-light);
+  border-radius: 12px;
+  background: var(--surface-alt);
+  color: var(--text-primary);
+  transition: all 0.3s ease;
+}
+
+.code-input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  background: var(--surface);
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+}
+
+.code-input.error {
+  border-color: var(--danger-color);
+  animation: shake 0.5s;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
+}
+
+.code-input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.twofa-error {
+  background: rgba(239, 68, 68, 0.1);
+  color: var(--danger-color);
+  padding: 0.875rem 1.25rem;
+  border-radius: 8px;
+  text-align: center;
+  font-size: 0.95rem;
+  font-weight: 500;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.twofa-submit {
+  background: var(--gradient-primary);
+  color: white;
+  border: none;
+  padding: 1.25rem 2rem;
+  border-radius: 12px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.4);
+}
+
+.twofa-submit:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.5);
+}
+
+.twofa-submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.twofa-footer {
+  text-align: center;
+  margin-top: 2rem;
+  padding-top: 2rem;
+  border-top: 1px solid var(--border-light);
+}
+
+.twofa-footer p {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  margin-bottom: 0.75rem;
+}
+
+.resend-btn {
+  background: transparent;
+  border: none;
+  color: var(--primary-color);
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.resend-btn:hover {
+  color: var(--accent-color);
+  text-decoration: underline;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .twofa-modal {
+    padding: 2.5rem 1.5rem;
+  }
+
+  .code-inputs {
+    gap: 0.5rem;
+  }
+
+  .code-input {
+    width: 45px;
+    height: 55px;
+    font-size: 1.5rem;
+  }
+
+  .twofa-icon {
+    width: 70px;
+    height: 70px;
+    font-size: 1.75rem;
+  }
+
+  .twofa-header h2 {
+    font-size: 1.5rem;
+  }
+}

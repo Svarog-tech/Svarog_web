@@ -1,0 +1,155 @@
+.currency-switcher {
+  position: relative;
+  z-index: 1000;
+}
+
+.currency-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  color: var(--text);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.875rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.currency-toggle:hover {
+  background: var(--surface-alt);
+  border-color: var(--primary-color);
+}
+
+.currency-symbol {
+  font-weight: 600;
+  color: var(--primary-color);
+}
+
+.currency-code {
+  font-weight: 500;
+  font-size: 0.8rem;
+}
+
+.currency-chevron {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  transition: transform 0.2s ease;
+}
+
+.currency-chevron.open {
+  transform: rotate(180deg);
+}
+
+.currency-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 999;
+  background: transparent;
+}
+
+.currency-dropdown {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  right: 0;
+  background: var(--surface);
+  border: 1px solid var(--border-light);
+  border-radius: 12px;
+  box-shadow: var(--shadow-xl);
+  min-width: 200px;
+  overflow: hidden;
+  z-index: 1001;
+}
+
+.currency-option {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: none;
+  background: transparent;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+  font-size: 0.875rem;
+}
+
+.currency-option:hover {
+  background: var(--surface-alt);
+}
+
+.currency-option.active {
+  background: rgba(37, 99, 235, 0.1);
+  color: var(--primary-color);
+}
+
+.currency-flag {
+  font-size: 1.2rem;
+  flex-shrink: 0;
+}
+
+.currency-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  flex: 1;
+}
+
+.currency-name {
+  font-weight: 500;
+  font-size: 0.875rem;
+  line-height: 1.2;
+}
+
+.currency-detail {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  font-weight: 400;
+}
+
+.currency-check {
+  color: var(--success-color);
+  font-weight: 600;
+  font-size: 0.875rem;
+  margin-left: auto;
+}
+
+/* Mobile styles */
+@media (max-width: 768px) {
+  .currency-dropdown {
+    right: auto;
+    left: 0;
+    min-width: 180px;
+  }
+
+  .currency-toggle {
+    padding: 0.4rem 0.6rem;
+    font-size: 0.8rem;
+  }
+
+  .currency-symbol {
+    font-size: 0.8rem;
+  }
+
+  .currency-code {
+    font-size: 0.75rem;
+  }
+}
+
+/* Dark mode adjustments */
+[data-theme="dark"] .currency-dropdown {
+  background: var(--surface-light);
+  border-color: var(--border-medium);
+}
+
+[data-theme="dark"] .currency-option.active {
+  background: rgba(37, 99, 235, 0.2);
+}
