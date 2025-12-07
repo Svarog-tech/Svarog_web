@@ -17,11 +17,19 @@ import {
   faChartLine,
   faChartBar,
   faTicket,
-  faArrowRight
+  faArrowRight,
+  faBan,
+  faCheck,
+  faTrashAlt,
+  faServer,
+  faUser,
+  faLink
 } from '@fortawesome/free-solid-svg-icons';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/auth';
+import { getAllUserHostingServices, HostingService } from '../lib/supabase';
+import { suspendHostingAccount, unsuspendHostingAccount, deleteHostingAccount } from '../services/hestiacpService';
 import OrderDetailModal from '../components/OrderDetailModal';
 import './Admin.css';
 
@@ -63,6 +71,8 @@ const Admin: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [hostingServices, setHostingServices] = useState<HostingService[]>([]);
+  const [loadingHestia, setLoadingHestia] = useState(false);
 
   useEffect(() => {
     // Kontrola, zda je uživatel admin
@@ -72,7 +82,98 @@ const Admin: React.FC = () => {
     }
 
     fetchOrders();
+    fetchHostingServices();
   }, [user, profile, navigate]);
+
+  const fetchHostingServices = async () => {
+    try {
+      // Získej všechny hosting služby (admin vidí všechny)
+      const { data, error } = await supabase
+        .from('user_hosting_services')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setHostingServices(data || []);
+    } catch (error) {
+      console.error('Error fetching hosting services:', error);
+    }
+  };
+
+  const handleSuspendAccount = async (service: HostingService) => {
+    if (!service.hestia_username) return;
+    if (!window.confirm(`Opravdu chceš suspendovat HestiaCP účet ${service.hestia_username}?`)) return;
+
+    try {
+      setLoadingHestia(true);
+      const result = await suspendHostingAccount(service.hestia_username);
+      if (result.success) {
+        await supabase
+          .from('user_hosting_services')
+          .update({ status: 'suspended' })
+          .eq('id', service.id);
+        await fetchHostingServices();
+        alert('HestiaCP účet byl suspendován');
+      } else {
+        alert(`Chyba: ${result.error}`);
+      }
+    } catch (error) {
+      console.error('Error suspending account:', error);
+      alert('Chyba při suspendování účtu');
+    } finally {
+      setLoadingHestia(false);
+    }
+  };
+
+  const handleUnsuspendAccount = async (service: HostingService) => {
+    if (!service.hestia_username) return;
+    if (!window.confirm(`Opravdu chceš obnovit HestiaCP účet ${service.hestia_username}?`)) return;
+
+    try {
+      setLoadingHestia(true);
+      const result = await unsuspendHostingAccount(service.hestia_username);
+      if (result.success) {
+        await supabase
+          .from('user_hosting_services')
+          .update({ status: 'active' })
+          .eq('id', service.id);
+        await fetchHostingServices();
+        alert('HestiaCP účet byl obnoven');
+      } else {
+        alert(`Chyba: ${result.error}`);
+      }
+    } catch (error) {
+      console.error('Error unsuspending account:', error);
+      alert('Chyba při obnovování účtu');
+    } finally {
+      setLoadingHestia(false);
+    }
+  };
+
+  const handleDeleteAccount = async (service: HostingService) => {
+    if (!service.hestia_username) return;
+    if (!window.confirm(`POZOR! Opravdu chceš smazat HestiaCP účet ${service.hestia_username}? Tato akce je nevratná a smaže všechny data!`)) return;
+
+    try {
+      setLoadingHestia(true);
+      const result = await deleteHostingAccount(service.hestia_username);
+      if (result.success) {
+        await supabase
+          .from('user_hosting_services')
+          .update({ status: 'cancelled', hestia_created: false })
+          .eq('id', service.id);
+        await fetchHostingServices();
+        alert('HestiaCP účet byl smazán');
+      } else {
+        alert(`Chyba: ${result.error}`);
+      }
+    } catch (error) {
+      console.error('Error deleting account:', error);
+      alert('Chyba při mazání účtu');
+    } finally {
+      setLoadingHestia(false);
+    }
+  };
 
   useEffect(() => {
     // Filtrování objednávek
@@ -405,6 +506,7 @@ const Admin: React.FC = () => {
                     <th>Plán</th>
                     <th>Cena</th>
                     <th>Status</th>
+                    <th>HestiaCP</th>
                     <th>Datum</th>
                     <th>Akce</th>
                   </tr>
@@ -423,6 +525,33 @@ const Admin: React.FC = () => {
                       <td className="plan-name">{order.plan_name}</td>
                       <td className="price">{formatPrice(order.price)}</td>
                       <td>{getStatusBadge(order.status)}</td>
+                      <td>
+                        {(() => {
+                          const service = hostingServices.find(s => s.order_id === order.id);
+                          if (service?.hestia_created && service.hestia_username) {
+                            return (
+                              <div className="hestiacp-info-cell">
+                                <div className="hestiacp-badge-small">
+                                  <FontAwesomeIcon icon={faCheckCircle} />
+                                  <span>{service.hestia_username}</span>
+                                </div>
+                                {service.cpanel_url && (
+                                  <a
+                                    href={service.cpanel_url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="hestiacp-link"
+                                    title="Otevřít Control Panel"
+                                  >
+                                    <FontAwesomeIcon icon={faLink} />
+                                  </a>
+                                )}
+                              </div>
+                            );
+                          }
+                          return <span className="no-hestia">-</span>;
+                        })()}
+                      </td>
                       <td className="date">{formatDate(order.created_at)}</td>
                       <td>
                         <div className="action-buttons">
@@ -436,9 +565,43 @@ const Admin: React.FC = () => {
                           >
                             <FontAwesomeIcon icon={faEye} />
                           </button>
-                          <button className="action-btn delete" title="Smazat">
-                            <FontAwesomeIcon icon={faTrash} />
-                          </button>
+                          {(() => {
+                            const service = hostingServices.find(s => s.order_id === order.id);
+                            if (service?.hestia_username) {
+                              return (
+                                <>
+                                  {service.status === 'active' ? (
+                                    <button
+                                      className="action-btn suspend"
+                                      title="Suspendovat HestiaCP účet"
+                                      onClick={() => handleSuspendAccount(service)}
+                                      disabled={loadingHestia}
+                                    >
+                                      <FontAwesomeIcon icon={faBan} />
+                                    </button>
+                                  ) : (
+                                    <button
+                                      className="action-btn unsuspend"
+                                      title="Obnovit HestiaCP účet"
+                                      onClick={() => handleUnsuspendAccount(service)}
+                                      disabled={loadingHestia}
+                                    >
+                                      <FontAwesomeIcon icon={faCheck} />
+                                    </button>
+                                  )}
+                                  <button
+                                    className="action-btn delete"
+                                    title="Smazat HestiaCP účet"
+                                    onClick={() => handleDeleteAccount(service)}
+                                    disabled={loadingHestia}
+                                  >
+                                    <FontAwesomeIcon icon={faTrashAlt} />
+                                  </button>
+                                </>
+                              );
+                            }
+                            return null;
+                          })()}
                         </div>
                       </td>
                     </motion.tr>

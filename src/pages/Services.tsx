@@ -9,22 +9,22 @@ import {
   faCircle,
   faCalendarAlt,
   faMoneyBill,
-  faSync
+  faSync,
+  faUser,
+  faKey,
+  faLink,
+  faCheckCircle,
+  faTimesCircle
 } from '@fortawesome/free-solid-svg-icons';
 import { useAuth } from '../contexts/AuthContext';
 import { useCurrency } from '../contexts/CurrencyContext';
-import { getUserOrders } from '../lib/supabase';
+import { getUserOrders, getAllUserHostingServices, HostingService } from '../lib/supabase';
 import './Services.css';
 
-interface Service {
-  id: number;
-  plan_name: string;
-  price: number;
-  currency: string;
-  status: string;
-  payment_status: string;
+interface Service extends HostingService {
+  currency?: string;
+  payment_status?: string;
   domain_name?: string;
-  created_at: string;
   service_start_date?: string;
   service_end_date?: string;
   auto_renewal?: boolean;
@@ -46,8 +46,25 @@ const Services: React.FC = () => {
   const fetchServices = async () => {
     try {
       setLoading(true);
-      const data = await getUserOrders();
-      setServices(data || []);
+      // Získej hosting služby s HestiaCP údaji
+      const hostingServices = await getAllUserHostingServices();
+      // Získej objednávky pro doplnění údajů
+      const orders = await getUserOrders();
+      
+      // Spoj data - hosting služby mají HestiaCP údaje
+      const servicesData = hostingServices.map(service => {
+        const order = orders?.find((o: any) => o.id === service.order_id);
+        return {
+          ...service,
+          currency: order?.currency || 'CZK',
+          payment_status: order?.payment_status,
+          domain_name: service.hestia_domain || order?.domain_name,
+          service_start_date: service.activated_at,
+          service_end_date: service.expires_at,
+        };
+      });
+      
+      setServices(servicesData || []);
     } catch (error) {
       console.error('Error fetching services:', error);
     } finally {
@@ -206,8 +223,45 @@ const Services: React.FC = () => {
                   <h3 className="service-name">{service.plan_name}</h3>
                   <div className="service-domain">
                     <FontAwesomeIcon icon={faGlobe} />
-                    <span>{service.domain_name || 'Bez domény'}</span>
+                    <span>{service.hestia_domain || service.domain_name || 'Bez domény'}</span>
                   </div>
+
+                  {/* HestiaCP údaje */}
+                  {service.hestia_created && service.hestia_username && (
+                    <div className="hestiacp-info">
+                      <div className="hestiacp-badge">
+                        <FontAwesomeIcon icon={faCheckCircle} />
+                        <span>HestiaCP aktivní</span>
+                      </div>
+                      <div className="hestiacp-details">
+                        <div className="hestiacp-detail">
+                          <FontAwesomeIcon icon={faUser} />
+                          <span>User: {service.hestia_username}</span>
+                        </div>
+                        {service.ftp_host && (
+                          <div className="hestiacp-detail">
+                            <FontAwesomeIcon icon={faServer} />
+                            <span>FTP: {service.ftp_host}</span>
+                          </div>
+                        )}
+                        {service.cpanel_url && (
+                          <div className="hestiacp-detail">
+                            <FontAwesomeIcon icon={faLink} />
+                            <a href={service.cpanel_url} target="_blank" rel="noopener noreferrer">
+                              Control Panel
+                            </a>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {service.hestia_error && (
+                    <div className="hestiacp-error">
+                      <FontAwesomeIcon icon={faTimesCircle} />
+                      <span>Chyba: {service.hestia_error}</span>
+                    </div>
+                  )}
 
                   <div className="service-details">
                     <div className="service-detail">
@@ -237,10 +291,22 @@ const Services: React.FC = () => {
                     <FontAwesomeIcon icon={faCog} />
                     Spravovat
                   </button>
-                  <button className="service-action-btn primary">
-                    <FontAwesomeIcon icon={faExternalLinkAlt} />
-                    Panel
-                  </button>
+                  {service.cpanel_url ? (
+                    <a
+                      href={service.cpanel_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="service-action-btn primary"
+                    >
+                      <FontAwesomeIcon icon={faExternalLinkAlt} />
+                      Panel
+                    </a>
+                  ) : (
+                    <button className="service-action-btn primary" disabled>
+                      <FontAwesomeIcon icon={faExternalLinkAlt} />
+                      Panel
+                    </button>
+                  )}
                 </div>
               </motion.div>
             ))}

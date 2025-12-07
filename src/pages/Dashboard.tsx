@@ -16,7 +16,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import { useAuth } from '../contexts/AuthContext';
 import { useCurrency } from '../contexts/CurrencyContext';
-import { getUserOrders } from '../lib/supabase';
+import { getUserOrders, getAllUserHostingServices, HostingService } from '../lib/supabase';
 import './Dashboard.css';
 
 interface Order {
@@ -57,12 +57,27 @@ const Dashboard: React.FC = () => {
 
       // Fetch user orders
       const ordersData = await getUserOrders();
-      setOrders(ordersData || []);
+      // Fetch hosting services with HestiaCP data
+      const hostingServices = await getAllUserHostingServices();
+      
+      // Merge data
+      const mergedOrders = ordersData?.map((order: any) => {
+        const service = hostingServices?.find((s: HostingService) => s.order_id === order.id);
+        return {
+          ...order,
+          hestia_username: service?.hestia_username,
+          hestia_domain: service?.hestia_domain,
+          cpanel_url: service?.cpanel_url,
+          hestia_created: service?.hestia_created
+        };
+      }) || [];
+      
+      setOrders(mergedOrders);
 
       // Calculate stats
-      const totalOrders = ordersData?.length || 0;
-      const activeServices = ordersData?.filter((order: Order) => order.status === 'active').length || 0;
-      const totalSpent = ordersData?.reduce((sum: number, order: Order) => sum + Number(order.price), 0) || 0;
+      const totalOrders = mergedOrders.length;
+      const activeServices = hostingServices?.filter((s: HostingService) => s.status === 'active' && s.hestia_created).length || 0;
+      const totalSpent = mergedOrders.reduce((sum: number, order: Order) => sum + Number(order.price), 0);
 
       setStats({ totalOrders, activeServices, totalSpent });
     } catch (error) {
@@ -221,8 +236,13 @@ const Dashboard: React.FC = () => {
                   <div className="order-info">
                     <h4 className="order-title">{order.plan_name}</h4>
                     <p className="order-domain">
-                      {order.domain_name || 'Bez domény'}
+                      {(order as any).hestia_domain || order.domain_name || 'Bez domény'}
                     </p>
+                    {(order as any).hestia_created && (order as any).hestia_username && (
+                      <p className="order-hestia">
+                        HestiaCP: {(order as any).hestia_username}
+                      </p>
+                    )}
                   </div>
 
                   <div className="order-meta">
