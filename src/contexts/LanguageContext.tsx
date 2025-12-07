@@ -15,7 +15,7 @@ const translations = {
   cs: {
     // Navigation
     'nav.home': 'Domů',
-    'nav.hosting': 'Hosting',
+    'nav.hosting': 'Webhosting',
     'nav.domains': 'Domény',
     'nav.support': 'Podpora',
     'nav.about': 'O nás',
