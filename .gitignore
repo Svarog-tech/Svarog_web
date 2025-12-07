@@ -23,6 +23,12 @@
 # deployment
 deploy.tar.gz
 
+# Local setup guides (necommituj na branch)
+HESTIACP-SETUP-NOW.md
+QUICKSTART-HESTIACP.md
+HESTIACP-SETUP-GUIDE.md
+.env.hestiacp.example
+
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*

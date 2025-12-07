@@ -21,9 +21,50 @@ import {
   createUserProfile,
   onAuthStateChange,
 } from '../lib/auth';
+import { createHostingAccount } from '../services/hestiacpService';
 
 // Create Context
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+/**
+ * Vytvoří hosting účet v HestiaCP po registraci
+ * Vytvoří jen uživatele v HestiaCP (bez domény), doména se přidá při objednávce
+ * Účet bude mít přístup jen na web hosting, ne do HestiaCP panelu (běžný uživatel)
+ */
+const createHestiaCPAccount = async (user: AppUser, profile: UserProfile) => {
+  try {
+    console.log('[AuthContext] Creating HestiaCP account for new user:', user.email);
+
+    // Vytvoř dočasnou doménu pro inicializaci účtu
+    // Poznámka: Tato doména se později může změnit při objednávce na skutečnou doménu
+    const tempDomain = `temp-${user.id.substring(0, 8)}.hostingforge.eu`;
+
+    // Vytvoř hosting účet s default balíčkem
+    // Účet bude mít přístup jen na web hosting (FTP, web), ne do HestiaCP panelu
+    // To je zajištěno tím, že vytváříme běžného uživatele, ne admina
+    const result = await createHostingAccount({
+      email: user.email || profile.email,
+      domain: tempDomain,
+      package: 'default' // Default balíček, později se může změnit při objednávce podle vybraného plánu
+    });
+
+    if (result.success) {
+      console.log('[AuthContext] ✅ HestiaCP account created successfully');
+      console.log('[AuthContext] Username:', result.username);
+      console.log('[AuthContext] Domain:', result.domain);
+      console.log('[AuthContext] Package:', result.package);
+      
+      // Poznámka: Účet má přístup jen na web hosting (FTP, web files)
+      // Nemá přístup do HestiaCP panelu - to je správně, protože je to běžný uživatel
+    } else {
+      console.error('[AuthContext] ❌ Failed to create HestiaCP account:', result.error);
+      // Nevyhazuj chybu - registrace byla úspěšná, hosting účet se může vytvořit později
+    }
+  } catch (error) {
+    console.error('[AuthContext] ❌ Error creating HestiaCP account:', error);
+    // Nevyhazuj chybu - registrace byla úspěšná
+  }
+};
 
 // Hook to use auth context
 export const useAuth = (): AuthContextType => {
@@ -179,6 +220,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       if (result.success && result.user) {
         // Load profile for the new user
         const profile = await loadUserProfile(result.user);
+
+        // Vytvoř hosting účet v HestiaCP (asynchronně, neblokuje registraci)
+        if (profile && result.user.email) {
+          createHestiaCPAccount(result.user, profile).catch(error => {
+            console.error('[AuthContext] Failed to create HestiaCP account:', error);
+            // Nezobrazuj chybu uživateli, protože registrace byla úspěšná
+          });
+        }
 
         updateState({
           user: result.user,
