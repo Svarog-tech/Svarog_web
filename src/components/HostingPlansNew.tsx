@@ -3,8 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCheck } from '@fortawesome/free-solid-svg-icons';
-import { usePlanSelection } from '../hooks/usePlanSelection';
-import { useWordPressPlans } from '../hooks/useWordPressPlans';
+import { usePlanSelection, HostingPlan } from '../hooks/usePlanSelection';
+import { useWordPressPlans, WordPressPlan } from '../hooks/useWordPressPlans';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useCurrency } from '../contexts/CurrencyContext';
 import './HostingPlansNew.css';
@@ -20,12 +20,12 @@ const HostingPlansNew: React.FC = () => {
   const [hostingType, setHostingType] = useState<HostingType>('webhosting');
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
 
-  const plans = hostingType === 'webhosting' ? webPlans : wpPlans;
+  const plans: (HostingPlan | WordPressPlan)[] = hostingType === 'webhosting' ? webPlans : wpPlans;
   const selectPlan = hostingType === 'webhosting' ? selectWebPlan : selectWPPlan;
 
   const handleSelectPlan = (planId: string) => {
     selectPlan(planId);
-    const plan = plans.find((p: any) => p.id === planId);
+    const plan = plans.find((p) => p.id === planId);
     if (plan) {
       navigate('/configurator', { state: { plan } });
     }

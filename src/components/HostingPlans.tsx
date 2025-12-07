@@ -13,8 +13,8 @@ import {
   faWandMagicSparkles,
   faCrown
 } from '@fortawesome/free-solid-svg-icons';
-import { usePlanSelection } from '../hooks/usePlanSelection';
-import { useWordPressPlans } from '../hooks/useWordPressPlans';
+import { usePlanSelection, HostingPlan } from '../hooks/usePlanSelection';
+import { useWordPressPlans, WordPressPlan } from '../hooks/useWordPressPlans';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useCurrency } from '../contexts/CurrencyContext';
 import { IconDefinition } from '@fortawesome/fontawesome-svg-core';
@@ -43,7 +43,7 @@ const HostingPlans: React.FC = () => {
   const isInView = useInView(sectionRef, { once: true, margin: "-100px" });
 
   // Dynamically get current plans based on hosting type
-  const plans = hostingType === 'webhosting' ? webPlans : wpPlans;
+  const plans: (HostingPlan | WordPressPlan)[] = hostingType === 'webhosting' ? webPlans : wpPlans;
   const selectedPlanId = hostingType === 'webhosting' ? selectedWebPlanId : selectedWPPlanId;
   const selectPlan = hostingType === 'webhosting' ? selectWebPlan : selectWPPlan;
 
@@ -67,7 +67,7 @@ const HostingPlans: React.FC = () => {
 
   const handleSelectPlan = (planId: string) => {
     selectPlan(planId);
-    const plan = plans.find((p: any) => p.id === planId);
+    const plan = plans.find((p) => p.id === planId);
     if (plan) {
       // Navigate to configurator with plan data
       navigate('/configurator', { state: { plan } });
