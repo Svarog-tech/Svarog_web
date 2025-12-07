@@ -198,14 +198,20 @@
 .input-icon {
   position: absolute;
   left: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
   color: var(--text-secondary);
   font-size: 1rem;
   z-index: 2;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .form-input {
   width: 100%;
-  padding: 1rem 1rem 1rem 3rem;
+  padding: 1rem 1rem 1rem 3.25rem;
   border: 2px solid var(--border);
   border-radius: 12px;
   background: var(--surface-alt);
@@ -213,6 +219,13 @@
   font-size: 0.95rem;
   transition: all 0.3s ease;
   outline: none;
+  box-sizing: border-box;
+}
+
+/* Zajistit, že placeholder text neleze pod ikonku */
+.form-input::placeholder {
+  color: var(--text-tertiary);
+  opacity: 1;
 }
 
 .form-input::placeholder {
