@@ -21,7 +21,6 @@ import {
   faBan,
   faCheck,
   faTrashAlt,
-  faServer,
   faUser,
   faLink
 } from '@fortawesome/free-solid-svg-icons';
