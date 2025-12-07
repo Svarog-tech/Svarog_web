@@ -23,13 +23,13 @@ const translations = {
     'nav.getStarted': 'Registrace',
 
     // Hero section
-    'hero.badge': '🚀 Nová generace hostingu',
-    'hero.title': 'Výkonný Hosting pro VÁŠ',
+    'hero.badge': 'Nová generace hostingu',
+    'hero.title': 'Výkonný Hosting pro váš',
     'hero.titleHighlight': ' Úspěch',
     'hero.description': 'Profesionální webhosting s 99.9% dostupností, bleskurychlou odezvou a 24/7 podporou. Začněte svůj úspěšný web ještě dnes.',
     'hero.feature1': 'SSL certifikát zdarma',
     'hero.feature2': 'Denní zálohování',
-    'hero.feature3': '24/7 podpora v češtině',
+    'hero.feature3': 'zákaznická podpora v češtině',
     'hero.startNow': 'Začít nyní',
     'hero.contactSales': 'Kontaktovat prodej',
     'hero.uptime': 'Dostupnost',
@@ -331,8 +331,8 @@ const translations = {
     'nav.getStarted': 'Register',
 
     // Hero section
-    'hero.badge': '🚀 Next Generation Hosting',
-    'hero.title': 'Powerful Hosting for YOUR',
+    'hero.badge': 'Next Generation Hosting',
+    'hero.title': 'Powerful Hosting for your',
     'hero.titleHighlight': ' Success',
     'hero.description': 'Professional web hosting with 99.9% uptime, lightning-fast response and 24/7 support. Start your successful website today.',
     'hero.feature1': 'Free SSL certificate',
