@@ -14,11 +14,8 @@ const Hosting: React.FC = () => {
       title: 'hosting.feature1.title',
       description: 'hosting.feature1.description'
     },
-    {
-      icon: faShield,
-      title: 'hosting.feature2.title',
-      description: 'hosting.feature2.description'
-    },
+    
+
     {
       icon: faBolt,
       title: 'hosting.feature3.title',

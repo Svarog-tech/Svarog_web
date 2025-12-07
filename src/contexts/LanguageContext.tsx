@@ -187,8 +187,8 @@ const translations = {
     'hosting.feature3.description': 'Náš expertní tým je vždy připraven pomoci s jakýmkoliv problémem.',
     'hosting.feature4.title': 'Pokročilá bezpečnost',
     'hosting.feature4.description': 'Komplexní ochrana proti malware a pravidelné bezpečnostní aktualizace.',
-    'hosting.guarantee.title': '30denní záruka',
-    'hosting.guarantee.description': 'Nejste spokojeni? Vrátíme vám peníze během 30 dní bez ptaní.',
+    'hosting.guarantee.title': '14denní záruka',
+    'hosting.guarantee.description': 'Nejste spokojeni? Vrátíme vám peníze během 14 dní bez ptaní.',
     'hosting.guarantee.cta': 'Začít bez rizika',
 
     // Domains page
