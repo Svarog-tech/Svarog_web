@@ -28,6 +28,16 @@
   --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
   --gradient-primary: linear-gradient(135deg, #2563eb 0%, #06b6d4 100%);
   --gradient-accent: linear-gradient(135deg, #06b6d4 0%, #10b981 100%);
+  
+  /* Z-index scale pro konzistentní layering */
+  --z-base: 1;
+  --z-dropdown: 100;
+  --z-sticky: 200;
+  --z-fixed: 300;
+  --z-modal-backdrop: 400;
+  --z-modal: 500;
+  --z-popover: 600;
+  --z-tooltip: 700;
 }
 
 [data-theme="dark"] {
@@ -45,8 +55,21 @@
   --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.4), 0 10px 10px -5px rgba(0, 0, 0, 0.3);
 }
 
-* {
-  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+/* Performance: Selektivní transitions místo globálního * */
+/* Transitions pouze na interaktivní elementy */
+button,
+a,
+input,
+select,
+textarea,
+[role="button"],
+[tabindex] {
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+}
+
+/* Transitions pro hover stavy */
+.hover-transition {
+  transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
 }
 
 body {
@@ -76,7 +99,7 @@ body {
   top: 0;
   left: 0;
   right: 0;
-  z-index: 1000;
+  z-index: var(--z-fixed);
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(20px);
   box-shadow: var(--shadow-sm);
@@ -1532,7 +1555,7 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 2000;
+  z-index: var(--z-modal);
   padding: 1rem;
 }
 
@@ -2852,7 +2875,7 @@ body {
   position: fixed;
   bottom: 2rem;
   right: 2rem;
-  z-index: 1000;
+  z-index: var(--z-fixed);
   max-width: 400px;
   background: var(--surface);
   border: 2px solid #fb9230;
@@ -4028,7 +4051,7 @@ body {
   border-radius: 12px;
   box-shadow: var(--shadow-xl);
   min-width: 200px;
-  z-index: 1000;
+  z-index: var(--z-dropdown);
   overflow: hidden;
 }
 

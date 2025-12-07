@@ -199,7 +199,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: var(--z-fixed);
   padding: 1rem;
 }
 
@@ -283,16 +283,16 @@
   padding-right: 2.5rem;
 }
 
-/* Force dark mode for select options */
+/* Select options styling - bez !important, použít specifičtější selektory */
 .form-group select option {
-  background-color: #1a1a1a !important;
-  color: #ffffff !important;
+  background-color: var(--surface);
+  color: var(--text-primary);
 }
 
-/* For light mode, override if needed */
-[data-theme="light"] .form-group select option {
-  background-color: #ffffff !important;
-  color: #000000 !important;
+/* Dark mode support přes CSS variables */
+[data-theme="dark"] .form-group select option {
+  background-color: var(--surface);
+  color: var(--text-primary);
 }
 
 .form-group input:focus,
