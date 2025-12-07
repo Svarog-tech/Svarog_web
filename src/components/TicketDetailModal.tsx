@@ -276,13 +276,37 @@ const TicketDetailModal: React.FC<TicketDetailModalProps> = ({ ticket, isOpen, o
   );
 
   const renderMessage = (text: string) => {
-    // Render images
-    text = text.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1" class="message-image" />');
+    // SECURITY: Sanitizace proti XSS
+    // Escape HTML znaky před renderováním
+    const escapeHtml = (unsafe: string) => {
+      return unsafe
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    };
+
+    // Escape celý text nejdřív
+    let safeText = escapeHtml(text);
+
+    // Pak renderuj markdown (už je escape)
+    // Render images (URL je už escape, ale zkontroluj)
+    safeText = safeText.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (match, alt, url) => {
+      // Zkontroluj že URL je bezpečná (pouze http/https)
+      const safeUrl = url.match(/^https?:\/\//) ? url : '#';
+      return `<img src="${safeUrl}" alt="${escapeHtml(alt)}" class="message-image" />`;
+    });
 
     // Render mentions
-    text = text.replace(/@\[([^\]]+)\]\([^)]+\)/g, '<span class="mention">@$1</span>');
+    safeText = safeText.replace(/@\[([^\]]+)\]\([^)]+\)/g, '<span class="mention">@$1</span>');
 
-    return <div dangerouslySetInnerHTML={{ __html: text }} />;
+    // POZNÁMKA: Pro produkci by bylo lepší použít DOMPurify nebo markdown parser
+    // npm install dompurify @types/dompurify
+    // import DOMPurify from 'dompurify';
+    // return <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(safeText) }} />;
+    
+    return <div dangerouslySetInnerHTML={{ __html: safeText }} />;
   };
 
   if (!ticket) return null;

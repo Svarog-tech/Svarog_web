@@ -29,6 +29,9 @@ QUICKSTART-HESTIACP.md
 HESTIACP-SETUP-GUIDE.md
 .env.hestiacp.example
 
+# Security documentation (obsahuje citlivé informace)
+SECURITY-ISSUES.md
+
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*

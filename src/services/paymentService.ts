@@ -37,10 +37,20 @@ export const createGoPayPayment = async (data: PaymentData): Promise<PaymentResu
     console.log('Creating GoPay payment via proxy server...');
     console.log('Payment data:', data);
 
+    // SECURITY: Získej JWT token pro autentizaci
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      return {
+        success: false,
+        error: 'Authentication required'
+      };
+    }
+
     const response = await fetch(`${PROXY_URL}/api/gopay/create-payment`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`
       },
       body: JSON.stringify(data)
     });
@@ -90,10 +100,20 @@ export const checkPaymentStatus = async (paymentId: string): Promise<PaymentStat
   try {
     console.log('Checking payment status via proxy server:', paymentId);
 
+    // SECURITY: Získej JWT token pro autentizaci
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      return {
+        success: false,
+        error: 'Authentication required'
+      };
+    }
+
     const response = await fetch(`${PROXY_URL}/api/gopay/check-payment`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`
       },
       body: JSON.stringify({ paymentId })
     });

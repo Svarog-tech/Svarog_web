@@ -5,6 +5,17 @@ require('dotenv').config();
 
 const hestiacp = require('./services/hestiacpService');
 
+// Supabase client pro autentizaci
+const { createClient } = require('@supabase/supabase-js');
+const supabaseUrl = process.env.REACT_APP_SUPABASE_URL;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY; // Service role key pro backend
+
+// Pro autentizaci uživatelů použijeme anon key a ověříme JWT token
+const supabaseAnonKey = process.env.REACT_APP_SUPABASE_ANON_KEY;
+const supabaseAuth = supabaseUrl && supabaseAnonKey 
+  ? createClient(supabaseUrl, supabaseAnonKey)
+  : null;
+
 const app = express();
 const PORT = process.env.PORT || 3001;
 
@@ -15,8 +26,15 @@ const allowedOrigins = process.env.SERVER_ALLOWED_ORIGINS
 
 app.use(cors({
   origin: function (origin, callback) {
-    // Povolit requesty bez origin (např. mobilní aplikace nebo curl)
-    if (!origin) return callback(null, true);
+    // SECURITY: V produkci nepovoluj requesty bez origin
+    if (!origin) {
+      // V development módu povolujeme (pro testování)
+      if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV !== 'production') {
+        return callback(null, true);
+      }
+      // V produkci zamítni
+      return callback(new Error('Origin required in production'));
+    }
 
     if (allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
@@ -28,6 +46,98 @@ app.use(cors({
 }));
 
 app.use(express.json());
+
+// ============================================
+// SECURITY: Autentizace middleware
+// ============================================
+
+/**
+ * Middleware pro ověření JWT tokenu z Supabase
+ */
+async function authenticateUser(req, res, next) {
+  // Webhook endpointy nepotřebují autentizaci (mají vlastní validaci)
+  if (req.path.includes('/webhook')) {
+    return next();
+  }
+
+  const authHeader = req.headers.authorization;
+  
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({
+      success: false,
+      error: 'Missing or invalid authorization header'
+    });
+  }
+
+  const token = authHeader.replace('Bearer ', '');
+
+  if (!supabaseAuth) {
+    console.error('Supabase client not configured');
+    return res.status(500).json({
+      success: false,
+      error: 'Server configuration error'
+    });
+  }
+
+  try {
+    // Ověř JWT token
+    const { data: { user }, error } = await supabaseAuth.auth.getUser(token);
+
+    if (error || !user) {
+      return res.status(401).json({
+        success: false,
+        error: 'Invalid or expired token'
+      });
+    }
+
+    // Přidej uživatele do requestu
+    req.user = user;
+    next();
+  } catch (error) {
+    console.error('Authentication error:', error);
+    return res.status(401).json({
+      success: false,
+      error: 'Authentication failed'
+    });
+  }
+}
+
+/**
+ * Middleware pro ověření admin práv
+ */
+async function requireAdmin(req, res, next) {
+  if (!req.user) {
+    return res.status(401).json({
+      success: false,
+      error: 'Authentication required'
+    });
+  }
+
+  try {
+    // Zkontroluj admin práva v databázi
+    const { data: profile, error } = await supabaseAuth
+      .from('profiles')
+      .select('is_admin')
+      .eq('id', req.user.id)
+      .single();
+
+    if (error || !profile || !profile.is_admin) {
+      return res.status(403).json({
+        success: false,
+        error: 'Admin access required'
+      });
+    }
+
+    req.isAdmin = true;
+    next();
+  } catch (error) {
+    console.error('Admin check error:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to verify admin status'
+    });
+  }
+}
 
 // GoPay konfigurace z .env
 const GOPAY_API_URL = process.env.REACT_APP_GOPAY_ENVIRONMENT === 'PRODUCTION'
@@ -66,8 +176,9 @@ async function getAccessToken() {
 
 /**
  * Vytvoření platby v GoPay
+ * SECURITY: Vyžaduje autentizaci
  */
-app.post('/api/gopay/create-payment', async (req, res) => {
+app.post('/api/gopay/create-payment', authenticateUser, async (req, res) => {
   try {
     console.log('Creating GoPay payment...');
     const paymentData = req.body;
@@ -136,17 +247,22 @@ app.post('/api/gopay/create-payment', async (req, res) => {
     });
   } catch (error) {
     console.error('Error creating payment:', error);
+    // SECURITY: V produkci nevyzrazuj detaily chyb
+    const errorMessage = process.env.NODE_ENV === 'production' 
+      ? 'Payment creation failed'
+      : error.message;
     res.status(500).json({
       success: false,
-      error: error.message
+      error: errorMessage
     });
   }
 });
 
 /**
  * Kontrola statusu platby
+ * SECURITY: Vyžaduje autentizaci
  */
-app.post('/api/gopay/check-payment', async (req, res) => {
+app.post('/api/gopay/check-payment', authenticateUser, async (req, res) => {
   try {
     const { paymentId } = req.body;
     console.log('Checking payment status:', paymentId);
@@ -181,17 +297,21 @@ app.post('/api/gopay/check-payment', async (req, res) => {
     });
   } catch (error) {
     console.error('Error checking payment status:', error);
+    const errorMessage = process.env.NODE_ENV === 'production' 
+      ? 'Failed to check payment status'
+      : error.message;
     res.status(500).json({
       success: false,
-      error: error.message
+      error: errorMessage
     });
   }
 });
 
 /**
  * HestiaCP - Vytvoření hosting účtu
+ * SECURITY: Vyžaduje autentizaci
  */
-app.post('/api/hestiacp/create-account', async (req, res) => {
+app.post('/api/hestiacp/create-account', authenticateUser, async (req, res) => {
   try {
     console.log('Creating HestiaCP hosting account...');
     const { email, domain, package: pkg, username, password } = req.body;
@@ -231,17 +351,21 @@ app.post('/api/hestiacp/create-account', async (req, res) => {
     });
   } catch (error) {
     console.error('Error creating HestiaCP account:', error);
+    const errorMessage = process.env.NODE_ENV === 'production' 
+      ? 'Failed to create hosting account'
+      : error.message;
     res.status(500).json({
       success: false,
-      error: error.message
+      error: errorMessage
     });
   }
 });
 
 /**
  * HestiaCP - Suspendování účtu
+ * SECURITY: Vyžaduje admin práva
  */
-app.post('/api/hestiacp/suspend-account', async (req, res) => {
+app.post('/api/hestiacp/suspend-account', authenticateUser, requireAdmin, async (req, res) => {
   try {
     console.log('Suspending HestiaCP account...');
     const { username } = req.body;
@@ -270,17 +394,21 @@ app.post('/api/hestiacp/suspend-account', async (req, res) => {
     });
   } catch (error) {
     console.error('Error suspending HestiaCP account:', error);
+    const errorMessage = process.env.NODE_ENV === 'production' 
+      ? 'Failed to suspend account'
+      : error.message;
     res.status(500).json({
       success: false,
-      error: error.message
+      error: errorMessage
     });
   }
 });
 
 /**
  * HestiaCP - Obnovení účtu
+ * SECURITY: Vyžaduje admin práva
  */
-app.post('/api/hestiacp/unsuspend-account', async (req, res) => {
+app.post('/api/hestiacp/unsuspend-account', authenticateUser, requireAdmin, async (req, res) => {
   try {
     console.log('Unsuspending HestiaCP account...');
     const { username } = req.body;
@@ -309,17 +437,21 @@ app.post('/api/hestiacp/unsuspend-account', async (req, res) => {
     });
   } catch (error) {
     console.error('Error unsuspending HestiaCP account:', error);
+    const errorMessage = process.env.NODE_ENV === 'production' 
+      ? 'Failed to unsuspend account'
+      : error.message;
     res.status(500).json({
       success: false,
-      error: error.message
+      error: errorMessage
     });
   }
 });
 
 /**
  * HestiaCP - Smazání účtu
+ * SECURITY: Vyžaduje admin práva
  */
-app.post('/api/hestiacp/delete-account', async (req, res) => {
+app.post('/api/hestiacp/delete-account', authenticateUser, requireAdmin, async (req, res) => {
   try {
     console.log('Deleting HestiaCP account...');
     const { username } = req.body;
@@ -348,9 +480,12 @@ app.post('/api/hestiacp/delete-account', async (req, res) => {
     });
   } catch (error) {
     console.error('Error deleting HestiaCP account:', error);
+    const errorMessage = process.env.NODE_ENV === 'production' 
+      ? 'Failed to delete account'
+      : error.message;
     res.status(500).json({
       success: false,
-      error: error.message
+      error: errorMessage
     });
   }
 });
