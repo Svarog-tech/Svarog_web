@@ -1214,7 +1214,12 @@ body {
   margin-bottom: 1rem;
   color: var(--text-primary);
 }
-
+.faq-title{
+  font-size: 2rem;
+  font-weight: 800;
+  margin: 0 auto 1rem auto;
+  color: var(--text-primary);
+}
 .section-description {
   font-size: 1.2rem;
   color: var(--text-secondary);
@@ -2495,6 +2500,11 @@ body {
     display: block;
   }
 }
+.faq-container {
+  max-width: 100%;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
 
 @media (max-width: 768px) {
   .container {
@@ -3040,10 +3050,11 @@ body {
   padding: 6rem 0;
   background: var(--surface-alt);
   text-align: center;
+
 }
 
 .hours-content {
-  max-width: 600px;
+  max-width: 60%;
   margin: 0 auto;
 }
 

@@ -105,8 +105,7 @@ const Support: React.FC = () => {
             transition={{ duration: 0.8 }}
             viewport={{ once: true }}
           >
-            <h2 className="section-title">{t('support.optionsTitle')}</h2>
-            <p className="section-description">{t('support.optionsDescription')}</p>
+            <h2 className="faq-title">{t('support.optionsTitle')}</h2>
           </motion.div>
 
           <div className="support-grid">
@@ -139,7 +138,7 @@ const Support: React.FC = () => {
       </section>
 
       <section className="support-hours">
-        <div className="container">
+        <div className="faq-container">
           <motion.div
             className="hours-content"
             initial={{ opacity: 0, y: 30 }}
@@ -177,8 +176,7 @@ const Support: React.FC = () => {
             transition={{ duration: 0.8 }}
             viewport={{ once: true }}
           >
-            <h2 className="section-title">{t('support.faqTitle')}</h2>
-            <p className="section-description">{t('support.faqDescription')}</p>
+            <h2 className="faq-title">{t('support.faqDescription')}</h2>
           </motion.div>
 
           <div className="faq-list">
