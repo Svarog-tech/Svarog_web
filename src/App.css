@@ -3334,7 +3334,16 @@ body {
 
 .stat-card {
   background: var(--surface);
-  padding: 3rem 2rem;
+  padding: 3rem 3rem;
+  border-radius: 16px;
+  text-align: center;
+  box-shadow: var(--shadow-sm);
+  border: 2px solid transparent;
+  transition: all 0.3s ease;
+}
+.about-card {
+  background: var(--surface);
+  padding: 3rem 3rem;
   border-radius: 16px;
   text-align: center;
   box-shadow: var(--shadow-sm);
@@ -3342,7 +3351,7 @@ body {
   transition: all 0.3s ease;
 }
 
-.stat-card:hover {
+.about-card:hover {
   border-color: var(--primary-color);
   box-shadow: var(--shadow-lg);
 }
