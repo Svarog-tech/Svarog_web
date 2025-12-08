@@ -17,7 +17,7 @@ class HestiaCP {
   }
 
   /**
-   * Generuje hash pro HestiaCP API autentizaci
+   * Generuje hash pro HestiaCP API autentizaci (stará metoda)
    */
   getAuthHash() {
     return `${this.accessKey}:${this.secretKey}`;
@@ -25,16 +25,40 @@ class HestiaCP {
 
   /**
    * Volá HestiaCP API příkaz
+   * Podporuje 3 metody autentizace:
+   * 1. Hash parametr (stará metoda): hash=ACCESS_KEY:SECRET_KEY
+   * 2. POST parametry: access_key_id + secret_access_key
+   * 3. Headers (doporučeno): x-access-key-id + x-secret-access-key
+   * 
    * @param {string} command - HestiaCP příkaz (např. 'v-add-user')
    * @param {Array} args - Argumenty příkazu
+   * @param {string} authMethod - Metoda autentizace: 'hash', 'params', 'headers' (default: 'headers')
    * @returns {Promise<{success: boolean, data?: any, error?: string}>}
    */
-  async callAPI(command, args = []) {
+  async callAPI(command, args = [], authMethod = 'headers') {
     try {
-      console.log(`[HestiaCP] Calling command: ${command}`, args);
+      console.log(`[HestiaCP] Calling command: ${command}`, args, `(auth: ${authMethod})`);
 
       const formData = new URLSearchParams();
-      formData.append('hash', this.getAuthHash());
+      const headers = {
+        'Content-Type': 'application/x-www-form-urlencoded'
+      };
+
+      // Metoda 3: Headers (doporučeno) - nejbezpečnější
+      if (authMethod === 'headers') {
+        headers['x-access-key-id'] = this.accessKey;
+        headers['x-secret-access-key'] = this.secretKey;
+      }
+      // Metoda 2: POST parametry
+      else if (authMethod === 'params') {
+        formData.append('access_key_id', this.accessKey);
+        formData.append('secret_access_key', this.secretKey);
+      }
+      // Metoda 1: Hash parametr (stará metoda, fallback)
+      else {
+        formData.append('hash', this.getAuthHash());
+      }
+
       formData.append('returncode', 'yes');
       formData.append('cmd', command);
 
@@ -45,22 +69,38 @@ class HestiaCP {
         }
       });
 
-      const response = await fetch(`${this.url}/api/`, {
+      // Pro Node.js fetch (node-fetch) musíme ignorovat SSL chyby
+      const https = require('https');
+      const agent = new https.Agent({
+        rejectUnauthorized: false // Ignore SSL certificate errors (self-signed cert)
+      });
+
+      // Zajisti že URL končí správně (buď už má /api/ nebo přidáme)
+      let apiUrl = this.url;
+      if (!apiUrl.endsWith('/api/') && !apiUrl.endsWith('/api')) {
+        apiUrl = apiUrl.endsWith('/') ? `${apiUrl}api/` : `${apiUrl}/api/`;
+      }
+
+      const response = await fetch(apiUrl, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded'
-        },
+        headers: headers,
         body: formData.toString(),
-        // Ignore SSL certificate errors (self-signed cert)
-        rejectUnauthorized: false
+        agent: agent
       });
 
       const data = await response.text();
-      console.log(`[HestiaCP] Response: ${data}`);
+      console.log(`[HestiaCP] Response: ${data.substring(0, 200)}...`); // Log jen prvních 200 znaků
 
       // HestiaCP vrací 0 pro success, jinak error code nebo error message
+      // JSON odpověď může být také validní
       if (data === '0' || data === '' || response.ok) {
-        return { success: true, data };
+        // Zkus parsovat jako JSON pokud to vypadá jako JSON
+        try {
+          const jsonData = JSON.parse(data);
+          return { success: true, data: jsonData };
+        } catch {
+          return { success: true, data };
+        }
       } else {
         return { success: false, error: data };
       }

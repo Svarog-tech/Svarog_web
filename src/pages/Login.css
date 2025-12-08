@@ -193,19 +193,51 @@
   position: relative;
   display: flex;
   align-items: center;
+  width: 100%;
 }
 
 .input-icon {
   position: absolute;
-  left: 1rem;
+  left: 0.3rem;
+  top: 50%;
+  transform: translateY(-10%);
   color: var(--text-secondary);
-  font-size: 1rem;
-  z-index: 2;
+  font-size: 0.875rem;
+  width: 1.125rem;
+  height: 1.125rem;
+  z-index: 3;
+  pointer-events: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin: 0 !important;
+  padding: 0 !important;
+  line-height: 1;
+  box-sizing: border-box;
+}
+
+/* FontAwesome SVG specifické styly - zajistit, že ikonka je správně velká a neleze do textu */
+.input-icon svg,
+.input-icon.svg-inline--fa {
+  width: 1.125rem !important;
+  height: 1.125rem !important;
+  display: block !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  flex-shrink: 0;
+  position: relative;
+  box-sizing: border-box;
+}
+
+/* Zajistit, že SVG neovlivňuje layout */
+.input-icon.svg-inline--fa {
+  overflow: visible;
 }
 
 .form-input {
   width: 100%;
-  padding: 1rem 1rem 1rem 3rem;
+  padding: 1rem 1rem 1rem 4.5rem;
   border: 2px solid var(--border);
   border-radius: 12px;
   background: var(--surface-alt);
@@ -213,10 +245,15 @@
   font-size: 0.95rem;
   transition: all 0.3s ease;
   outline: none;
+  box-sizing: border-box;
 }
 
+/* Zajistit, že placeholder text neleze pod ikonku */
 .form-input::placeholder {
   color: var(--text-tertiary);
+  opacity: 1;
+  text-indent: 0;
+  padding-left: 0;
 }
 
 .form-input:focus {

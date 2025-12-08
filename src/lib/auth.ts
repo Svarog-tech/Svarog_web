@@ -7,11 +7,34 @@ import type {
 } from '../types/auth';
 
 // Configuration - použití čistě Supabase Auth
-const supabaseUrl = process.env.REACT_APP_SUPABASE_URL || 'https://ccgxtldxeerwacyekzyk.supabase.co';
-const supabaseAnonKey = process.env.REACT_APP_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNjZ3h0bGR4ZWVyd2FjeWVrenlrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI3NTI4NDEsImV4cCI6MjA3ODMyODg0MX0.SY_7cC1op-rR6-4NDdHkAJBL0viYEsbr_rFlkyOdYMk';
+// SECURITY: API klíče musí být v environment variables, ne hardcoded!
+const supabaseUrl = process.env.REACT_APP_SUPABASE_URL;
+const supabaseAnonKey = process.env.REACT_APP_SUPABASE_ANON_KEY;
+
+// Fallback pro development (pouze pokud není nastaveno)
+// V produkci MUSÍ být v .env souboru!
+const devSupabaseUrl = 'https://ccgxtldxeerwacyekzyk.supabase.co';
+const devSupabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNjZ3h0bGR4ZWVyd2FjeWVrenlrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI3NTI4NDEsImV4cCI6MjA3ODMyODg0MX0.SY_7cC1op-rR6-4NDdHkAJBL0viYEsbr_rFlkyOdYMk';
+
+if (!supabaseUrl || !supabaseAnonKey) {
+  if (process.env.NODE_ENV === 'production') {
+    console.error('❌ SECURITY ERROR: Missing Supabase configuration in environment variables!');
+    throw new Error('Missing required Supabase configuration. Please set REACT_APP_SUPABASE_URL and REACT_APP_SUPABASE_ANON_KEY in your .env file.');
+  } else {
+    // Development fallback - VAROVÁNÍ!
+    console.warn('⚠️ WARNING: Using fallback Supabase credentials for development. Create .env file with your credentials!');
+    console.warn('⚠️ Create .env file with:');
+    console.warn('   REACT_APP_SUPABASE_URL=https://your-project.supabase.co');
+    console.warn('   REACT_APP_SUPABASE_ANON_KEY=your-anon-key');
+  }
+}
+
+// Použij environment variables nebo fallback pro development
+const finalSupabaseUrl = supabaseUrl || devSupabaseUrl;
+const finalSupabaseAnonKey = supabaseAnonKey || devSupabaseAnonKey;
 
 // Vytvoření Supabase klienta s optimálním nastavením
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+export const supabase = createClient(finalSupabaseUrl, finalSupabaseAnonKey, {
   auth: {
     autoRefreshToken: true,
     persistSession: true,

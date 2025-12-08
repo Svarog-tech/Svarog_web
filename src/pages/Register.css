@@ -319,19 +319,51 @@
   position: relative;
   display: flex;
   align-items: center;
+  width: 100%;
 }
 
 .input-icon {
   position: absolute;
-  left: 1rem;
+  left: 0.3rem;
+  top: 50%;
+  transform: translateY(-10%);
   color: var(--text-secondary);
   font-size: 0.875rem;
-  z-index: 1;
+  width: 1.125rem;
+  height: 1.125rem;
+  z-index: 3;
+  pointer-events: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin: 0 !important;
+  padding: 0 !important;
+  line-height: 1;
+  box-sizing: border-box;
+}
+
+/* FontAwesome SVG specifické styly - zajistit, že ikonka je správně velká a neleze do textu */
+.input-icon svg,
+.input-icon.svg-inline--fa {
+  width: 1.125rem !important;
+  height: 1.125rem !important;
+  display: block !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  flex-shrink: 0;
+  position: relative;
+  box-sizing: border-box;
+}
+
+/* Zajistit, že SVG neovlivňuje layout */
+.input-icon.svg-inline--fa {
+  overflow: visible;
 }
 
 .form-input {
   width: 100%;
-  padding: 0.875rem 1rem 0.875rem 2.5rem;
+  padding: 0.875rem 1rem 0.875rem 4.5rem;
   border: 2px solid var(--border);
   border-radius: 10px;
   background: var(--surface-alt);
@@ -339,6 +371,15 @@
   font-size: 1rem;
   transition: all 0.3s ease;
   outline: none;
+  box-sizing: border-box;
+}
+
+/* Zajistit, že placeholder text neleze pod ikonku - začíná až za ikonkou */
+.form-input::placeholder {
+  color: var(--text-secondary);
+  opacity: 1;
+  text-indent: 0;
+  padding-left: 0;
 }
 
 .form-input:focus {
@@ -349,6 +390,8 @@
 
 .form-input::placeholder {
   color: var(--text-secondary);
+  opacity: 1;
+  text-indent: 0;
 }
 
 .password-toggle {

@@ -193,11 +193,15 @@ tail -f /var/log/hestia/api.log
 
 ## Credentials
 
-Tvoje HestiaCP API credentials (z Discord):
+**SECURITY:** HestiaCP API credentials musí být nastaveny v `.env` souboru:
+
 ```env
-HESTIA_USER=epgmooky
-HESTIA_ACCESS_KEY_ID=o2z6TO8bZ7M89w1SrfUr
-HESTIA_SECRET_ACCESS_KEY=x62zVT1n=tS6gqZXiDfjApFJd9ppdXLU_VW6lIp-
+HESTIA_USER=your_username
+HESTIA_ACCESS_KEY_ID=your_access_key_id
+HESTIA_SECRET_ACCESS_KEY=your_secret_access_key
 ```
 
-**DŮLEŽITÉ:** Tyto credentials jsou v `.env.deploy` který je v `.gitignore` - necommitnou se!
+**DŮLEŽITÉ:** 
+- ✅ Credentials jsou v `.env.deploy` který je v `.gitignore` - necommitnou se!
+- ❌ **NIKDY necommituj credentials do Gitu!**
+- ✅ Použij environment variables pro všechny citlivé údaje

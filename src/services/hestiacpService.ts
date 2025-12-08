@@ -41,10 +41,20 @@ export const createHostingAccount = async (
   try {
     console.log('[HestiaCP Frontend] Creating hosting account:', params);
 
+    // SECURITY: Získej JWT token pro autentizaci
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      return {
+        success: false,
+        error: 'Authentication required'
+      };
+    }
+
     const response = await fetch(`${PROXY_URL}/api/hestiacp/create-account`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`
       },
       body: JSON.stringify(params)
     });
@@ -88,10 +98,20 @@ export const suspendHostingAccount = async (
   try {
     console.log('[HestiaCP Frontend] Suspending account:', username);
 
+    // SECURITY: Získej JWT token pro autentizaci (vyžaduje admin práva)
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      return {
+        success: false,
+        error: 'Authentication required'
+      };
+    }
+
     const response = await fetch(`${PROXY_URL}/api/hestiacp/suspend-account`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`
       },
       body: JSON.stringify({ username })
     });
@@ -128,10 +148,20 @@ export const unsuspendHostingAccount = async (
   try {
     console.log('[HestiaCP Frontend] Unsuspending account:', username);
 
+    // SECURITY: Získej JWT token pro autentizaci (vyžaduje admin práva)
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      return {
+        success: false,
+        error: 'Authentication required'
+      };
+    }
+
     const response = await fetch(`${PROXY_URL}/api/hestiacp/unsuspend-account`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`
       },
       body: JSON.stringify({ username })
     });
@@ -168,10 +198,20 @@ export const deleteHostingAccount = async (
   try {
     console.log('[HestiaCP Frontend] Deleting account:', username);
 
+    // SECURITY: Získej JWT token pro autentizaci (vyžaduje admin práva)
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      return {
+        success: false,
+        error: 'Authentication required'
+      };
+    }
+
     const response = await fetch(`${PROXY_URL}/api/hestiacp/delete-account`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`
       },
       body: JSON.stringify({ username })
     });
@@ -257,9 +297,10 @@ export const createHostingAccountForOrder = async (
         cpanel_url: result.cpanelUrl,
         ftp_host: result.domain,
         ftp_username: result.username,
-        // POZNÁMKA: Heslo by mělo být zašifrované v produkci!
-        // Pro testování ho ukládáme, ale v produkci by se mělo poslat emailem
-        notes: `HestiaCP Username: ${result.username}\nPassword: ${result.password}\nControl Panel: ${result.cpanelUrl}`
+        // SECURITY: Heslo NIKDY neukládej do databáze!
+        // Heslo by mělo být posláno emailem uživateli
+        // Pro testování můžeme ukládat jen username a URL
+        notes: `HestiaCP Username: ${result.username}\nControl Panel: ${result.cpanelUrl}\n\nPOZNÁMKA: Heslo bylo posláno emailem uživateli.`
       })
       .eq('order_id', orderId);
 

@@ -324,6 +324,14 @@ export interface HostingService {
   created_at: string;
   updated_at: string;
   notes?: string;
+  // HestiaCP údaje
+  hestia_username?: string;
+  hestia_domain?: string;
+  hestia_package?: string;
+  hestia_created?: boolean;
+  hestia_created_at?: string;
+  hestia_error?: string;
+  cpanel_url?: string;
 }
 
 /**
