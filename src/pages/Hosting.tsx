@@ -163,9 +163,11 @@ const Hosting: React.FC = () => {
                   color: 'white',
                   borderRadius: '8px',
                   transform: 'translateY(-4px)',
-                  background: 'linear-gradient(to right, #f27121, #e94057, #8a2387)',
+                  background: 'linear-gradient(135deg, #2563eb, #06b6d4, #2563eb)',
+                  backgroundSize: '200% 200%',
+                  backgroundPosition: '0% 50%',
                   gap: '12px',
-                  transition: 'transform 600ms cubic-bezier(0.3, 0.7, 0.4, 1)',
+                  transition: 'transform 600ms cubic-bezier(0.3, 0.7, 0.4, 1), background-position 800ms ease',
                 }}
               >
                 <span style={{ userSelect: 'none' }}>{t('hosting.guarantee.cta')}</span>
