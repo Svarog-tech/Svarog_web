@@ -133,9 +133,22 @@ const About: React.FC = () => {
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
             viewport={{ once: true }}
+            style={{ textAlign: 'center', marginBottom: '56px', width: '100%', display: 'block' }}
           >
-            <h2 className="section-title">{t('about.valuesTitle')}</h2>
-            <p className="section-description">{t('about.valuesDescription')}</p>
+            <h2
+              style={{
+                fontSize: '2.75rem',
+                fontWeight: 800,
+                color: 'var(--text-primary)',
+                marginBottom: '16px',
+                letterSpacing: '-0.02em',
+                textAlign: 'center',
+                display: 'block',
+                width: '100%'
+              }}
+            >
+              {t('about.valuesTitle')} {t('about.valuesDescription')}
+            </h2>
           </motion.div>
 
           <div className="values-grid">
@@ -168,9 +181,22 @@ const About: React.FC = () => {
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
             viewport={{ once: true }}
+            style={{ textAlign: 'center', marginBottom: '56px', width: '100%', display: 'block' }}
           >
-            <h2 className="section-title">{t('about.teamTitle')}</h2>
-            <p className="section-description">{t('about.teamDescription')}</p>
+            <h2
+              style={{
+                fontSize: '2.75rem',
+                fontWeight: 800,
+                color: 'var(--text-primary)',
+                marginBottom: '16px',
+                letterSpacing: '-0.02em',
+                textAlign: 'center',
+                display: 'block',
+                width: '100%'
+              }}
+            >
+              {t('about.teamTitle')} {t('about.teamDescription')}
+            </h2>
           </motion.div>
 
           <div className="team-grid">
