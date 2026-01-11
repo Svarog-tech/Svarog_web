@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faSun, faMoon } from '@fortawesome/free-solid-svg-icons';
+import { faCloudMoon, faCloudSun } from '@fortawesome/free-solid-svg-icons';
 import { useTheme } from '../contexts/ThemeContext';
 
 const ThemeToggle: React.FC = () => {
@@ -21,7 +21,7 @@ const ThemeToggle: React.FC = () => {
         transition={{ duration: 0.5, ease: "easeInOut" }}
       >
         <FontAwesomeIcon
-          icon={theme === 'light' ? faMoon : faSun}
+          icon={theme === 'light' ? faCloudMoon : faCloudSun}
         />
       </motion.div>
     </motion.button>
