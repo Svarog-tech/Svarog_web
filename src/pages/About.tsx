@@ -29,11 +29,6 @@ const About: React.FC = () => {
       icon: faHeart,
       title: 'about.values.care.title',
       description: 'about.values.care.description'
-    },
-    {
-      icon: faBolt,
-      title: 'about.values.performance.title',
-      description: 'about.values.performance.description'
     }
   ];
 
