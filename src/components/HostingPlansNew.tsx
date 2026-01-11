@@ -81,43 +81,46 @@ const HostingPlansNew: React.FC = () => {
           {plans.map((plan, index) => (
             <motion.div
               key={plan.id}
-              className={`plan-card-new ${plan.popular ? 'popular' : ''}`}
+              className="plan"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.1 }}
             >
               {plan.popular && (
-                <div className="popular-badge-new">Nejpopulárnější</div>
-              )}
-
-              <div className="plan-header-new">
-                <h3 className="plan-name-new">{plan.name}</h3>
-                <div className="plan-price-new">
-                  <span className="price-amount">
-                    {formatPrice(billingCycle === 'yearly' ? plan.yearlyPrice * 12 : plan.price)}
-                  </span>
-                  <span className="price-period">
-                    /{billingCycle === 'yearly' ? 'rok' : 'měsíc'}
-                  </span>
+                <div className="popular-stamp">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
+                  </svg>
                 </div>
-                <p className="plan-description-new">{plan.description}</p>
+              )}
+              <div className="inner">
+                <span className="pricing">
+                  <span>
+                    {formatPrice(billingCycle === 'yearly' ? plan.yearlyPrice * 12 : plan.price)}{' '}
+                    <small>/ {billingCycle === 'yearly' ? 'rok' : 'měsíc'}</small>
+                  </span>
+                </span>
+                <p className="title">{plan.name}</p>
+                <p className="info">{plan.description}</p>
+                <ul className="features">
+                  {plan.features.map((feature, idx) => (
+                    <li key={idx}>
+                      <span className="icon">
+                        <svg height="24" width="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M0 0h24v24H0z" fill="none"></path>
+                          <path fill="currentColor" d="M10 15.172l9.192-9.193 1.415 1.414L10 18l-6.364-6.364 1.414-1.414z"></path>
+                        </svg>
+                      </span>
+                      <span>{feature}</span>
+                    </li>
+                  ))}
+                </ul>
+                <div className="action">
+                  <button className="button" onClick={() => handleSelectPlan(plan.id)}>
+                    Vybrat plán
+                  </button>
+                </div>
               </div>
-
-              <ul className="features-list-new">
-                {plan.features.map((feature, idx) => (
-                  <li key={idx} className="feature-item-new">
-                    <FontAwesomeIcon icon={faCheck} className="check-icon" />
-                    <span>{feature}</span>
-                  </li>
-                ))}
-              </ul>
-
-              <button
-                className="select-btn-new"
-                onClick={() => handleSelectPlan(plan.id)}
-              >
-                Vybrat plán
-              </button>
             </motion.div>
           ))}
         </div>
