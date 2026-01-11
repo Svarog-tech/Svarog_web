@@ -202,6 +202,32 @@ body {
   box-shadow: var(--shadow-lg);
 }
 
+/* Fancy 3D button styles */
+.fancy-button:hover .button-shadow {
+  transform: translateY(4px);
+  transition: transform 250ms;
+}
+
+.fancy-button:hover .button-front {
+  transform: translateY(-6px);
+  transition: transform 250ms;
+  filter: brightness(1.1);
+}
+
+.fancy-button:active .button-shadow {
+  transform: translateY(1px) !important;
+  transition: transform 50ms !important;
+}
+
+.fancy-button:active .button-front {
+  transform: translateY(-2px) !important;
+  transition: transform 50ms !important;
+}
+
+.fancy-button:hover .button-arrow {
+  transform: translateX(4px);
+}
+
 .nav-cta {
   display: flex;
   align-items: center;
