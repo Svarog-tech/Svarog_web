@@ -322,12 +322,14 @@ body {
   border-radius: 50%;
   width: 40px;
   height: 40px;
+  padding: 0;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   transition: all 0.3s ease;
   color: var(--text-secondary);
+  flex-shrink: 0;
 }
 
 .theme-toggle:hover {
@@ -338,6 +340,9 @@ body {
 
 .theme-toggle-icon {
   font-size: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .mobile-theme-toggle {
