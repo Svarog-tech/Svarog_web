@@ -21,7 +21,7 @@ const ThemeToggle: React.FC = () => {
         transition={{ duration: 0.5, ease: "easeInOut" }}
       >
         <FontAwesomeIcon
-          icon={theme === 'light' ? faCloudSun : faCloudMoon}
+          icon={theme === 'light' ? faCloudMoon : faCloudSun}
         />
       </motion.div>
     </motion.button>
