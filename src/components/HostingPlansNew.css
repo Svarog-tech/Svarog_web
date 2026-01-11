@@ -110,7 +110,7 @@
 /* Plan Card - New Design */
 .plan {
   border-radius: 16px;
-  box-shadow: 0 30px 30px -25px rgba(38, 168, 217, 0.3);
+  box-shadow: 0 30px 30px -25px rgba(38, 81, 217, 0.25);
   padding: 10px;
   background-color: #fff;
   color: #697e91;
@@ -144,7 +144,7 @@
   position: absolute;
   top: 0;
   right: 0;
-  background: linear-gradient(135deg, #26A8D9 0%, #26D9C5 100%);
+  background-color: var(--primary-color);
   border-radius: 99em 0 0 99em;
   display: flex;
   align-items: center;
@@ -237,7 +237,7 @@
   cursor: pointer;
   align-items: center;
   gap: 0.75rem;
-  background: linear-gradient(135deg, #26A8D9 0%, #26D9C5 100%);
+  background-color: var(--primary-color);
   color: #fff;
   border-radius: 10rem;
   font-weight: 600;
@@ -257,7 +257,7 @@
   width: 25px;
   height: 25px;
   position: relative;
-  color: #26A8D9;
+  color: var(--primary-color);
   background-color: #fff;
   border-radius: 50%;
   display: grid;
@@ -266,12 +266,12 @@
 }
 
 .plan .button:hover {
-  background: linear-gradient(135deg, #1d8ab0 0%, #1da88f 100%);
+  background-color: var(--primary-dark);
   transform: translateY(-2px);
 }
 
 .plan .button:hover .button__icon-wrapper {
-  color: #1d8ab0;
+  color: var(--primary-dark);
 }
 
 .plan .button__icon-svg--copy {
@@ -295,13 +295,13 @@
   left: 15px;
   width: 42px;
   height: 42px;
-  background: linear-gradient(135deg, #26A8D9 0%, #26D9C5 100%);
+  background-color: var(--primary-color);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
-  box-shadow: 0 4px 12px rgba(38, 197, 217, 0.4);
+  box-shadow: 0 4px 12px rgba(38, 81, 217, 0.4);
   z-index: 10;
   animation: pulse 2s ease-in-out infinite;
 }
@@ -380,7 +380,7 @@
 }
 
 [data-theme="dark"] .popular-stamp {
-  box-shadow: 0 4px 12px rgba(38, 197, 217, 0.6);
+  box-shadow: 0 4px 12px rgba(38, 81, 217, 0.6);
 }
 
 [data-theme="dark"] .toggle-group {
