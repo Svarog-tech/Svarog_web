@@ -230,35 +230,71 @@
 }
 
 .plan .button {
-  background-color: var(--primary-color);
-  border-radius: 6px;
-  color: #fff;
-  font-weight: 500;
-  font-size: 1.125rem;
-  text-align: center;
-  border: 0;
-  outline: 0;
-  width: 100%;
-  padding: 0.625em 0.75em;
+  line-height: 1;
   text-decoration: none;
+  display: inline-flex;
+  border: none;
   cursor: pointer;
-  transition: all 0.2s ease;
+  align-items: center;
+  gap: 0.75rem;
+  background-color: var(--primary-color);
+  color: #fff;
+  border-radius: 10rem;
+  font-weight: 600;
+  padding: 0.75rem 1.5rem;
+  padding-left: 20px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: background-color 0.3s;
+  width: 100%;
+  justify-content: center;
+  font-size: 1rem;
 }
 
-.plan .button:hover,
-.plan .button:focus {
+.plan .button__icon-wrapper {
+  flex-shrink: 0;
+  width: 25px;
+  height: 25px;
+  position: relative;
+  color: var(--primary-color);
+  background-color: #fff;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+
+.plan .button:hover {
   background-color: var(--primary-dark);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(38, 81, 217, 0.3);
+}
+
+.plan .button:hover .button__icon-wrapper {
+  color: var(--primary-dark);
+}
+
+.plan .button__icon-svg--copy {
+  position: absolute;
+  transform: translate(-150%, 150%);
+}
+
+.plan .button:hover .button__icon-svg:first-child {
+  transition: transform 0.3s ease-in-out;
+  transform: translate(150%, -150%);
+}
+
+.plan .button:hover .button__icon-svg--copy {
+  transition: transform 0.3s ease-in-out 0.1s;
+  transform: translate(0);
 }
 
 .popular-stamp {
   position: absolute;
   top: 15px;
   left: 15px;
-  width: 50px;
-  height: 50px;
-  background: var(--warning-color);
+  width: 42px;
+  height: 42px;
+  background: linear-gradient(135deg, #26A8D9 0%, #26D9C5 100%);
   border-radius: 50%;
   display: flex;
   align-items: center;
