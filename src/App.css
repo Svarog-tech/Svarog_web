@@ -430,18 +430,82 @@ body {
   flex-direction: column;
 }
 
-.hero-badge {
-  display: inline-flex;
-  align-items: center;
-  background: rgba(37, 99, 235, 0.1);
-  color: var(--primary-color);
-  padding: 0.5rem 1rem;
-  border-radius: 50px;
-  font-size: 0.875rem;
-  font-weight: 600;
-  margin-bottom: 2rem;
-  width: fit-content;
-  border: 1px solid rgba(37, 99, 235, 0.2);
+/* New Hero Badge Button */
+.hero-badge-button {
+  cursor: pointer;
+  font-size: 0.875rem; /* Match old font-size */
+  font-weight: 600; /* Match old font-weight */
+  border-radius: 16px;
+  border: none;
+  padding: 2px;
+  background: radial-gradient(circle 80px at 80% -10%, var(--surface), var(--surface-light));
+  position: relative;
+  margin-bottom: 2rem; /* Match old margin */
+  width: fit-content; /* Match old width */
+  display: inline-flex; /* Match old display */
+  align-items: center; /* Match old align-items */
+}
+
+.hero-badge-button::after {
+  content: "";
+  position: absolute;
+  width: 65%;
+  height: 60%;
+  border-radius: 120px;
+  top: 0;
+  right: 0;
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+  z-index: -1;
+}
+
+[data-theme="dark"] .hero-badge-button {
+    background: radial-gradient(circle 80px at 80% -10%, var(--surface-light), var(--surface));
+}
+
+.hero-badge-blob1 {
+  position: absolute;
+  width: 70px;
+  height: 100%;
+  border-radius: 16px;
+  bottom: 0;
+  left: 0;
+  background: radial-gradient(
+    circle 60px at 0% 100%,
+    var(--accent-color),
+    var(--primary-color),
+    transparent
+  );
+  box-shadow: -10px 10px 30px rgba(37, 99, 235, 0.18);
+}
+
+.hero-badge-inner {
+  padding: 0.5rem 1rem; /* Match old padding */
+  border-radius: 14px;
+  color: var(--text-primary);
+  z-index: 3;
+  position: relative;
+  background: radial-gradient(circle 80px at 80% -50%, var(--surface-alt), var(--surface));
+}
+
+[data-theme="dark"] .hero-badge-inner {
+  color: var(--text-primary);
+  background: radial-gradient(circle 80px at 80% -50%, var(--surface-light), var(--surface));
+}
+
+.hero-badge-inner::before {
+  content: "";
+  width: 100%;
+  height: 100%;
+  left: 0;
+  top: 0;
+  border-radius: 14px;
+  background: radial-gradient(
+    circle 60px at 0% 100%,
+    rgba(6, 182, 212, 0.1),
+    rgba(37, 99, 235, 0.06),
+    transparent
+  );
+  position: absolute;
 }
 
 .hero-title {

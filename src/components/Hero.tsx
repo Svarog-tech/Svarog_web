@@ -31,12 +31,15 @@ const Hero: React.FC = () => {
         <div className="hero-content">
           <div className="hero-left">
             <motion.div
-              className="hero-badge"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.2 }}
+              className="hero-badge-button"
             >
-              <span>{t('hero.badge')}</span>
+              <div className="hero-badge-blob1"></div>
+              <div className="hero-badge-inner">
+                {t('hero.badge')}
+              </div>
             </motion.div>
 
             <motion.h1
