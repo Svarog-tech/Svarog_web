@@ -17,9 +17,10 @@
   --text-primary: #111827;
   --text-secondary: #6b7280;
   --text-muted: #9ca3af;
-  --surface: #ffffff;
-  --surface-light: #f9fafb;
-  --surface-alt: #f3f4f6;
+  --surface: rgba(255, 255, 255, 0.85);
+  --surface-light: rgba(249, 250, 251, 0.85);
+  --surface-alt: rgba(243, 244, 246, 0.85);
+  --surface-solid: #ffffff;
   --border-light: #e5e7eb;
   --border-medium: #d1d5db;
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
@@ -28,7 +29,7 @@
   --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
   --gradient-primary: linear-gradient(135deg, #2563eb 0%, #06b6d4 100%);
   --gradient-accent: linear-gradient(135deg, #06b6d4 0%, #10b981 100%);
-  
+
   /* Z-index scale pro konzistentní layering */
   --z-base: 1;
   --z-dropdown: 100;
@@ -44,9 +45,10 @@
   --text-primary: #f9fafb;
   --text-secondary: #d1d5db;
   --text-muted: #9ca3af;
-  --surface: #111827;
-  --surface-light: #1f2937;
-  --surface-alt: #374151;
+  --surface: rgba(17, 24, 39, 0.85);
+  --surface-light: rgba(31, 41, 55, 0.85);
+  --surface-alt: rgba(55, 65, 81, 0.85);
+  --surface-solid: #111827;
   --border-light: #374151;
   --border-medium: #4b5563;
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
@@ -76,8 +78,19 @@ body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   line-height: 1.6;
   color: var(--text-primary);
-  background-color: var(--surface);
+  background-color: var(--surface-solid);
   overflow-x: hidden;
+  position: relative;
+}
+
+.App {
+  position: relative;
+  z-index: 1;
+}
+
+.App > *:not(canvas) {
+  position: relative;
+  z-index: var(--z-base);
 }
 
 .container {
