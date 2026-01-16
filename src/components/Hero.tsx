@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCheck, faArrowRight, faHeadset, faServer, faDatabase, faGlobe } from '@fortawesome/free-solid-svg-icons';
 import { usePlanSelection } from '../hooks/usePlanSelection';
@@ -10,6 +11,7 @@ const Hero: React.FC = () => {
   const { plans, selectedPlan, selectPlan } = usePlanSelection();
   const { t } = useLanguage();
   const { formatPrice } = useCurrency();
+  const navigate = useNavigate();
   const [currentPlanIndex, setCurrentPlanIndex] = useState(1); // Start with Business (index 1)
 
   // Auto-cycle through plans
@@ -89,14 +91,24 @@ const Hero: React.FC = () => {
             >
               <button
                 className="primary-btn"
-                onClick={() => document.getElementById('hosting')?.scrollIntoView({ behavior: 'smooth' })}
+                onClick={() => {
+                  const element = document.getElementById('hosting');
+                  if (element) {
+                    const offset = 0; // Adjust this value to show more of the section
+                    const elementPosition = element.getBoundingClientRect().top + window.pageYOffset;
+                    window.scrollTo({ top: elementPosition - offset, behavior: 'smooth' });
+                  }
+                }}
               >
                 <span>
                   {t('hero.startNow')}
                   <FontAwesomeIcon icon={faArrowRight} />
                 </span>
               </button>
-              <button className="secondary-btn">
+              <button
+                className="secondary-btn"
+                onClick={() => navigate('/support')}
+              >
                 <span>{t('hero.contactSales')}</span>
               </button>
             </motion.div>
@@ -203,7 +215,14 @@ const Hero: React.FC = () => {
                         className="preview-show-plans-btn"
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
-                        onClick={() => document.getElementById('hosting')?.scrollIntoView({ behavior: 'smooth' })}
+                        onClick={() => {
+                          const element = document.getElementById('hosting');
+                          if (element) {
+                            const offset = 100; // Adjust this value to show more of the section
+                            const elementPosition = element.getBoundingClientRect().top + window.pageYOffset;
+                            window.scrollTo({ top: elementPosition - offset, behavior: 'smooth' });
+                          }
+                        }}
                       >
                         <span>
                           {t('hero.showPlans')}
