@@ -322,14 +322,43 @@
 }
 
 /* Responsive */
-@media (max-width: 1200px) {
+@media (max-width: 1400px) {
+  .plans-grid-new.grid-4 {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 1024px) {
+  .hosting-plans-new {
+    padding: 60px 0;
+  }
+
+  .plans-header-new {
+    margin-bottom: 48px;
+  }
+
+  .plans-title-new {
+    font-size: 2.5rem;
+  }
+
+  .plans-subtitle-new {
+    font-size: 1.05rem;
+  }
+
+  .plans-toggles {
+    gap: 24px;
+    margin-bottom: 48px;
+  }
+
   .plans-grid-new.grid-4 {
     grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
   }
 
   .plans-grid-new.grid-2 {
     grid-template-columns: repeat(2, 1fr);
     max-width: 700px;
+    gap: 20px;
   }
 
   .plan {
@@ -338,8 +367,43 @@
 }
 
 @media (max-width: 768px) {
+  .hosting-plans-new {
+    padding: 50px 0;
+  }
+
+  .plans-header-new {
+    margin-bottom: 40px;
+  }
+
   .plans-title-new {
     font-size: 2rem;
+    line-height: 1.2;
+  }
+
+  .plans-subtitle-new {
+    font-size: 1rem;
+  }
+
+  .plans-toggles {
+    gap: 16px;
+    margin-bottom: 40px;
+  }
+
+  .toggle-group {
+    width: 100%;
+    max-width: 100%;
+    padding: 5px;
+  }
+
+  .toggle-btn {
+    padding: 12px 20px;
+    font-size: 0.875rem;
+    flex: 1;
+  }
+
+  .save-badge {
+    font-size: 0.7rem;
+    padding: 3px 8px;
   }
 
   .plans-grid-new,
@@ -347,25 +411,273 @@
   .plans-grid-new.grid-2 {
     grid-template-columns: 1fr;
     max-width: 100%;
+    gap: 20px;
+  }
+
+  .plan {
+    max-width: 500px;
+    margin: 0 auto;
+  }
+
+  .plan .inner {
+    padding: 18px;
+    padding-top: 40px;
+  }
+
+  .plan .pricing {
+    font-size: 1.125rem;
+    padding: 0.5em 0.65em;
+  }
+
+  .plan .title {
+    font-size: 1.15rem;
+  }
+
+  .plan .info {
+    font-size: 0.95rem;
+  }
+
+  .plan .features li {
+    font-size: 0.95rem;
+  }
+
+  .plan .button {
+    font-size: 0.95rem;
+    padding: 0.7rem 1.35rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .plans-title-new {
+    font-size: 1.875rem;
+  }
+
+  .plans-subtitle-new {
+    font-size: 0.95rem;
+  }
+
+  .toggle-btn {
+    padding: 11px 16px;
+    font-size: 0.8rem;
+  }
+
+  .save-badge {
+    font-size: 0.65rem;
+    padding: 3px 7px;
   }
 
   .plan {
     max-width: 100%;
+    padding: 8px;
   }
 
   .plan .inner {
     padding: 16px;
-    padding-top: 32px;
+    padding-top: 38px;
+  }
+
+  .plan .pricing {
+    font-size: 1rem;
+  }
+
+  .plan .pricing small {
+    font-size: 0.7em;
+  }
+
+  .plan .title {
+    font-size: 1.1rem;
+  }
+
+  .popular-stamp {
+    width: 38px;
+    height: 38px;
+    top: 12px;
+    left: 12px;
+  }
+
+  .popular-stamp svg {
+    width: 24px;
+    height: 24px;
+  }
+}
+
+@media (max-width: 480px) {
+  .hosting-plans-new {
+    padding: 40px 0;
+  }
+
+  .plans-header-new {
+    margin-bottom: 32px;
+  }
+
+  .plans-title-new {
+    font-size: 1.65rem;
+    line-height: 1.25;
+  }
+
+  .plans-subtitle-new {
+    font-size: 0.9rem;
   }
 
   .plans-toggles {
-    flex-direction: column;
-    align-items: center;
+    gap: 12px;
+    margin-bottom: 32px;
   }
 
   .toggle-group {
-    width: 100%;
-    max-width: 400px;
+    padding: 4px;
+    border-radius: 12px;
+  }
+
+  .toggle-btn {
+    padding: 10px 14px;
+    font-size: 0.75rem;
+    border-radius: 8px;
+  }
+
+  .save-badge {
+    font-size: 0.6rem;
+    padding: 2px 6px;
+    border-radius: 6px;
+  }
+
+  .plans-grid-new,
+  .plans-grid-new.grid-4,
+  .plans-grid-new.grid-2 {
+    gap: 16px;
+  }
+
+  .plan {
+    padding: 7px;
+  }
+
+  .plan .inner {
+    padding: 14px;
+    padding-top: 35px;
+  }
+
+  .plan .pricing {
+    font-size: 0.95rem;
+    padding: 0.45em 0.6em;
+  }
+
+  .plan .title {
+    font-size: 1.05rem;
+    margin-top: 0.4rem;
+  }
+
+  .plan .info {
+    font-size: 0.875rem;
+  }
+
+  .plan .features li {
+    font-size: 0.875rem;
+  }
+
+  .plan .features .icon {
+    width: 18px;
+    height: 18px;
+  }
+
+  .plan .features .icon svg {
+    width: 12px;
+    height: 12px;
+  }
+
+  .plan .button {
+    font-size: 0.875rem;
+    padding: 0.65rem 1.2rem;
+    gap: 0.6rem;
+  }
+
+  .plan .button__icon-wrapper {
+    width: 22px;
+    height: 22px;
+  }
+
+  .popular-stamp {
+    width: 36px;
+    height: 36px;
+    top: 10px;
+    left: 10px;
+  }
+
+  .popular-stamp svg {
+    width: 22px;
+    height: 22px;
+  }
+}
+
+@media (max-width: 360px) {
+  .plans-title-new {
+    font-size: 1.5rem;
+  }
+
+  .plans-subtitle-new {
+    font-size: 0.85rem;
+  }
+
+  .toggle-btn {
+    padding: 9px 12px;
+    font-size: 0.7rem;
+    gap: 6px;
+  }
+
+  .save-badge {
+    font-size: 0.55rem;
+    padding: 2px 5px;
+  }
+
+  .plan {
+    padding: 6px;
+  }
+
+  .plan .inner {
+    padding: 12px;
+    padding-top: 32px;
+  }
+
+  .plan .pricing {
+    font-size: 0.875rem;
+  }
+
+  .plan .title {
+    font-size: 1rem;
+  }
+
+  .plan .info {
+    font-size: 0.8rem;
+  }
+
+  .plan .features li {
+    font-size: 0.8rem;
+    gap: 0.4rem;
+  }
+
+  .plan .features li + * {
+    margin-top: 0.6rem;
+  }
+
+  .plan .button {
+    font-size: 0.8rem;
+    padding: 0.6rem 1rem;
+  }
+
+  .plan .button__icon-wrapper {
+    width: 20px;
+    height: 20px;
+  }
+
+  .popular-stamp {
+    width: 32px;
+    height: 32px;
+    top: 8px;
+    left: 8px;
+  }
+
+  .popular-stamp svg {
+    width: 20px;
+    height: 20px;
   }
 }
 

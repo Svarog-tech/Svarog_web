@@ -297,9 +297,36 @@ body {
   background: var(--surface);
   border-top: 1px solid var(--border-light);
   box-shadow: var(--shadow-lg);
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: 100%;
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+  z-index: calc(var(--z-fixed) - 1);
 }
 
 .mobile-menu.open {
+  display: block;
+  max-height: calc(100vh - 80px);
+  overflow-y: auto;
+}
+
+/* Mobile menu backdrop */
+.mobile-menu-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  z-index: calc(var(--z-fixed) - 2);
+  display: none;
+}
+
+.mobile-menu-backdrop.open {
   display: block;
 }
 
@@ -2793,11 +2820,32 @@ body {
   .hero-content {
     grid-template-columns: 1fr;
     text-align: center;
-    gap: 2rem;
+    gap: 3rem;
+  }
+
+  .hero-left {
+    align-items: center;
+  }
+
+  .hero-description {
+    max-width: 100%;
+  }
+
+  .hero-visual {
+    max-width: 600px;
+    margin: 0 auto;
   }
 
   .hero-title {
     font-size: 3rem;
+  }
+
+  .hero-cta {
+    justify-content: center;
+  }
+
+  .hero-stats {
+    justify-content: center;
   }
 
   .plans-grid {
@@ -2828,11 +2876,27 @@ body {
   }
 
   .modern-hero {
-    padding: 100px 0 60px;
+    padding: 80px 0 60px;
+  }
+
+  .hero-content {
+    gap: 2.5rem;
   }
 
   .hero-title {
     font-size: 2.5rem;
+    line-height: 1.15;
+  }
+
+  .hero-description {
+    font-size: 1rem;
+    margin-bottom: 1.5rem;
+    line-height: 1.6;
+  }
+
+  .hero-features {
+    margin-bottom: 2rem;
+    align-items: center;
   }
 
   .section-title {
@@ -2841,17 +2905,65 @@ body {
 
   .hero-stats {
     justify-content: center;
-    gap: 1.5rem;
+    gap: 2rem;
+    flex-wrap: wrap;
+  }
+
+  .stat {
+    min-width: 100px;
   }
 
   .hero-cta {
     flex-direction: column;
     align-items: stretch;
+    margin-bottom: 2rem;
+    gap: 0.75rem;
   }
 
   .primary-btn,
   .secondary-btn {
     width: 100%;
+    font-size: 0.95rem;
+  }
+
+  .hero-visual {
+    max-width: 100%;
+  }
+
+  .hosting-preview {
+    font-size: 0.9rem;
+    margin: 0 auto;
+  }
+
+  .plan-selector {
+    padding: 0.2rem;
+  }
+
+  .plan-selector-btn {
+    font-size: 0.7rem;
+    padding: 1.5px;
+  }
+
+  .preview-content {
+    padding: 1rem;
+  }
+
+  .plan-display-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .plan-display-header h4 {
+    font-size: 1.1rem;
+  }
+
+  .plan-specs {
+    gap: 0.5rem;
+  }
+
+  .spec-item {
+    font-size: 0.75rem;
   }
 
   .plans-grid {
@@ -2881,11 +2993,86 @@ body {
     grid-template-columns: 1fr;
     text-align: center;
   }
+
+  /* Mobile menu improvements */
+  .mobile-menu.open {
+    top: 57px;
+  }
+
+  .mobile-menu-content {
+    padding: 1.25rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .hero-title {
+    font-size: 2.25rem;
+  }
+
+  .hero-visual {
+    max-width: 100%;
+    padding: 0 0.5rem;
+  }
+
+  .hero-right {
+    padding: 0;
+  }
+
+  .plan-specs {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+  }
+
+  .spec-item {
+    justify-content: center;
+  }
+
+  .hero-badge-button {
+    font-size: 0.8rem;
+  }
+
+  .preview-header {
+    padding: 0.85rem;
+  }
+
+  .performance-chart {
+    height: 70px;
+  }
 }
 
 @media (max-width: 480px) {
+  .container {
+    padding: 0 12px;
+  }
+
+  .modern-hero {
+    padding: 60px 0 40px;
+  }
+
+  .hero-content {
+    gap: 2rem;
+  }
+
   .hero-title {
-    font-size: 2rem;
+    font-size: 1.875rem;
+    line-height: 1.25;
+    margin-bottom: 1rem;
+  }
+
+  .hero-description {
+    font-size: 0.9rem;
+    margin-bottom: 1.25rem;
+    line-height: 1.5;
+  }
+
+  .hero-badge-button {
+    font-size: 0.75rem;
+    margin-bottom: 1.25rem;
+    padding: 1.5px;
+  }
+
+  .hero-badge-inner {
+    padding: 0.4rem 0.85rem;
   }
 
   .section-title {
@@ -2902,11 +3089,250 @@ body {
 
   .hero-features {
     gap: 0.75rem;
+    font-size: 0.875rem;
+  }
+
+  .feature {
+    gap: 0.6rem;
+  }
+
+  .feature svg {
+    font-size: 0.9rem;
   }
 
   .hero-stats {
-    flex-direction: column;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    justify-content: center;
+  }
+
+  .stat {
+    flex: 0 0 calc(50% - 0.75rem);
+    min-width: auto;
+  }
+
+  .stat-number {
+    font-size: 1.5rem;
+  }
+
+  .stat-label {
+    font-size: 0.8rem;
+  }
+
+  .hero-cta {
+    gap: 0.75rem;
+    margin-bottom: 1.75rem;
+  }
+
+  .primary-btn,
+  .secondary-btn {
+    font-size: 0.9rem;
+  }
+
+  .primary-btn > *,
+  .secondary-btn > * {
+    padding: 0.65rem 0.85rem;
+  }
+
+  .hero-visual {
+    padding: 0;
+  }
+
+  .hosting-preview {
+    font-size: 0.85rem;
+  }
+
+  .plan-selector {
+    gap: 0.2rem;
+    padding: 0.15rem;
+    margin-bottom: 1rem;
+  }
+
+  .plan-selector-btn {
+    font-size: 0.55rem;
+    border-radius: 12px;
+  }
+
+  .tab-text {
+    padding: 0.4rem 0.5rem;
+  }
+
+  .preview-header {
+    padding: 0.75rem;
+  }
+
+  .preview-dots {
+    gap: 0.4rem;
+  }
+
+  .preview-dots span {
+    width: 10px;
+    height: 10px;
+  }
+
+  .preview-title {
+    font-size: 0.7rem;
+  }
+
+  .preview-content {
+    padding: 0.85rem;
+  }
+
+  .plan-display-header {
+    margin-bottom: 0.85rem;
+  }
+
+  .plan-display-header h4 {
+    font-size: 0.95rem;
+  }
+
+  .plan-price .price {
+    font-size: 1.15rem;
+  }
+
+  .plan-price .currency {
+    font-size: 0.75rem;
+  }
+
+  .plan-specs {
+    gap: 0.4rem;
+    margin-bottom: 1rem;
+  }
+
+  .spec-item {
+    font-size: 0.7rem;
+    gap: 0.4rem;
+  }
+
+  .spec-item svg {
+    font-size: 0.8rem;
+  }
+
+  .preview-show-plans-btn {
+    font-size: 0.85rem;
+  }
+
+  .preview-show-plans-btn span {
+    padding: 0.55rem 0.85rem;
+  }
+
+  .performance-chart {
+    height: 60px;
+    gap: 0.35rem;
+  }
+
+  /* Mobile menu adjustments for very small screens */
+  .mobile-menu.open {
+    top: 52px;
+  }
+
+  .mobile-menu-content {
+    padding: 1rem;
+  }
+
+  .mobile-nav-link {
+    font-size: 0.95rem;
+    padding: 0.65rem 0;
+  }
+
+  .logo-image {
+    height: 35px;
+  }
+
+  .main-nav {
+    padding: 0.75rem 0;
+  }
+}
+
+/* Extra small screens (360px and below) */
+@media (max-width: 360px) {
+  .container {
+    padding: 0 10px;
+  }
+
+  .hero-title {
+    font-size: 1.65rem;
+    line-height: 1.3;
+  }
+
+  .hero-description {
+    font-size: 0.85rem;
+  }
+
+  .hero-badge-button {
+    font-size: 0.7rem;
+  }
+
+  .hero-badge-inner {
+    padding: 0.35rem 0.75rem;
+  }
+
+  .plan-selector-btn {
+    font-size: 0.5rem;
+  }
+
+  .tab-text {
+    padding: 0.35rem 0.4rem;
+  }
+
+  .preview-content {
+    padding: 0.65rem;
+  }
+
+  .plan-display-header h4 {
+    font-size: 0.9rem;
+  }
+
+  .plan-price .price {
+    font-size: 1rem;
+  }
+
+  .spec-item {
+    font-size: 0.65rem;
+  }
+
+  .stat {
+    flex: 0 0 100%;
+  }
+
+  .hero-stats {
     gap: 1rem;
+  }
+
+  .primary-btn,
+  .secondary-btn {
+    font-size: 0.85rem;
+  }
+
+  .primary-btn > *,
+  .secondary-btn > * {
+    padding: 0.6rem 0.75rem;
+  }
+
+  .performance-chart {
+    height: 50px;
+  }
+
+  .logo-image {
+    height: 32px;
+  }
+
+  .mobile-menu.open {
+    top: 49px;
+  }
+
+  .main-nav {
+    padding: 0.65rem 0;
+  }
+
+  .mobile-menu-content {
+    padding: 0.85rem;
+  }
+
+  .mobile-nav-link {
+    font-size: 0.9rem;
+    padding: 0.6rem 0;
   }
 }
 
