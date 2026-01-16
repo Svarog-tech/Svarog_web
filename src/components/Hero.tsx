@@ -91,11 +91,13 @@ const Hero: React.FC = () => {
                 className="primary-btn"
                 onClick={() => document.getElementById('hosting')?.scrollIntoView({ behavior: 'smooth' })}
               >
-                {t('hero.startNow')}
-                <FontAwesomeIcon icon={faArrowRight} />
+                <span>
+                  {t('hero.startNow')}
+                  <FontAwesomeIcon icon={faArrowRight} />
+                </span>
               </button>
               <button className="secondary-btn">
-                {t('hero.contactSales')}
+                <span>{t('hero.contactSales')}</span>
               </button>
             </motion.div>
 
@@ -154,20 +156,7 @@ const Hero: React.FC = () => {
                           stiffness: 400,
                           damping: 30
                         }}
-                        style={{ position: 'relative' }}
                       >
-                        {selectedPlan.id === plan.id && (
-                          <motion.div
-                            layoutId="activeTab"
-                            className="active-tab-background"
-                            initial={false}
-                            transition={{
-                              type: "spring",
-                              stiffness: 500,
-                              damping: 30
-                            }}
-                          />
-                        )}
                         <span className="tab-text">{t(`plans.${plan.id}.name`)}</span>
                       </motion.button>
                     ))}
@@ -216,8 +205,10 @@ const Hero: React.FC = () => {
                         whileTap={{ scale: 0.95 }}
                         onClick={() => document.getElementById('hosting')?.scrollIntoView({ behavior: 'smooth' })}
                       >
-                        {t('hero.showPlans')}
-                        <FontAwesomeIcon icon={faArrowRight} />
+                        <span>
+                          {t('hero.showPlans')}
+                          <FontAwesomeIcon icon={faArrowRight} />
+                        </span>
                       </motion.button>
                     </motion.div>
                   </AnimatePresence>

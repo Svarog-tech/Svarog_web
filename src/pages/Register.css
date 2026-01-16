@@ -107,44 +107,75 @@
 }
 
 .oauth-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.75rem;
-  padding: 0.875rem 1rem;
-  border: 2px solid var(--border);
-  border-radius: 10px;
-  background: var(--surface-alt);
-  color: var(--text-primary);
+  cursor: pointer;
   font-size: 0.875rem;
   font-weight: 500;
-  cursor: pointer;
+  border-radius: 16px;
+  border: none;
+  padding: 2px;
+  background: radial-gradient(circle 80px at 80% -10%, var(--surface), var(--surface-light));
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
   transition: all 0.3s ease;
   text-decoration: none;
-  position: relative;
-  overflow: hidden;
+}
+
+.oauth-btn::after {
+  content: "";
+  position: absolute;
+  width: 65%;
+  height: 60%;
+  border-radius: 120px;
+  top: 0;
+  right: 0;
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+  z-index: -1;
+}
+
+[data-theme="dark"] .oauth-btn {
+  background: radial-gradient(circle 80px at 80% -10%, var(--surface-light), var(--surface));
 }
 
 .oauth-btn::before {
-  content: '';
+  content: "";
   position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
+  width: 50px;
   height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
-  transition: left 0.5s ease;
+  border-radius: 16px;
+  bottom: 0;
+  left: 0;
+  background: radial-gradient(
+    circle 50px at 0% 100%,
+    var(--accent-color),
+    var(--primary-color),
+    transparent
+  );
+  box-shadow: -10px 10px 30px rgba(37, 99, 235, 0.18);
+  z-index: 0;
 }
 
-.oauth-btn:hover::before {
-  left: 100%;
+.oauth-btn > .oauth-content {
+  position: relative;
+  z-index: 3;
+  padding: 0.875rem 1rem;
+  border-radius: 14px;
+  color: var(--text-primary);
+  background: radial-gradient(circle 80px at 80% -50%, var(--surface-alt), var(--surface));
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  justify-content: center;
+}
+
+[data-theme="dark"] .oauth-btn > .oauth-content {
+  background: radial-gradient(circle 80px at 80% -50%, var(--surface-light), var(--surface));
 }
 
 .oauth-btn:hover {
-  border-color: var(--provider-color, var(--primary-color));
-  background: var(--surface);
   transform: translateY(-2px);
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
 }
 
 .oauth-btn:active {
@@ -470,33 +501,81 @@
 
 .register-button {
   width: 100%;
-  padding: 1rem 2rem;
-  background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
-  color: white;
-  border: none;
-  border-radius: 10px;
+  cursor: pointer;
   font-size: 1rem;
   font-weight: 600;
-  cursor: pointer;
+  border-radius: 16px;
+  border: none;
+  padding: 2px;
+  background: radial-gradient(circle 80px at 80% -10%, var(--surface), var(--surface-light));
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
   transition: all 0.3s ease;
+  margin-top: 1rem;
+}
+
+.register-button::after {
+  content: "";
+  position: absolute;
+  width: 65%;
+  height: 60%;
+  border-radius: 120px;
+  top: 0;
+  right: 0;
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+  z-index: -1;
+}
+
+[data-theme="dark"] .register-button {
+  background: radial-gradient(circle 80px at 80% -10%, var(--surface-light), var(--surface));
+}
+
+.register-button::before {
+  content: "";
+  position: absolute;
+  width: 70px;
+  height: 100%;
+  border-radius: 16px;
+  bottom: 0;
+  left: 0;
+  background: radial-gradient(
+    circle 60px at 0% 100%,
+    var(--accent-color),
+    var(--primary-color),
+    transparent
+  );
+  box-shadow: -10px 10px 30px rgba(37, 99, 235, 0.18);
+  z-index: 0;
+}
+
+.register-button > * {
+  position: relative;
+  z-index: 3;
+  padding: 1rem 2rem;
+  border-radius: 14px;
+  color: var(--text-primary);
+  background: radial-gradient(circle 80px at 80% -50%, var(--surface-alt), var(--surface));
   display: flex;
   align-items: center;
-  justify-content: center;
   gap: 0.5rem;
-  box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3);
-  margin-top: 1rem;
+  width: 100%;
+  justify-content: center;
+}
+
+[data-theme="dark"] .register-button > * {
+  background: radial-gradient(circle 80px at 80% -50%, var(--surface-light), var(--surface));
 }
 
 .register-button:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(37, 99, 235, 0.4);
 }
 
 .register-button:disabled {
   opacity: 0.6;
   cursor: not-allowed;
   transform: none;
-  box-shadow: 0 4px 15px rgba(37, 99, 235, 0.2);
 }
 
 .register-footer {
