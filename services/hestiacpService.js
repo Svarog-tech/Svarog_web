@@ -70,7 +70,7 @@ class HestiaCP {
       });
 
       // SECURITY: SSL certificate validation
-      // V produkci VŽDY validovat certifikáty, v development můžeme ignorovat pro self-signed certs
+      // V produkci VŽDY validovat certifikáty, v developmentu můžem ignorovat pro self-signed certs
       const https = require('https');
       const agent = new https.Agent({
         rejectUnauthorized: process.env.NODE_ENV === 'production' // true v produkci, false v development

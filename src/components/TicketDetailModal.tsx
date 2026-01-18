@@ -13,10 +13,12 @@ import {
   faExclamationCircle,
   faSave
 } from '@fortawesome/free-solid-svg-icons';
-import { supabase } from '../lib/auth';
+import { getAuthHeader } from '../lib/auth';
 import { useAuth } from '../contexts/AuthContext';
 import DOMPurify from 'dompurify';
 import './TicketDetailModal.css';
+
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
 
 interface Ticket {
   id: number;
@@ -77,23 +79,21 @@ const TicketDetailModal: React.FC<TicketDetailModalProps> = ({ ticket, isOpen, o
     if (!ticket) return;
 
     try {
-      const { data, error } = await supabase
-        .from('ticket_messages')
-        .select(`
-          *,
-          profiles!ticket_messages_user_id_fkey(first_name, last_name)
-        `)
-        .eq('ticket_id', ticket.id)
-        .order('created_at', { ascending: true });
+      const response = await fetch(`${API_BASE_URL}/tickets/${ticket.id}/messages`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthHeader()
+        }
+      });
 
-      if (error) throw error;
+      if (!response.ok) {
+        throw new Error('Failed to fetch messages');
+      }
 
-      if (data) {
-        const messagesWithUserInfo = data.map((msg: any) => ({
-          ...msg,
-          user_name: `${msg.profiles?.first_name || ''} ${msg.profiles?.last_name || ''}`.trim()
-        }));
-        setMessages(messagesWithUserInfo);
+      const result = await response.json();
+      if (result.success && result.messages) {
+        setMessages(result.messages);
         setTimeout(() => scrollToBottom(), 100);
       }
     } catch (error) {
@@ -103,13 +103,24 @@ const TicketDetailModal: React.FC<TicketDetailModalProps> = ({ ticket, isOpen, o
 
   const fetchAdmins = async () => {
     try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('id, first_name, last_name, email')
-        .eq('is_admin', true);
+      const response = await fetch(`${API_BASE_URL}/admin/users`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthHeader()
+        }
+      });
 
-      if (error) throw error;
-      if (data) setAdmins(data);
+      if (!response.ok) {
+        throw new Error('Failed to fetch admins');
+      }
+
+      const result = await response.json();
+      if (result.success && result.users) {
+        // Filtruj pouze adminy
+        const adminUsers = result.users.filter((u: any) => u.is_admin);
+        setAdmins(adminUsers);
+      }
     } catch (error) {
       console.error('Error fetching admins:', error);
     }
@@ -125,16 +136,22 @@ const TicketDetailModal: React.FC<TicketDetailModalProps> = ({ ticket, isOpen, o
     try {
       setSaving(true);
 
-      const { error } = await supabase
-        .from('support_tickets')
-        .update({
+      const response = await fetch(`${API_BASE_URL}/tickets/${ticket.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthHeader()
+        },
+        body: JSON.stringify({
           status,
           priority,
           assigned_to: profile?.is_admin ? user?.id : ticket.assigned_to
         })
-        .eq('id', ticket.id);
+      });
 
-      if (error) throw error;
+      if (!response.ok) {
+        throw new Error('Failed to update ticket');
+      }
 
       onUpdate();
     } catch (error) {
@@ -157,44 +174,26 @@ const TicketDetailModal: React.FC<TicketDetailModalProps> = ({ ticket, isOpen, o
         mentions.push(match[2]); // user_id
       }
 
-      // Insert message
-      const { data: messageData, error: messageError } = await supabase
-        .from('ticket_messages')
-        .insert([{
-          ticket_id: ticket.id,
-          user_id: user?.id,
+      // Insert message via API
+      const response = await fetch(`${API_BASE_URL}/tickets/${ticket.id}/messages`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthHeader()
+        },
+        body: JSON.stringify({
           message: newMessage,
-          is_admin_reply: profile?.is_admin || false
-        }])
-        .select()
-        .single();
+          is_admin_reply: profile?.is_admin || false,
+          mentions: mentions.length > 0 ? mentions : undefined
+        })
+      });
 
-      if (messageError) throw messageError;
-
-      // Insert mentions
-      if (mentions.length > 0 && messageData) {
-        const mentionRecords = mentions.map(userId => ({
-          message_id: messageData.id,
-          mentioned_user_id: userId
-        }));
-
-        await supabase
-          .from('ticket_mentions')
-          .insert(mentionRecords);
+      if (!response.ok) {
+        throw new Error('Failed to send message');
       }
 
       setNewMessage('');
       fetchMessages();
-
-      // Update last_reply_at
-      await supabase
-        .from('support_tickets')
-        .update({
-          last_reply_at: new Date().toISOString(),
-          last_reply_by: user?.id
-        })
-        .eq('id', ticket.id);
-
     } catch (error) {
       console.error('Error sending message:', error);
     }
@@ -207,33 +206,26 @@ const TicketDetailModal: React.FC<TicketDetailModalProps> = ({ ticket, isOpen, o
     setUploading(true);
 
     try {
-      // Upload to Supabase Storage
-      const fileName = `${ticket.id}/${Date.now()}_${file.name}`;
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('ticket-attachments')
-        .upload(fileName, file);
-
-      if (uploadError) throw uploadError;
-
-      // Get public URL
-      const { data: urlData } = supabase.storage
-        .from('ticket-attachments')
-        .getPublicUrl(fileName);
-
-      // Save attachment record
-      await supabase
-        .from('ticket_attachments')
-        .insert([{
-          ticket_id: ticket.id,
-          file_url: urlData.publicUrl,
-          file_name: file.name,
-          file_type: file.type,
-          file_size: file.size,
-          uploaded_by: user?.id
-        }]);
-
-      // Add image to message
-      setNewMessage(prev => prev + `\n![${file.name}](${urlData.publicUrl})`);
+      // TODO: Implementovat file upload endpoint na backendu
+      // Pro teď zobrazíme chybu
+      alert('Nahrávání souborů není momentálně implementováno. Použijte externí hosting (např. imgur) a vložte URL do zprávy.');
+      
+      // Pro budoucí implementaci:
+      // const formData = new FormData();
+      // formData.append('file', file);
+      // formData.append('ticket_id', ticket.id.toString());
+      // 
+      // const response = await fetch(`${API_BASE_URL}/tickets/${ticket.id}/attachments`, {
+      //   method: 'POST',
+      //   headers: {
+      //     ...getAuthHeader()
+      //   },
+      //   body: formData
+      // });
+      //
+      // if (!response.ok) throw new Error('Upload failed');
+      // const result = await response.json();
+      // setNewMessage(prev => prev + `\n![${file.name}](${result.url})`);
 
     } catch (error) {
       console.error('Error uploading image:', error);
