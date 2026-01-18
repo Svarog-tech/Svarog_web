@@ -189,7 +189,7 @@ const translations = {
     'hosting.feature4.description': 'Komplexní ochrana proti malware a pravidelné bezpečnostní aktualizace.',
     'hosting.guarantee.title': '14denní záruka',
     'hosting.guarantee.description': 'Nejste spokojeni? Vrátíme vám peníze během 14 dní bez ptaní.',
-    'hosting.guarantee.cta': 'Začít bez rizika',
+    'hosting.guarantee.cta': 'Začít relaci',
 
     // Domains page
     'domains.title': 'Najděte perfektní',
