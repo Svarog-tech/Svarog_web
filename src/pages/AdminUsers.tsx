@@ -16,7 +16,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '../lib/auth';
+import { getAuthHeader } from '../lib/auth';
 import './AdminUsers.css';
 
 interface User {
@@ -84,24 +84,30 @@ const AdminUsers: React.FC = () => {
     try {
       setLoading(true);
 
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .order('created_at', { ascending: false });
+      const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
+      const response = await fetch(`${API_URL}/admin/users`, {
+        method: 'GET',
+        headers: {
+          ...getAuthHeader()
+        }
+      });
 
-      if (error) throw error;
+      if (!response.ok) {
+        throw new Error('Failed to fetch users');
+      }
 
-      if (data) {
-        setUsers(data);
-        setFilteredUsers(data);
+      const result = await response.json();
+      if (result.success && result.users) {
+        setUsers(result.users);
+        setFilteredUsers(result.users);
 
         // Calculate stats
-        const total = data.length;
-        const admins = data.filter(u => u.is_admin).length;
-        const verified = data.filter(u => u.email_verified).length;
+        const total = result.users.length;
+        const admins = result.users.filter((u: User) => u.is_admin).length;
+        const verified = result.users.filter((u: User) => u.email_verified).length;
         const weekAgo = new Date();
         weekAgo.setDate(weekAgo.getDate() - 7);
-        const lastWeek = data.filter(u => new Date(u.created_at) > weekAgo).length;
+        const lastWeek = result.users.filter((u: User) => new Date(u.created_at) > weekAgo).length;
 
         setStats({ total, admins, verified, lastWeek });
       }
@@ -114,12 +120,20 @@ const AdminUsers: React.FC = () => {
 
   const toggleAdminRole = async (userId: string, currentIsAdmin: boolean) => {
     try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({ is_admin: !currentIsAdmin })
-        .eq('id', userId);
+      const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
+      const response = await fetch(`${API_URL}/profile/${userId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthHeader()
+        },
+        body: JSON.stringify({ is_admin: !currentIsAdmin })
+      });
 
-      if (error) throw error;
+      if (!response.ok) {
+        const result = await response.json();
+        throw new Error(result.error || 'Failed to update user role');
+      }
 
       fetchUsers();
       setEditingUser(null);

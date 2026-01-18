@@ -34,7 +34,7 @@ const AuthCallback: React.FC = () => {
             if (decoded.includes('access_denied')) {
               userFriendlyError = 'Přístup byl odepřen. Zkuste to prosím znovu.';
             } else if (decoded.includes('redirect_uri_mismatch')) {
-              userFriendlyError = 'OAuth není správně nakonfigurovaný. Zkontrolujte redirect URLs v Google Console a Supabase.';
+              userFriendlyError = 'OAuth není správně nakonfigurovaný. Zkontrolujte redirect URLs v Google Console a v backend konfiguraci.';
             } else {
               userFriendlyError = `Chyba: ${decoded}`;
             }

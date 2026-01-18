@@ -15,7 +15,7 @@ import {
   faBox,
   faExclamationTriangle
 } from '@fortawesome/free-solid-svg-icons';
-import { supabase } from '../lib/auth';
+import { getAuthHeader } from '../lib/auth';
 import './OrderDetailModal.css';
 
 interface Order {
@@ -24,13 +24,29 @@ interface Order {
   plan_id: string;
   plan_name: string;
   price: number;
-  customer_email: string;
-  customer_name: string;
-  status: string;
+  currency?: string;
+  customer_email?: string;
+  customer_name?: string;
+  billing_email?: string;
+  billing_name?: string;
+  billing_company?: string;
+  billing_address?: string;
+  billing_phone?: string;
+  status?: string;
   payment_status?: string;
   payment_id?: string;
+  payment_url?: string;
   gopay_status?: string;
+  payment_method?: string;
+  transaction_id?: string;
+  payment_date?: string | Date;
+  domain_name?: string;
+  service_start_date?: string | Date;
+  service_end_date?: string | Date;
+  auto_renewal?: boolean;
+  notes?: string;
   created_at: string;
+  updated_at?: string;
 }
 
 interface OrderDetailModalProps {
@@ -53,15 +69,23 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({ order, isOpen, onCl
       setSaving(true);
       setError('');
 
-      const { error: updateError } = await supabase
-        .from('user_orders')
-        .update({
+      const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
+      const response = await fetch(`${API_URL}/orders/${order.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthHeader()
+        },
+        body: JSON.stringify({
           status,
           payment_status: paymentStatus
         })
-        .eq('id', order.id);
+      });
 
-      if (updateError) throw updateError;
+      if (!response.ok) {
+        const result = await response.json();
+        throw new Error(result.error || 'Failed to update order');
+      }
 
       onUpdate();
       onClose();

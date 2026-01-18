@@ -1,4 +1,4 @@
-import { supabase } from '../lib/auth';
+import { getCurrentSession, getAuthHeader } from '../lib/auth';
 import { createHostingAccountForOrder } from './hestiacpService';
 
 export interface PaymentData {
@@ -38,8 +38,8 @@ export const createGoPayPayment = async (data: PaymentData): Promise<PaymentResu
     console.log('Payment data:', data);
 
     // SECURITY: Získej JWT token pro autentizaci
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
+    const session = await getCurrentSession();
+    if (!session || !session.access_token) {
       return {
         success: false,
         error: 'Authentication required'
@@ -50,7 +50,7 @@ export const createGoPayPayment = async (data: PaymentData): Promise<PaymentResu
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${session.access_token}`
+        ...getAuthHeader()
       },
       body: JSON.stringify(data)
     });
@@ -65,17 +65,25 @@ export const createGoPayPayment = async (data: PaymentData): Promise<PaymentResu
     console.log('Payment created successfully:', result);
 
     // Uložení payment_id a payment_url do databáze
-    const { error: updateError } = await supabase
-      .from('user_orders')
-      .update({
-        payment_id: result.paymentId,
-        payment_url: result.paymentUrl,
-        gopay_status: result.state,
-        payment_status: 'unpaid'
-      })
-      .eq('id', data.orderId);
+    try {
+      const updateResponse = await fetch(`${PROXY_URL}/api/orders/${data.orderId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthHeader()
+        },
+        body: JSON.stringify({
+          payment_id: result.paymentId,
+          payment_url: result.paymentUrl,
+          gopay_status: result.state,
+          payment_status: 'unpaid'
+        })
+      });
 
-    if (updateError) {
+      if (!updateResponse.ok) {
+        console.error('Error updating order with payment info');
+      }
+    } catch (updateError) {
       console.error('Error updating order with payment info:', updateError);
     }
 
@@ -101,8 +109,8 @@ export const checkPaymentStatus = async (paymentId: string): Promise<PaymentStat
     console.log('Checking payment status via proxy server:', paymentId);
 
     // SECURITY: Získej JWT token pro autentizaci
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
+    const session = await getCurrentSession();
+    if (!session || !session.access_token) {
       return {
         success: false,
         error: 'Authentication required'
@@ -113,7 +121,7 @@ export const checkPaymentStatus = async (paymentId: string): Promise<PaymentStat
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${session.access_token}`
+        ...getAuthHeader()
       },
       body: JSON.stringify({ paymentId })
     });
@@ -137,16 +145,44 @@ export const checkPaymentStatus = async (paymentId: string): Promise<PaymentStat
                        result.status === 'TIMEOUTED' ? 'cancelled' : 'pending';
 
     // Aktualizuj status v databázi
-    const { data: updatedOrder } = await supabase
-      .from('user_orders')
-      .update({
-        gopay_status: result.status,
-        payment_status: paymentStatus,
-        status: orderStatus
-      })
-      .eq('payment_id', paymentId)
-      .select()
-      .single();
+    let updatedOrder = null;
+    try {
+      // Najdi objednávku podle payment_id
+      const findResponse = await fetch(`${PROXY_URL}/api/orders?payment_id=${paymentId}`, {
+        method: 'GET',
+        headers: {
+          ...getAuthHeader()
+        }
+      });
+
+      if (findResponse.ok) {
+        const findResult = await findResponse.json();
+        if (findResult.orders && findResult.orders.length > 0) {
+          const orderId = findResult.orders[0].id;
+          
+          // Aktualizuj objednávku
+          const updateResponse = await fetch(`${PROXY_URL}/api/orders/${orderId}`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              ...getAuthHeader()
+            },
+            body: JSON.stringify({
+              gopay_status: result.status,
+              payment_status: paymentStatus,
+              status: orderStatus
+            })
+          });
+
+          if (updateResponse.ok) {
+            const updateResult = await updateResponse.json();
+            updatedOrder = updateResult.order;
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error updating order status:', error);
+    }
 
     // Pokud je platba zaplacená a máme doménu, automaticky vytvoř hosting účet
     if (result.status === 'PAID' && updatedOrder?.domain_name) {
@@ -191,15 +227,36 @@ export const cancelPayment = async (paymentId: string): Promise<{ success: boole
   try {
     console.log('Cancelling payment:', paymentId);
 
-    // Aktualizace v databázi
-    await supabase
-      .from('user_orders')
-      .update({
-        gopay_status: 'CANCELED',
-        payment_status: 'failed',
-        status: 'cancelled'
-      })
-      .eq('payment_id', paymentId);
+    // Aktualizace v databázi - najdi objednávku a aktualizuj
+    try {
+      const findResponse = await fetch(`${PROXY_URL}/api/orders?payment_id=${paymentId}`, {
+        method: 'GET',
+        headers: {
+          ...getAuthHeader()
+        }
+      });
+
+      if (findResponse.ok) {
+        const findResult = await findResponse.json();
+        if (findResult.orders && findResult.orders.length > 0) {
+          const orderId = findResult.orders[0].id;
+          await fetch(`${PROXY_URL}/api/orders/${orderId}`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              ...getAuthHeader()
+            },
+            body: JSON.stringify({
+              gopay_status: 'CANCELED',
+              payment_status: 'failed',
+              status: 'cancelled'
+            })
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error canceling payment:', error);
+    }
 
     return { success: true };
   } catch (error) {
@@ -221,14 +278,35 @@ export const refundPayment = async (
   try {
     console.log('Refunding payment:', paymentId, amount);
 
-    // Aktualizace v databázi
-    await supabase
-      .from('user_orders')
-      .update({
-        gopay_status: 'REFUNDED',
-        payment_status: 'refunded'
-      })
-      .eq('payment_id', paymentId);
+    // Aktualizace v databázi - najdi objednávku a aktualizuj
+    try {
+      const findResponse = await fetch(`${PROXY_URL}/api/orders?payment_id=${paymentId}`, {
+        method: 'GET',
+        headers: {
+          ...getAuthHeader()
+        }
+      });
+
+      if (findResponse.ok) {
+        const findResult = await findResponse.json();
+        if (findResult.orders && findResult.orders.length > 0) {
+          const orderId = findResult.orders[0].id;
+          await fetch(`${PROXY_URL}/api/orders/${orderId}`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              ...getAuthHeader()
+            },
+            body: JSON.stringify({
+              gopay_status: 'REFUNDED',
+              payment_status: 'refunded'
+            })
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error refunding payment:', error);
+    }
 
     return { success: true };
   } catch (error) {

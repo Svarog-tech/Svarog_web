@@ -1,47 +1,104 @@
-import { createClient } from '@supabase/supabase-js';
+// Authentication Service
+// Používá vlastní backend API místo Supabase
+
 import type {
   UserProfile,
   RegistrationData,
   LoginData,
-  OAuthProvider
+  OAuthProvider,
+  AppUser,
 } from '../types/auth';
 
-// Configuration - použití čistě Supabase Auth
-// SECURITY: API klíče musí být v environment variables, ne hardcoded!
-const supabaseUrl = process.env.REACT_APP_SUPABASE_URL;
-const supabaseAnonKey = process.env.REACT_APP_SUPABASE_ANON_KEY;
+// API Base URL
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
 
-// Fallback pro development (pouze pokud není nastaveno)
-// V produkci MUSÍ být v .env souboru!
-const devSupabaseUrl = 'https://ccgxtldxeerwacyekzyk.supabase.co';
-const devSupabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNjZ3h0bGR4ZWVyd2FjeWVrenlrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI3NTI4NDEsImV4cCI6MjA3ODMyODg0MX0.SY_7cC1op-rR6-4NDdHkAJBL0viYEsbr_rFlkyOdYMk';
+// Token storage keys
+const ACCESS_TOKEN_KEY = 'auth_access_token';
+const REFRESH_TOKEN_KEY = 'auth_refresh_token';
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  if (process.env.NODE_ENV === 'production') {
-    console.error('❌ SECURITY ERROR: Missing Supabase configuration in environment variables!');
-    throw new Error('Missing required Supabase configuration. Please set REACT_APP_SUPABASE_URL and REACT_APP_SUPABASE_ANON_KEY in your .env file.');
-  } else {
-    // Development fallback - VAROVÁNÍ!
-    console.warn('⚠️ WARNING: Using fallback Supabase credentials for development. Create .env file with your credentials!');
-    console.warn('⚠️ Create .env file with:');
-    console.warn('   REACT_APP_SUPABASE_URL=https://your-project.supabase.co');
-    console.warn('   REACT_APP_SUPABASE_ANON_KEY=your-anon-key');
-  }
+// ==============================================
+// TOKEN MANAGEMENT
+// ==============================================
+
+/**
+ * Uloží access token do localStorage
+ */
+function setAccessToken(token: string): void {
+  localStorage.setItem(ACCESS_TOKEN_KEY, token);
 }
 
-// Použij environment variables nebo fallback pro development
-const finalSupabaseUrl = supabaseUrl || devSupabaseUrl;
-const finalSupabaseAnonKey = supabaseAnonKey || devSupabaseAnonKey;
+/**
+ * Získá access token z localStorage
+ */
+function getAccessToken(): string | null {
+  return localStorage.getItem(ACCESS_TOKEN_KEY);
+}
 
-// Vytvoření Supabase klienta s optimálním nastavením
-export const supabase = createClient(finalSupabaseUrl, finalSupabaseAnonKey, {
-  auth: {
-    autoRefreshToken: true,
-    persistSession: true,
-    detectSessionInUrl: true,
-    flowType: 'pkce'
-  },
-});
+/**
+ * Uloží refresh token do localStorage
+ */
+function setRefreshToken(token: string): void {
+  localStorage.setItem(REFRESH_TOKEN_KEY, token);
+}
+
+/**
+ * Získá refresh token z localStorage
+ */
+function getRefreshToken(): string | null {
+  return localStorage.getItem(REFRESH_TOKEN_KEY);
+}
+
+/**
+ * Smaže všechny tokeny
+ */
+function clearTokens(): void {
+  localStorage.removeItem(ACCESS_TOKEN_KEY);
+  localStorage.removeItem(REFRESH_TOKEN_KEY);
+}
+
+/**
+ * Získá authorization header s tokenem
+ */
+function getAuthHeader(): Record<string, string> {
+  const token = getAccessToken();
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
+/**
+ * Refresh access token pomocí refresh tokenu
+ */
+async function refreshAccessToken(): Promise<boolean> {
+  const refreshToken = getRefreshToken();
+
+  if (!refreshToken) {
+    return false;
+  }
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ refreshToken }),
+    });
+
+    const data = await response.json();
+
+    if (data.success && data.accessToken) {
+      setAccessToken(data.accessToken);
+      return true;
+    }
+
+    // Refresh token je neplatný, smaž tokeny
+    clearTokens();
+    return false;
+  } catch (error) {
+    console.error('Token refresh error:', error);
+    clearTokens();
+    return false;
+  }
+}
 
 // ==============================================
 // HELPER FUNKCE PRO VALIDACI
@@ -105,7 +162,7 @@ export const validateRegistrationData = (data: RegistrationData): { isValid: boo
 };
 
 // ==============================================
-// REGISTRACE (Email/Password)
+// REGISTRACE
 // ==============================================
 
 export const signUp = async (data: RegistrationData) => {
@@ -124,37 +181,51 @@ export const signUp = async (data: RegistrationData) => {
       return { success: false, error: 'Musíte souhlasit s obchodními podmínkami' };
     }
 
-    // Registrace přes Supabase Auth
-    const { data: authData, error } = await supabase.auth.signUp({
-      email: data.email,
-      password: data.password,
-      options: {
-        data: {
-          first_name: data.firstName,
-          last_name: data.lastName,
-        },
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
-      }
+    // Registrace přes API
+    const response = await fetch(`${API_BASE_URL}/auth/register`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        email: data.email,
+        password: data.password,
+        firstName: data.firstName,
+        lastName: data.lastName,
+      }),
     });
 
-    if (error) {
-      console.error('Sign up error:', error);
+    const result = await response.json();
 
-      // Zpracování specifických chyb
-      if (error.message.includes('already registered')) {
-        return { success: false, error: 'Tento email je již registrován' };
-      }
-      if (error.message.includes('Password')) {
-        return { success: false, error: 'Heslo je příliš slabé' };
-      }
+    if (result.success && result.accessToken && result.refreshToken) {
+      // Ulož tokeny
+      setAccessToken(result.accessToken);
+      setRefreshToken(result.refreshToken);
 
-      return { success: false, error: error.message };
+      // Převeď user na AppUser formát
+      const appUser: AppUser = {
+        id: result.user.id,
+        email: result.user.email,
+        user_metadata: {
+          first_name: result.user.first_name,
+          last_name: result.user.last_name,
+        },
+        app_metadata: {
+          provider: 'email',
+        },
+        email_confirmed_at: result.user.email_verified ? new Date().toISOString() : undefined,
+      };
+
+      return {
+        success: true,
+        user: appUser,
+        message: result.message || 'Registrace úspěšná!',
+      };
     }
 
     return {
-      success: true,
-      user: authData.user as any,
-      message: 'Registrace úspěšná! Zkontrolujte svůj email pro potvrzení.'
+      success: false,
+      error: result.error || 'Registrace se nezdařila',
     };
   } catch (error: any) {
     console.error('Sign up error:', error);
@@ -163,7 +234,7 @@ export const signUp = async (data: RegistrationData) => {
 };
 
 // ==============================================
-// PŘIHLÁŠENÍ (Email/Password)
+// PŘIHLÁŠENÍ
 // ==============================================
 
 export const signIn = async (data: LoginData) => {
@@ -176,40 +247,51 @@ export const signIn = async (data: LoginData) => {
       return { success: false, error: 'Zadejte heslo' };
     }
 
-    const { data: authData, error } = await supabase.auth.signInWithPassword({
-      email: data.email,
-      password: data.password,
+    const response = await fetch(`${API_BASE_URL}/auth/login`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        email: data.email,
+        password: data.password,
+      }),
     });
 
-    if (error) {
-      console.error('Sign in error:', error);
+    const result = await response.json();
 
-      if (error.message.includes('Invalid login credentials')) {
-        return { success: false, error: 'Nesprávný email nebo heslo' };
-      }
-      if (error.message.includes('Email not confirmed')) {
-        return { success: false, error: 'Email nebyl potvrzen. Zkontrolujte svou emailovou schránku.' };
-      }
+    if (result.success && result.accessToken && result.refreshToken) {
+      // Ulož tokeny
+      setAccessToken(result.accessToken);
+      setRefreshToken(result.refreshToken);
 
-      return { success: false, error: error.message };
-    }
+      // Převeď user na AppUser formát
+      const appUser: AppUser = {
+        id: result.user.id,
+        email: result.user.email,
+        user_metadata: {
+          first_name: result.user.first_name,
+          last_name: result.user.last_name,
+        },
+        app_metadata: {
+          provider: 'email',
+        },
+        email_confirmed_at: result.user.email_verified ? new Date().toISOString() : undefined,
+      };
 
-    // Aktualizace last_login
-    if (authData.user) {
-      try {
-        await supabase
-          .from('profiles')
-          .update({ last_login: new Date().toISOString() })
-          .eq('id', authData.user.id);
-      } catch (err) {
-        console.warn('Failed to update last_login:', err);
-      }
+      return {
+        success: true,
+        user: appUser,
+        session: {
+          access_token: result.accessToken,
+          refresh_token: result.refreshToken,
+        },
+      };
     }
 
     return {
-      success: true,
-      user: authData.user as any,
-      session: authData.session
+      success: false,
+      error: result.error || 'Nesprávný email nebo heslo',
     };
   } catch (error: any) {
     console.error('Sign in error:', error);
@@ -218,32 +300,12 @@ export const signIn = async (data: LoginData) => {
 };
 
 // ==============================================
-// OAUTH PŘIHLÁŠENÍ (Google, GitHub)
+// OAUTH PŘIHLÁŠENÍ (TODO: Implementovat pokud je potřeba)
 // ==============================================
 
 export const signInWithOAuth = async (provider: OAuthProvider) => {
-  try {
-    const { data, error } = await supabase.auth.signInWithOAuth({
-      provider: provider,
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
-        queryParams: {
-          access_type: 'offline',
-          prompt: 'consent',
-        }
-      }
-    });
-
-    if (error) {
-      console.error(`OAuth ${provider} error:`, error);
-      throw error;
-    }
-
-    return data;
-  } catch (error: any) {
-    console.error(`OAuth ${provider} error:`, error);
-    throw error;
-  }
+  // TODO: Implementovat OAuth pokud je potřeba
+  throw new Error('OAuth není momentálně podporováno');
 };
 
 // ==============================================
@@ -252,16 +314,30 @@ export const signInWithOAuth = async (provider: OAuthProvider) => {
 
 export const signOut = async () => {
   try {
-    const { error } = await supabase.auth.signOut();
+    const refreshToken = getRefreshToken();
 
-    if (error) {
-      console.error('Sign out error:', error);
-      return { success: false, error: error.message };
+    if (refreshToken) {
+      // Zavolej API pro logout
+      try {
+        await fetch(`${API_BASE_URL}/auth/logout`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ refreshToken }),
+        });
+      } catch (error) {
+        console.warn('Logout API call failed:', error);
+      }
     }
+
+    // Smaž tokeny lokálně
+    clearTokens();
 
     return { success: true };
   } catch (error: any) {
     console.error('Sign out error:', error);
+    clearTokens(); // Smaž tokeny i při chybě
     return { success: false, error: 'Nastala chyba při odhlašování' };
   }
 };
@@ -276,18 +352,26 @@ export const resetPassword = async (email: string) => {
       return { success: false, error: 'Neplatná emailová adresa' };
     }
 
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
+    const response = await fetch(`${API_BASE_URL}/auth/request-password-reset`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email }),
     });
 
-    if (error) {
-      console.error('Reset password error:', error);
-      return { success: false, error: error.message };
+    const result = await response.json();
+
+    if (result.success) {
+      return {
+        success: true,
+        message: result.message || 'Email pro resetování hesla byl odeslán',
+      };
     }
 
     return {
-      success: true,
-      message: 'Email pro resetování hesla byl odeslán'
+      success: false,
+      error: result.error || 'Zaslání emailu se nezdařilo',
     };
   } catch (error: any) {
     console.error('Reset password error:', error);
@@ -299,23 +383,32 @@ export const resetPassword = async (email: string) => {
 // AKTUALIZACE HESLA
 // ==============================================
 
-export const updatePassword = async (newPassword: string) => {
+export const updatePassword = async (newPassword: string, oldPassword?: string) => {
   try {
     const passwordValidation = validatePassword(newPassword);
     if (!passwordValidation.isValid) {
       return { success: false, error: passwordValidation.errors[0] };
     }
 
-    const { error } = await supabase.auth.updateUser({
-      password: newPassword
+    const response = await fetch(`${API_BASE_URL}/auth/change-password`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...getAuthHeader(),
+      },
+      body: JSON.stringify({ oldPassword, newPassword }),
     });
 
-    if (error) {
-      console.error('Update password error:', error);
-      return { success: false, error: error.message };
+    const result = await response.json();
+
+    if (result.success) {
+      return { success: true, message: result.message || 'Heslo bylo úspěšně změněno' };
     }
 
-    return { success: true, message: 'Heslo bylo úspěšně změněno' };
+    return {
+      success: false,
+      error: result.error || 'Změna hesla se nezdařila',
+    };
   } catch (error: any) {
     console.error('Update password error:', error);
     return { success: false, error: 'Nastala chyba při změně hesla' };
@@ -323,22 +416,64 @@ export const updatePassword = async (newPassword: string) => {
 };
 
 // ==============================================
-// ZÍSKÁNÍ AKTUÁLNÍHO UŽIVATELE A SESSION
+// ZÍSKÁNÍ AKTUÁLNÍHO UŽIVATELE
 // ==============================================
 
-export const getCurrentUser = async () => {
+export const getCurrentUser = async (): Promise<AppUser | null> => {
   try {
-    const { data: { user }, error } = await supabase.auth.getUser();
+    const token = getAccessToken();
 
-    if (error) {
-      if (error.message.includes('Auth session missing')) {
-        return null;
-      }
-      console.error('Get user error:', error);
+    if (!token) {
       return null;
     }
 
-    return user;
+    // Zkus refresh token pokud je access token neplatný
+    let response = await fetch(`${API_BASE_URL}/auth/me`, {
+      method: 'GET',
+      headers: {
+        ...getAuthHeader(),
+      },
+    });
+
+    // Pokud je token neplatný, zkus refresh
+    if (response.status === 401) {
+      const refreshed = await refreshAccessToken();
+      if (!refreshed) {
+        return null;
+      }
+
+      // Zkus znovu s novým tokenem
+      response = await fetch(`${API_BASE_URL}/auth/me`, {
+        method: 'GET',
+        headers: {
+          ...getAuthHeader(),
+        },
+      });
+    }
+
+    if (!response.ok) {
+      return null;
+    }
+
+    const result = await response.json();
+
+    if (result.success && result.user) {
+      const user = result.user;
+      return {
+        id: user.id,
+        email: user.email,
+        user_metadata: {
+          first_name: user.first_name,
+          last_name: user.last_name,
+        },
+        app_metadata: {
+          provider: 'email',
+        },
+        email_confirmed_at: user.email_verified ? new Date().toISOString() : undefined,
+      };
+    }
+
+    return null;
   } catch (error) {
     console.error('Get user error:', error);
     return null;
@@ -346,141 +481,127 @@ export const getCurrentUser = async () => {
 };
 
 export const getCurrentSession = async () => {
-  try {
-    const { data: { session }, error } = await supabase.auth.getSession();
+  const token = getAccessToken();
+  const refreshToken = getRefreshToken();
 
-    if (error) {
-      if (error.message.includes('Auth session missing')) {
-        return null;
-      }
-      console.error('Get session error:', error);
-      return null;
-    }
-
-    return session;
-  } catch (error) {
-    console.error('Get session error:', error);
+  if (!token) {
     return null;
   }
+
+  return {
+    access_token: token,
+    refresh_token: refreshToken,
+  };
 };
 
 // ==============================================
-// AUTH STATE CHANGE LISTENER
+// AUTH STATE CHANGE LISTENER (simulace)
 // ==============================================
 
-export const onAuthStateChange = (callback: (user: any) => void) => {
-  return supabase.auth.onAuthStateChange((_event, session) => {
-    callback(session?.user || null);
-  });
+// Simulace auth state change listeneru
+// V reálné aplikaci byste použili custom event system nebo state management
+const authStateListeners: Set<(user: AppUser | null) => void> = new Set();
+
+export const onAuthStateChange = (callback: (user: AppUser | null) => void) => {
+  authStateListeners.add(callback);
+
+  // Zavolej callback okamžitě s aktuálním uživatelem
+  getCurrentUser().then(user => callback(user));
+
+  return {
+    data: {
+      subscription: {
+        unsubscribe: () => {
+          authStateListeners.delete(callback);
+        },
+      },
+    },
+  };
 };
 
 // ==============================================
 // PROFIL MANAGEMENT
 // ==============================================
 
-// UserProfile interface je importovaný z types/auth.ts
-
 export const getUserProfile = async (userId: string): Promise<UserProfile | null> => {
   try {
-    console.log('🔍 Fetching profile for user:', userId);
+    const response = await fetch(`${API_BASE_URL}/auth/me`, {
+      method: 'GET',
+      headers: {
+        ...getAuthHeader(),
+      },
+    });
 
-    // Explicitně vyber všechny sloupce včetně is_admin
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('id, email, first_name, last_name, avatar_url, phone, is_admin, last_login, created_at, updated_at')
-      .eq('id', userId)
-      .single();
-
-    if (error) {
-      if (error.code === 'PGRST116') {
-        console.warn('⚠️ Profile not found for user:', userId);
+    if (!response.ok) {
+      // Zkus refresh token
+      const refreshed = await refreshAccessToken();
+      if (!refreshed) {
         return null;
       }
-      console.error('❌ Get profile error:', error);
-      console.error('Error details:', {
-        code: error.code,
-        message: error.message,
-        details: error.details,
-        hint: error.hint
+
+      const retryResponse = await fetch(`${API_BASE_URL}/auth/me`, {
+        method: 'GET',
+        headers: {
+          ...getAuthHeader(),
+        },
       });
+
+      if (!retryResponse.ok) {
+        return null;
+      }
+
+      const result = await retryResponse.json();
+      if (result.success && result.user) {
+        return result.user;
+      }
       return null;
     }
 
-    console.log('✅ Profile successfully loaded from database');
-    console.log('📥 Full profile data:', JSON.stringify(data, null, 2));
-    console.log('🔐 is_admin value:', data?.is_admin);
-    console.log('🔐 is_admin type:', typeof data?.is_admin);
+    const result = await response.json();
+    if (result.success && result.user) {
+      return result.user;
+    }
 
-    return data;
+    return null;
   } catch (error) {
-    console.error('❌ Unexpected error in getUserProfile:', error);
+    console.error('Get user profile error:', error);
     return null;
   }
 };
 
 export const updateProfile = async (userId: string, updates: Partial<UserProfile>) => {
   try {
-    const { error } = await supabase
-      .from('profiles')
-      .update({
-        ...updates,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', userId);
+    // TODO: Implementovat update profile API endpoint na backendu
+    // Prozatím použijeme existující /auth/me endpoint
+    const response = await fetch(`${API_BASE_URL}/auth/me`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        ...getAuthHeader(),
+      },
+      body: JSON.stringify(updates),
+    });
 
-    if (error) {
-      console.error('Update profile error:', error);
-      return { success: false, error: error.message };
+    const result = await response.json();
+
+    if (result.success) {
+      return { success: true };
     }
 
-    return { success: true };
+    return { success: false, error: result.error || 'Aktualizace profilu se nezdařila' };
   } catch (error: any) {
     console.error('Update profile error:', error);
     return { success: false, error: 'Nastala chyba při aktualizaci profilu' };
   }
 };
 
-// ==============================================
-// EXPORTS PRO KOMPATIBILITU
-// ==============================================
-
-// All types are imported from types/auth.ts
-
-// Vytvoření profilu se teď dělá automaticky přes SQL trigger
-// Tato funkce je jen pro explicitní vytvoření pokud by trigger selhal
-export const createUserProfile = async (user: any): Promise<UserProfile | null> => {
-  try {
-    // Zkontroluj jestli profil už neexistuje
-    const existingProfile = await getUserProfile(user.id);
-    if (existingProfile) {
-      return existingProfile;
-    }
-
-    // Vytvoř profil
-    const profileData = {
-      id: user.id,
-      email: user.email,
-      first_name: user.user_metadata?.first_name || '',
-      last_name: user.user_metadata?.last_name || '',
-      avatar_url: user.user_metadata?.avatar_url || user.user_metadata?.picture,
-      provider: user.app_metadata?.provider || 'email',
-      email_verified: user.email_confirmed_at !== null,
-    };
-
-    const { data, error } = await supabase
-      .from('profiles')
-      .insert([profileData])
-      .select()
-      .single();
-
-    if (error) {
-      console.error('Create profile error:', error);
-      return profileData as UserProfile;
-    }
-
-    return data;
-  } catch (error) {
-    console.warn('Create profile error:', error);
-    return null;
-  }
+export const createUserProfile = async (user: AppUser): Promise<UserProfile | null> => {
+  // Profil se vytváří automaticky při registraci
+  return await getUserProfile(user.id);
 };
+
+// ==============================================
+// EXPORT getAuthHeader pro použití v jiných modulech
+// ==============================================
+
+export { getAuthHeader, getAccessToken, refreshAccessToken };

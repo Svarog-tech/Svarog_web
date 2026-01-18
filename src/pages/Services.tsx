@@ -52,7 +52,7 @@ const Services: React.FC = () => {
       const orders = await getUserOrders();
       
       // Spoj data - hosting služby mají HestiaCP údaje
-      const servicesData = hostingServices.map(service => {
+      const servicesData = hostingServices.map((service: HostingService) => {
         const order = orders?.find((o: any) => o.id === service.order_id);
         return {
           ...service,

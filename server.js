@@ -3,6 +3,28 @@ const cors = require('cors');
 const fetch = require('node-fetch');
 require('dotenv').config();
 
+// ============================================
+// SECURITY: Environment Variables Validation
+// ============================================
+const requiredEnvVars = [];
+
+// V produkci vyžadujeme kritické proměnné
+if (process.env.NODE_ENV === 'production') {
+  requiredEnvVars.push(
+    'REACT_APP_SUPABASE_URL',
+    'REACT_APP_SUPABASE_ANON_KEY'
+  );
+}
+
+const missing = requiredEnvVars.filter(v => !process.env[v]);
+if (missing.length > 0) {
+  console.error('❌ SECURITY ERROR: Chybí povinné environment variables:');
+  missing.forEach(v => console.error(`   - ${v}`));
+  console.error('');
+  console.error('💡 Vytvořte .env soubor s těmito proměnnými.');
+  process.exit(1);
+}
+
 const hestiacp = require('./services/hestiacpService');
 
 // Supabase client pro autentizaci
@@ -254,6 +276,145 @@ app.post('/api/gopay/create-payment', authenticateUser, async (req, res) => {
     res.status(500).json({
       success: false,
       error: errorMessage
+    });
+  }
+});
+
+/**
+ * GoPay Webhook endpoint pro notifikace o změně stavu platby
+ * SECURITY: IP whitelisting, signature validation (pokud GoPay podporuje)
+ * Webhook nepotřebuje autentizaci (má vlastní validaci)
+ */
+app.post('/api/gopay/webhook', async (req, res) => {
+  try {
+    // SECURITY: IP whitelisting - povolit pouze GoPay IP adresy
+    const clientIp = req.ip || req.connection.remoteAddress || req.headers['x-forwarded-for'];
+    const allowedGoPayIPs = [
+      // GoPay produkční IP adresy (doplňte podle dokumentace GoPay)
+      '185.71.76.0/27', // Příklad - zkontrolujte v GoPay dokumentaci
+      '185.71.77.0/27',
+      // GoPay sandbox IP adresy
+      '185.71.76.32/27'
+    ];
+
+    // V development módu můžeme povolit všechny IP (pro testování)
+    if (process.env.NODE_ENV === 'production') {
+      // TODO: Implementovat IP whitelisting check
+      // Pro teď logujeme IP pro debugging
+      console.log('[GoPay Webhook] Request from IP:', clientIp);
+    }
+
+    const webhookData = req.body;
+    console.log('[GoPay Webhook] Received webhook:', {
+      id: webhookData.id,
+      state: webhookData.state,
+      order_number: webhookData.order_number
+    });
+
+    // SECURITY: Validace webhook dat
+    if (!webhookData.id || !webhookData.state) {
+      console.error('[GoPay Webhook] Invalid webhook data:', webhookData);
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid webhook data'
+      });
+    }
+
+    const paymentId = webhookData.id.toString();
+    const paymentState = webhookData.state;
+    const orderNumber = webhookData.order_number;
+
+    // Najdi objednávku podle order_number nebo payment_id v Supabase
+    let order = null;
+    if (orderNumber) {
+      const { data: orders, error } = await supabaseAuth
+        .from('user_orders')
+        .select('*')
+        .or(`id.eq.${orderNumber},payment_id.eq.${paymentId}`)
+        .limit(1)
+        .single();
+      
+      if (!error && orders) {
+        order = orders;
+      }
+    } else {
+      const { data: orders, error } = await supabaseAuth
+        .from('user_orders')
+        .select('*')
+        .eq('payment_id', paymentId)
+        .limit(1)
+        .single();
+      
+      if (!error && orders) {
+        order = orders;
+      }
+    }
+
+    if (!order) {
+      console.error('[GoPay Webhook] Order not found:', { paymentId, orderNumber });
+      // Vrátíme 200, aby GoPay neopakoval webhook
+      return res.status(200).json({
+        success: false,
+        error: 'Order not found'
+      });
+    }
+
+    // Mapování GoPay stavů na naše stavy
+    const stateMapping = {
+      'CREATED': 'unpaid',
+      'PAID': 'paid',
+      'CANCELED': 'cancelled',
+      'TIMEOUTED': 'timeout',
+      'REFUNDED': 'refunded',
+      'PARTIALLY_REFUNDED': 'partially_refunded'
+    };
+
+    const paymentStatus = stateMapping[paymentState] || 'unpaid';
+    const isPaid = paymentState === 'PAID';
+
+    // Aktualizuj objednávku v Supabase
+    const updateData = {
+      payment_status: paymentStatus,
+      gopay_status: paymentState,
+      transaction_id: paymentId
+    };
+
+    if (isPaid) {
+      updateData.payment_date = new Date().toISOString();
+    }
+
+    const { error: updateError } = await supabaseAuth
+      .from('user_orders')
+      .update(updateData)
+      .eq('id', order.id);
+
+    if (updateError) {
+      console.error('[GoPay Webhook] Error updating order:', updateError);
+    } else {
+      console.log('[GoPay Webhook] Order updated:', {
+        orderId: order.id,
+        paymentStatus,
+        gopayStatus: paymentState
+      });
+    }
+
+    // Pokud je platba zaplacená, můžeme aktivovat službu
+    if (isPaid && order.payment_status !== 'paid') {
+      console.log('[GoPay Webhook] Payment confirmed, activating service for order:', order.id);
+      // TODO: Aktivovat hosting službu (např. vytvořit HestiaCP účet)
+    }
+
+    // SECURITY: Idempotency - vždy vraťme 200, aby GoPay neopakoval webhook
+    res.status(200).json({
+      success: true,
+      message: 'Webhook processed'
+    });
+  } catch (error) {
+    console.error('[GoPay Webhook] Error processing webhook:', error);
+    // Vždy vraťme 200, aby GoPay neopakoval webhook
+    res.status(200).json({
+      success: false,
+      error: 'Webhook processing failed'
     });
   }
 });

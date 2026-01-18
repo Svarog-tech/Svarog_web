@@ -15,6 +15,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import { supabase } from '../lib/auth';
 import { useAuth } from '../contexts/AuthContext';
+import DOMPurify from 'dompurify';
 import './TicketDetailModal.css';
 
 interface Ticket {
@@ -276,8 +277,8 @@ const TicketDetailModal: React.FC<TicketDetailModalProps> = ({ ticket, isOpen, o
   );
 
   const renderMessage = (text: string) => {
-    // SECURITY: Sanitizace proti XSS
-    // Escape HTML znaky před renderováním
+    // SECURITY: XSS Protection using DOMPurify
+    // Escape HTML znaky před renderováním (základní ochrana)
     const escapeHtml = (unsafe: string) => {
       return unsafe
         .replace(/&/g, "&amp;")
@@ -301,12 +302,14 @@ const TicketDetailModal: React.FC<TicketDetailModalProps> = ({ ticket, isOpen, o
     // Render mentions
     safeText = safeText.replace(/@\[([^\]]+)\]\([^)]+\)/g, '<span class="mention">@$1</span>');
 
-    // POZNÁMKA: Pro produkci by bylo lepší použít DOMPurify nebo markdown parser
-    // npm install dompurify @types/dompurify
-    // import DOMPurify from 'dompurify';
-    // return <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(safeText) }} />;
+    // SECURITY: Použij DOMPurify pro finální sanitizaci před renderováním
+    const sanitizedHtml = DOMPurify.sanitize(safeText, {
+      ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'u', 'span', 'img', 'a'],
+      ALLOWED_ATTR: ['class', 'src', 'alt', 'href'],
+      ALLOW_DATA_ATTR: false
+    });
     
-    return <div dangerouslySetInnerHTML={{ __html: safeText }} />;
+    return <div dangerouslySetInnerHTML={{ __html: sanitizedHtml }} />;
   };
 
   if (!ticket) return null;

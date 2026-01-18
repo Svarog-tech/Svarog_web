@@ -15,7 +15,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '../lib/auth';
+import { getAuthHeader } from '../lib/auth';
 import TicketDetailModal from '../components/TicketDetailModal';
 import './AdminTickets.css';
 
@@ -97,21 +97,24 @@ const AdminTickets: React.FC = () => {
       setLoading(true);
 
       // Fetch all tickets with user info
-      const { data, error } = await supabase
-        .from('support_tickets')
-        .select(`
-          *,
-          profiles!support_tickets_user_id_fkey(email, first_name, last_name),
-          assigned:profiles!support_tickets_assigned_to_fkey(first_name, last_name)
-        `)
-        .order('created_at', { ascending: false });
+      const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
+      const response = await fetch(`${API_URL}/tickets`, {
+        method: 'GET',
+        headers: {
+          ...getAuthHeader()
+        }
+      });
 
-      if (error) throw error;
+      if (!response.ok) {
+        throw new Error('Failed to fetch tickets');
+      }
 
-      if (data) {
-        const ticketsWithUserInfo = data.map((ticket: any) => ({
+      const result = await response.json();
+      if (result.success && result.tickets) {
+        // TODO: API by mělo vracet user info s tickety
+        const ticketsWithUserInfo = result.tickets.map((ticket: any) => ({
           ...ticket,
-          user_email: ticket.profiles?.email,
+          user_email: ticket.user_email,
           user_name: `${ticket.profiles?.first_name || ''} ${ticket.profiles?.last_name || ''}`.trim(),
           assigned_name: ticket.assigned ? `${ticket.assigned.first_name || ''} ${ticket.assigned.last_name || ''}`.trim() : undefined
         }));

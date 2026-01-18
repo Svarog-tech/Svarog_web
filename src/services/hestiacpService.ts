@@ -3,7 +3,7 @@
  * Handles communication with HestiaCP API through backend proxy
  */
 
-import { supabase } from '../lib/auth';
+import { getCurrentSession, getAuthHeader } from '../lib/auth';
 
 const PROXY_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
 
@@ -42,8 +42,8 @@ export const createHostingAccount = async (
     console.log('[HestiaCP Frontend] Creating hosting account:', params);
 
     // SECURITY: Získej JWT token pro autentizaci
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
+    const session = await getCurrentSession();
+    if (!session || !session.access_token) {
       return {
         success: false,
         error: 'Authentication required'
@@ -54,7 +54,7 @@ export const createHostingAccount = async (
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${session.access_token}`
+        ...getAuthHeader()
       },
       body: JSON.stringify(params)
     });
@@ -99,8 +99,8 @@ export const suspendHostingAccount = async (
     console.log('[HestiaCP Frontend] Suspending account:', username);
 
     // SECURITY: Získej JWT token pro autentizaci (vyžaduje admin práva)
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
+    const session = await getCurrentSession();
+    if (!session || !session.access_token) {
       return {
         success: false,
         error: 'Authentication required'
@@ -111,7 +111,7 @@ export const suspendHostingAccount = async (
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${session.access_token}`
+        ...getAuthHeader()
       },
       body: JSON.stringify({ username })
     });
@@ -149,8 +149,8 @@ export const unsuspendHostingAccount = async (
     console.log('[HestiaCP Frontend] Unsuspending account:', username);
 
     // SECURITY: Získej JWT token pro autentizaci (vyžaduje admin práva)
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
+    const session = await getCurrentSession();
+    if (!session || !session.access_token) {
       return {
         success: false,
         error: 'Authentication required'
@@ -161,7 +161,7 @@ export const unsuspendHostingAccount = async (
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${session.access_token}`
+        ...getAuthHeader()
       },
       body: JSON.stringify({ username })
     });
@@ -199,8 +199,8 @@ export const deleteHostingAccount = async (
     console.log('[HestiaCP Frontend] Deleting account:', username);
 
     // SECURITY: Získej JWT token pro autentizaci (vyžaduje admin práva)
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
+    const session = await getCurrentSession();
+    if (!session || !session.access_token) {
       return {
         success: false,
         error: 'Authentication required'
@@ -211,7 +211,7 @@ export const deleteHostingAccount = async (
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${session.access_token}`
+        ...getAuthHeader()
       },
       body: JSON.stringify({ username })
     });
@@ -251,14 +251,25 @@ export const createHostingAccountForOrder = async (
     console.log('[HestiaCP Frontend] Creating hosting account for order:', orderId);
 
     // Získej údaje o objednávce z databáze
-    const { data: order, error: orderError } = await supabase
-      .from('user_orders')
-      .select('*, profiles(email)')
-      .eq('id', orderId)
-      .single();
+    let order = null;
+    try {
+      const orderResponse = await fetch(`${PROXY_URL}/api/orders/${orderId}`, {
+        method: 'GET',
+        headers: {
+          ...getAuthHeader()
+        }
+      });
 
-    if (orderError || !order) {
-      console.error('[HestiaCP Frontend] Failed to fetch order:', orderError);
+      if (orderResponse.ok) {
+        const orderResult = await orderResponse.json();
+        order = orderResult.order;
+      }
+    } catch (error) {
+      console.error('[HestiaCP Frontend] Failed to fetch order:', error);
+    }
+
+    if (!order) {
+      console.error('[HestiaCP Frontend] Order not found');
       return {
         success: false,
         error: 'Order not found'
@@ -272,40 +283,73 @@ export const createHostingAccountForOrder = async (
       package: order.plan_id
     });
 
+    // Najdi hosting službu podle order_id
+    let hostingService = null;
+    try {
+      const servicesResponse = await fetch(`${PROXY_URL}/api/hosting-services`, {
+        method: 'GET',
+        headers: {
+          ...getAuthHeader()
+        }
+      });
+
+      if (servicesResponse.ok) {
+        const servicesResult = await servicesResponse.json();
+        hostingService = servicesResult.services?.find((s: any) => s.order_id === orderId);
+      }
+    } catch (error) {
+      console.error('[HestiaCP Frontend] Failed to fetch hosting services:', error);
+    }
+
     if (!result.success) {
       // Ulož chybu do databáze
-      await supabase
-        .from('user_hosting_services')
-        .update({
-          hestia_error: result.error,
-          hestia_created: false
-        })
-        .eq('order_id', orderId);
+      if (hostingService) {
+        try {
+          await fetch(`${PROXY_URL}/api/hosting-services/${hostingService.id}`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              ...getAuthHeader()
+            },
+            body: JSON.stringify({
+              hestia_error: result.error,
+              hestia_created: false
+            })
+          });
+        } catch (error) {
+          console.error('[HestiaCP Frontend] Failed to update hosting service:', error);
+        }
+      }
 
       return result;
     }
 
     // Ulož údaje o hosting účtu do databáze
-    const { error: updateError } = await supabase
-      .from('user_hosting_services')
-      .update({
-        hestia_username: result.username,
-        hestia_domain: result.domain,
-        hestia_package: result.package,
-        hestia_created: true,
-        hestia_created_at: new Date().toISOString(),
-        cpanel_url: result.cpanelUrl,
-        ftp_host: result.domain,
-        ftp_username: result.username,
-        // SECURITY: Heslo NIKDY neukládej do databáze!
-        // Heslo by mělo být posláno emailem uživateli
-        // Pro testování můžeme ukládat jen username a URL
-        notes: `HestiaCP Username: ${result.username}\nControl Panel: ${result.cpanelUrl}\n\nPOZNÁMKA: Heslo bylo posláno emailem uživateli.`
-      })
-      .eq('order_id', orderId);
-
-    if (updateError) {
-      console.error('[HestiaCP Frontend] Failed to update hosting service:', updateError);
+    if (hostingService) {
+      try {
+        await fetch(`${PROXY_URL}/api/hosting-services/${hostingService.id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            ...getAuthHeader()
+          },
+          body: JSON.stringify({
+            hestia_username: result.username,
+            hestia_domain: result.domain,
+            hestia_package: result.package,
+            hestia_created: true,
+            hestia_created_at: new Date().toISOString(),
+            cpanel_url: result.cpanelUrl,
+            ftp_host: result.domain,
+            ftp_username: result.username,
+            // SECURITY: Heslo NIKDY neukládej do databáze!
+            // Heslo by mělo být posláno emailem uživateli
+            notes: `HestiaCP Username: ${result.username}\nControl Panel: ${result.cpanelUrl}\n\nPOZNÁMKA: Heslo bylo posláno emailem uživateli.`
+          })
+        });
+      } catch (error) {
+        console.error('[HestiaCP Frontend] Failed to update hosting service:', error);
+      }
     }
 
     console.log('[HestiaCP Frontend] Hosting account created and saved successfully');

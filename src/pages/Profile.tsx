@@ -17,7 +17,8 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import { QRCodeSVG } from 'qrcode.react';
 import { useAuth } from '../contexts/AuthContext';
-import { supabase } from '../lib/auth';
+// MFA není momentálně implementováno v MySQL verzi
+// import { supabase } from '../lib/auth';
 import './Profile.css';
 
 const Profile: React.FC = () => {
@@ -58,24 +59,16 @@ const Profile: React.FC = () => {
     }
   }, [profile, user]);
 
-  // Check 2FA status
+  // Check 2FA status - MFA není momentálně implementováno
   useEffect(() => {
-    checkMFAStatus();
+    // checkMFAStatus(); // MFA není implementováno
+    setMfaEnabled(false);
   }, [user]);
 
   const checkMFAStatus = async () => {
-    try {
-      const { data, error } = await supabase.auth.mfa.listFactors();
-      if (!error && data) {
-        const totpFactor = data.totp.find((f: any) => f.status === 'verified');
-        setMfaEnabled(!!totpFactor);
-        if (totpFactor) {
-          setFactorId(totpFactor.id);
-        }
-      }
-    } catch (err) {
-      console.error('Error checking MFA status:', err);
-    }
+    // MFA není momentálně implementováno v MySQL verzi
+    // TODO: Implementovat MFA
+    setMfaEnabled(false);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -106,120 +99,25 @@ const Profile: React.FC = () => {
     }
   };
 
-  // Enable 2FA
+  // Enable 2FA - MFA není momentálně implementováno
   const enable2FA = async () => {
-    setEnrolling(true);
-    setError('');
-
-    try {
-      // Use unique name with timestamp to avoid conflicts
-      const uniqueName = `Authenticator App ${new Date().getTime()}`;
-
-      // Enroll a new factor with unique name
-      const { data, error } = await supabase.auth.mfa.enroll({
-        factorType: 'totp',
-        friendlyName: uniqueName
-      });
-
-      if (error) throw error;
-
-      if (data) {
-        // Create OTP auth URI manually from secret
-        const issuer = 'Alatyr Hosting';
-        const accountName = user?.email || 'user';
-        const otpauth = `otpauth://totp/${encodeURIComponent(issuer)}:${encodeURIComponent(accountName)}?secret=${data.totp.secret}&issuer=${encodeURIComponent(issuer)}`;
-
-        setQrCode(otpauth);
-        setTotpSecret(data.totp.secret);
-        setFactorId(data.id);
-        setShow2FAModal(true);
-      }
-    } catch (err: any) {
-      setError(err.message || 'Chyba při zapínání 2FA');
-    } finally {
-      setEnrolling(false);
-    }
+    setError('Dvoufaktorové ověření není momentálně dostupné. Bude implementováno v budoucí verzi.');
+    // MFA není momentálně implementováno v MySQL verzi
+    // TODO: Implementovat MFA
   };
 
-  // Verify 2FA code
+  // Verify 2FA code - MFA není momentálně implementováno
   const verify2FA = async () => {
-    if (!verificationCode || verificationCode.length !== 6) {
-      setError('Zadej platný 6-místný kód');
-      return;
-    }
-
-    setEnrolling(true);
-    setError('');
-
-    try {
-      const { data, error } = await supabase.auth.mfa.challenge({
-        factorId: factorId
-      });
-
-      if (error) throw error;
-
-      if (data) {
-        const { error: verifyError } = await supabase.auth.mfa.verify({
-          factorId: factorId,
-          challengeId: data.id,
-          code: verificationCode
-        });
-
-        if (verifyError) throw verifyError;
-
-        setMfaEnabled(true);
-        setSuccess(true);
-        setShow2FAModal(false);
-        setVerificationCode('');
-
-        // Generate mock recovery codes (Supabase doesn't provide these directly)
-        const codes = Array.from({ length: 10 }, () =>
-          Math.random().toString(36).substring(2, 10).toUpperCase()
-        );
-        setRecoveryCodes(codes);
-        setShowRecoveryCodes(true); // Show recovery codes initially
-
-        // Hide recovery codes after 30 seconds
-        setTimeout(() => {
-          setShowRecoveryCodes(false);
-          setSuccess(false);
-        }, 30000);
-      }
-    } catch (err: any) {
-      setError(err.message || 'Neplatný kód');
-    } finally {
-      setEnrolling(false);
-    }
+    setError('Dvoufaktorové ověření není momentálně dostupné.');
+    // MFA není momentálně implementováno v MySQL verzi
+    // TODO: Implementovat MFA
   };
 
-  // Disable 2FA
+  // Disable 2FA - MFA není momentálně implementováno
   const disable2FA = async () => {
-    if (!window.confirm('Opravdu chceš vypnout dvoufaktorové ověření?')) {
-      return;
-    }
-
-    setEnrolling(true);
-    setError('');
-
-    try {
-      const { error } = await supabase.auth.mfa.unenroll({
-        factorId: factorId
-      });
-
-      if (error) throw error;
-
-      setMfaEnabled(false);
-      setFactorId('');
-      setRecoveryCodes([]);
-      setShowRecoveryCodes(false);
-      setSuccess(true);
-
-      setTimeout(() => setSuccess(false), 3000);
-    } catch (err: any) {
-      setError(err.message || 'Chyba při vypínání 2FA');
-    } finally {
-      setEnrolling(false);
-    }
+    setError('Dvoufaktorové ověření není momentálně dostupné.');
+    // MFA není momentálně implementováno v MySQL verzi
+    // TODO: Implementovat MFA
   };
 
   // Copy to clipboard

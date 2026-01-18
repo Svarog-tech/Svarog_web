@@ -11,7 +11,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import { useAuth } from '../contexts/AuthContext';
 import { createSupportTicket } from '../lib/supabase';
-import { supabase } from '../lib/auth';
+import { getAuthHeader } from '../lib/auth';
 import './Tickets.css';
 
 interface Ticket {
@@ -47,16 +47,21 @@ const Tickets: React.FC = () => {
 
     try {
       setLoading(true);
-      const { data, error } = await supabase
-        .from('support_tickets')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
+      const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
+      const response = await fetch(`${API_URL}/tickets`, {
+        method: 'GET',
+        headers: {
+          ...getAuthHeader()
+        }
+      });
 
-      if (error) throw error;
+      if (!response.ok) {
+        throw new Error('Failed to fetch tickets');
+      }
 
-      if (data) {
-        setTickets(data);
+      const result = await response.json();
+      if (result.success && result.tickets) {
+        setTickets(result.tickets);
       }
     } catch (error) {
       console.error('Error fetching tickets:', error);

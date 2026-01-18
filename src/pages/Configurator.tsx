@@ -22,7 +22,8 @@ import {
 import { useCurrency } from '../contexts/CurrencyContext';
 import { useAuth } from '../contexts/AuthContext';
 import { createOrder, Order } from '../lib/supabase';
-import { supabase } from '../lib/auth';
+// MFA není momentálně implementováno v MySQL verzi
+// import { supabase } from '../lib/auth';
 import { createGoPayPayment } from '../services/paymentService';
 import MultiStateButton from '../components/MultiStateButton';
 import TwoFactorModal from '../components/TwoFactorModal';
@@ -143,26 +144,10 @@ const Configurator: React.FC = () => {
     }
   }, [user, profile]);
 
-  // Check 2FA status
+  // Check 2FA status - MFA není momentálně implementováno
   useEffect(() => {
-    const checkMFAStatus = async () => {
-      if (!user) return;
-
-      try {
-        const { data, error } = await supabase.auth.mfa.listFactors();
-        if (!error && data) {
-          const totpFactor = data.totp.find((f: any) => f.status === 'verified');
-          setMfaEnabled(!!totpFactor);
-          if (totpFactor) {
-            setFactorId(totpFactor.id);
-          }
-        }
-      } catch (err) {
-        console.error('Error checking MFA status:', err);
-      }
-    };
-
-    checkMFAStatus();
+    // MFA není momentálně implementováno v MySQL verzi
+    setMfaEnabled(false);
   }, [user]);
 
   const updateAddonQuantity = (addonId: string, change: number) => {
@@ -196,30 +181,11 @@ const Configurator: React.FC = () => {
     if (e) e.preventDefault();
     if (!selectedPlan) return;
 
-    // Check if user has 2FA enabled and needs to verify
-    if (user && mfaEnabled && !twoFactorCode) {
-      try {
-        // Create MFA challenge
-        const { data, error } = await supabase.auth.mfa.challenge({ factorId });
-
-        if (error) {
-          console.error('Error creating MFA challenge:', error);
-          setButtonState('error');
-          setTimeout(() => setButtonState('idle'), 3000);
-          return;
-        }
-
-        if (data) {
-          setChallengeId(data.id);
-          setShow2FA(true);
-        }
-      } catch (err) {
-        console.error('Error creating MFA challenge:', err);
-        setButtonState('error');
-        setTimeout(() => setButtonState('idle'), 3000);
-      }
-      return;
-    }
+    // MFA není momentálně implementováno - přeskočit 2FA kontrolu
+    // if (user && mfaEnabled && !twoFactorCode) {
+    //   // MFA není implementováno
+    //   return;
+    // }
 
     setButtonState('loading');
     setIsLoading(true);
@@ -246,7 +212,7 @@ const Configurator: React.FC = () => {
         customerEmail: formData.customerEmail,
         customerName: formData.customerName,
         returnUrl: `${window.location.origin}/payment/success`,
-        notifyUrl: `${process.env.REACT_APP_SUPABASE_URL}/functions/v1/gopay-webhook`
+        notifyUrl: `${process.env.REACT_APP_API_URL || 'http://localhost:3001'}/api/gopay/webhook`
       });
 
       if (payment.success && payment.paymentUrl) {
@@ -270,37 +236,10 @@ const Configurator: React.FC = () => {
   };
 
   const handle2FAVerify = async (code: string): Promise<boolean> => {
-    try {
-      // Verify the TOTP code with Supabase
-      const { data, error } = await supabase.auth.mfa.verify({
-        factorId: factorId,
-        challengeId: challengeId,
-        code: code
-      });
-
-      if (error) {
-        console.error('2FA verification error:', error);
-        return false;
-      }
-
-      if (data) {
-        // Code is valid
-        setTwoFactorCode(code);
-        setShow2FA(false);
-
-        // Continue with order submission
-        setTimeout(() => {
-          handleSubmit();
-        }, 300);
-
-        return true;
-      }
-
-      return false;
-    } catch (error) {
-      console.error('2FA verification error:', error);
-      return false;
-    }
+    // MFA není momentálně implementováno v MySQL verzi
+    // TODO: Implementovat MFA
+    console.warn('MFA není implementováno');
+    return false;
   };
 
   if (!selectedPlan) {

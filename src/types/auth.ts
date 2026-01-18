@@ -1,5 +1,3 @@
-import { User as SupabaseUser } from '@supabase/supabase-js';
-
 // Basic User Profile Interface
 export interface UserProfile {
   id: string;
@@ -22,8 +20,23 @@ export interface UserProfile {
   last_login?: string;
 }
 
-// Extended User with Profile Data
-export interface AppUser extends SupabaseUser {
+// Extended User with Profile Data (nezávislý na Supabase)
+export interface AppUser {
+  id: string;
+  email: string;
+  user_metadata?: {
+    first_name?: string;
+    last_name?: string;
+    full_name?: string;
+    avatar_url?: string;
+    phone?: string;
+    company?: string;
+    address?: string;
+  };
+  app_metadata?: {
+    provider?: string;
+  };
+  email_confirmed_at?: string;
   profile?: UserProfile;
 }
 

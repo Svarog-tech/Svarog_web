@@ -69,10 +69,11 @@ class HestiaCP {
         }
       });
 
-      // Pro Node.js fetch (node-fetch) musíme ignorovat SSL chyby
+      // SECURITY: SSL certificate validation
+      // V produkci VŽDY validovat certifikáty, v development můžeme ignorovat pro self-signed certs
       const https = require('https');
       const agent = new https.Agent({
-        rejectUnauthorized: false // Ignore SSL certificate errors (self-signed cert)
+        rejectUnauthorized: process.env.NODE_ENV === 'production' // true v produkci, false v development
       });
 
       // Zajisti že URL končí správně (buď už má /api/ nebo přidáme)

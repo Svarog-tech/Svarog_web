@@ -26,7 +26,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '../lib/auth';
+import { getAuthHeader } from '../lib/auth';
 import { getAllUserHostingServices, HostingService } from '../lib/supabase';
 import { suspendHostingAccount, unsuspendHostingAccount, deleteHostingAccount } from '../services/hestiacpService';
 import OrderDetailModal from '../components/OrderDetailModal';
@@ -38,13 +38,29 @@ interface Order {
   plan_id: string;
   plan_name: string;
   price: number;
-  customer_email: string;
-  customer_name: string;
-  status: string;
+  currency?: string;
+  customer_email?: string;
+  customer_name?: string;
+  billing_email?: string;
+  billing_name?: string;
+  billing_company?: string;
+  billing_address?: string;
+  billing_phone?: string;
+  status?: string;
   payment_status?: string;
   payment_id?: string;
   payment_url?: string;
+  gopay_status?: string;
+  payment_method?: string;
+  transaction_id?: string;
+  payment_date?: string | Date;
+  domain_name?: string;
+  service_start_date?: string | Date;
+  service_end_date?: string | Date;
+  auto_renewal?: boolean;
+  notes?: string;
   created_at: string;
+  updated_at?: string;
 }
 
 interface Stats {
@@ -87,13 +103,22 @@ const Admin: React.FC = () => {
   const fetchHostingServices = async () => {
     try {
       // Získej všechny hosting služby (admin vidí všechny)
-      const { data, error } = await supabase
-        .from('user_hosting_services')
-        .select('*')
-        .order('created_at', { ascending: false });
+      const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
+      const response = await fetch(`${API_URL}/hosting-services`, {
+        method: 'GET',
+        headers: {
+          ...getAuthHeader()
+        }
+      });
 
-      if (error) throw error;
-      setHostingServices(data || []);
+      if (!response.ok) {
+        throw new Error('Failed to fetch hosting services');
+      }
+
+      const result = await response.json();
+      if (result.success && result.services) {
+        setHostingServices(result.services);
+      }
     } catch (error) {
       console.error('Error fetching hosting services:', error);
     }
@@ -107,10 +132,15 @@ const Admin: React.FC = () => {
       setLoadingHestia(true);
       const result = await suspendHostingAccount(service.hestia_username);
       if (result.success) {
-        await supabase
-          .from('user_hosting_services')
-          .update({ status: 'suspended' })
-          .eq('id', service.id);
+        const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
+        await fetch(`${API_URL}/hosting-services/${service.id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            ...getAuthHeader()
+          },
+          body: JSON.stringify({ status: 'suspended' })
+        });
         await fetchHostingServices();
         alert('HestiaCP účet byl suspendován');
       } else {
@@ -132,10 +162,15 @@ const Admin: React.FC = () => {
       setLoadingHestia(true);
       const result = await unsuspendHostingAccount(service.hestia_username);
       if (result.success) {
-        await supabase
-          .from('user_hosting_services')
-          .update({ status: 'active' })
-          .eq('id', service.id);
+        const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
+        await fetch(`${API_URL}/hosting-services/${service.id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            ...getAuthHeader()
+          },
+          body: JSON.stringify({ status: 'active' })
+        });
         await fetchHostingServices();
         alert('HestiaCP účet byl obnoven');
       } else {
@@ -157,10 +192,15 @@ const Admin: React.FC = () => {
       setLoadingHestia(true);
       const result = await deleteHostingAccount(service.hestia_username);
       if (result.success) {
-        await supabase
-          .from('user_hosting_services')
-          .update({ status: 'cancelled', hestia_created: false })
-          .eq('id', service.id);
+        const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
+        await fetch(`${API_URL}/hosting-services/${service.id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            ...getAuthHeader()
+          },
+          body: JSON.stringify({ status: 'cancelled', hestia_created: false })
+        });
         await fetchHostingServices();
         alert('HestiaCP účet byl smazán');
       } else {
@@ -180,15 +220,15 @@ const Admin: React.FC = () => {
 
     if (searchTerm) {
       filtered = filtered.filter(order =>
-        order.customer_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        order.customer_email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (order.customer_name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (order.customer_email || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
         order.plan_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         order.id.toString().includes(searchTerm)
       );
     }
 
     if (statusFilter !== 'all') {
-      filtered = filtered.filter(order => order.status === statusFilter);
+      filtered = filtered.filter(order => (order.status || 'pending') === statusFilter);
     }
 
     setFilteredOrders(filtered);
@@ -199,22 +239,28 @@ const Admin: React.FC = () => {
       setLoading(true);
 
       // Načtení všech objednávek (pouze pro adminy)
-      const { data, error } = await supabase
-        .from('user_orders')
-        .select('*')
-        .order('created_at', { ascending: false });
+      const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
+      const response = await fetch(`${API_URL}/orders`, {
+        method: 'GET',
+        headers: {
+          ...getAuthHeader()
+        }
+      });
 
-      if (error) throw error;
+      if (!response.ok) {
+        throw new Error('Failed to fetch orders');
+      }
 
-      if (data) {
-        setOrders(data);
-        setFilteredOrders(data);
+      const result = await response.json();
+      if (result.success && result.orders) {
+        setOrders(result.orders);
+        setFilteredOrders(result.orders);
 
         // Výpočet statistik
-        const totalOrders = data.length;
-        const totalRevenue = data.reduce((sum, order) => sum + parseFloat(order.price.toString()), 0);
-        const pendingOrders = data.filter(order => order.status === 'pending').length;
-        const activeOrders = data.filter(order => order.status === 'active').length;
+        const totalOrders = result.orders.length;
+        const totalRevenue = result.orders.reduce((sum: number, order: Order) => sum + parseFloat(order.price.toString()), 0);
+        const pendingOrders = result.orders.filter((order: Order) => (order.status || 'pending') === 'pending').length;
+        const activeOrders = result.orders.filter((order: Order) => (order.status || 'pending') === 'active').length;
 
         setStats({
           totalOrders,
@@ -230,7 +276,7 @@ const Admin: React.FC = () => {
     }
   };
 
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = (status?: string) => {
     const statusMap: Record<string, { color: string; icon: any; label: string }> = {
       pending: { color: '#f59e0b', icon: faClock, label: 'Čeká' },
       processing: { color: '#3b82f6', icon: faClock, label: 'Zpracovává se' },
@@ -239,7 +285,7 @@ const Admin: React.FC = () => {
       expired: { color: '#6b7280', icon: faTimesCircle, label: 'Expirováno' }
     };
 
-    const statusInfo = statusMap[status] || statusMap.pending;
+    const statusInfo = statusMap[status || 'pending'] || statusMap.pending;
 
     return (
       <span
@@ -519,11 +565,11 @@ const Admin: React.FC = () => {
                       transition={{ duration: 0.3 }}
                     >
                       <td>#{order.id}</td>
-                      <td className="customer-name">{order.customer_name}</td>
-                      <td>{order.customer_email}</td>
+                      <td className="customer-name">{order.customer_name || order.billing_name || '-'}</td>
+                      <td>{order.customer_email || order.billing_email || '-'}</td>
                       <td className="plan-name">{order.plan_name}</td>
                       <td className="price">{formatPrice(order.price)}</td>
-                      <td>{getStatusBadge(order.status)}</td>
+                      <td>{getStatusBadge(order.status || 'pending')}</td>
                       <td>
                         {(() => {
                           const service = hostingServices.find(s => s.order_id === order.id);

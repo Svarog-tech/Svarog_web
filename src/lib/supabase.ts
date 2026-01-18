@@ -1,5 +1,51 @@
-// Import the properly configured Supabase client from auth.ts
-import { supabase } from './auth';
+// Database API Service
+// Nahrazuje Supabase databázové dotazy s vlastním API
+
+import { getCurrentUser, getAuthHeader, refreshAccessToken } from './auth';
+
+// API Base URL
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
+
+// Helper pro API volání s automatickým refresh tokenu
+async function apiCall<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+  let headers = {
+    'Content-Type': 'application/json',
+    ...getAuthHeader(),
+    ...options.headers,
+  };
+
+  let response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    ...options,
+    headers,
+  });
+
+  // Pokud je token neplatný, zkus refresh
+  if (response.status === 401) {
+    const refreshed = await refreshAccessToken();
+    if (refreshed) {
+      headers = {
+        'Content-Type': 'application/json',
+        ...getAuthHeader(),
+        ...options.headers,
+      };
+      response = await fetch(`${API_BASE_URL}${endpoint}`, {
+        ...options,
+        headers,
+      });
+    }
+  }
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ error: 'Network error' }));
+    throw new Error(error.error || 'API request failed');
+  }
+
+  return response.json();
+}
+
+// ============================================
+// ORDERS
+// ============================================
 
 export interface Order {
   id?: number;
@@ -7,33 +53,59 @@ export interface Order {
   plan_id: string;
   plan_name: string;
   price: number;
-  customer_email: string;
-  customer_name: string;
-  status: 'pending' | 'completed' | 'failed';
+  currency?: string;
+  // Billing info
+  billing_email?: string;
+  billing_name?: string;
+  billing_company?: string;
+  billing_address?: string;
+  billing_phone?: string;
+  // Customer info
+  customer_email?: string;
+  customer_name?: string;
+  // Order status
+  status?: 'pending' | 'processing' | 'active' | 'cancelled' | 'expired';
+  payment_status?: 'unpaid' | 'paid' | 'refunded' | 'failed';
+  // Service details
+  domain_name?: string;
+  service_start_date?: string | Date;
+  service_end_date?: string | Date;
+  auto_renewal?: boolean;
+  // Payment details (GoPay)
+  payment_id?: string;
+  payment_url?: string;
+  gopay_status?: string;
+  payment_method?: string;
+  transaction_id?: string;
+  payment_date?: string | Date;
+  // Notes
+  notes?: string;
+  // Timestamps
   created_at?: string;
+  updated_at?: string;
 }
 
 export const createOrder = async (orderData: Omit<Order, 'id' | 'created_at'>) => {
-  const { data, error } = await supabase
-    .from('user_orders')
-    .insert([orderData])
-    .select();
+  const result = await apiCall<any>('/orders', {
+    method: 'POST',
+    body: JSON.stringify(orderData),
+  });
 
-  if (error) throw error;
-  return data[0];
+  if (result.success) {
+    return result.order;
+  }
+  throw new Error(result.error || 'Failed to create order');
 };
 
-export const getOrders = async () => {
-  const { data, error } = await supabase
-    .from('user_orders')
-    .select('*')
-    .order('created_at', { ascending: false });
-
-  if (error) throw error;
-  return data;
+export const getOrders = async (): Promise<Order[]> => {
+  const result = await apiCall<{ orders: Order[] }>('/orders');
+  return result.orders || [];
 };
 
-// OAuth provider mapping
+// ============================================
+// OAUTH (TODO: Implementovat pokud je potřeba)
+// ============================================
+
 export const oauthProviders = {
   google: 'google',
   github: 'github'
@@ -41,95 +113,38 @@ export const oauthProviders = {
 
 export type OAuthProvider = keyof typeof oauthProviders;
 
-// OAuth sign in function
 export const signInWithOAuth = async (provider: OAuthProvider) => {
-  const { data, error } = await supabase.auth.signInWithOAuth({
-    provider: provider as any,
-    options: {
-      redirectTo: `${window.location.origin}/auth/callback`
-    }
-  });
-
-  if (error) {
-    console.error(`OAuth ${provider} error:`, error);
-    throw error;
-  }
-
-  return data;
+  throw new Error('OAuth není momentálně podporováno');
 };
 
-// Get current user
-export const getCurrentUser = async () => {
-  const { data: { user }, error } = await supabase.auth.getUser();
+// ============================================
+// AUTH FUNCTIONS (re-export z auth.ts)
+// ============================================
 
-  if (error) {
-    // Handle AuthSessionMissingError gracefully
-    if (error.message.includes('AuthSessionMissingError') || error.message.includes('Auth session missing')) {
-      console.warn('Auth session missing, user not authenticated');
-      return null;
-    }
-    console.error('Get user error:', error);
-    throw error;
-  }
+export { getCurrentUser, signOut, onAuthStateChange } from './auth';
 
-  return user;
-};
-
-// Sign out
-export const signOut = async () => {
-  const { error } = await supabase.auth.signOut();
-
-  if (error) {
-    console.error('Sign out error:', error);
-    throw error;
-  }
-};
-
-// Listen to auth changes
-export const onAuthStateChange = (callback: (user: any) => void) => {
-  return supabase.auth.onAuthStateChange((event, session) => {
-    callback(session?.user || null);
-  });
-};
-
-// Registraci zpracovává auth.ts - tato funkce se nepoužívá
-
-// Login with email and password
 export const signInWithEmail = async (email: string, password: string) => {
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  });
-
-  if (error) {
-    console.error('Login error:', error);
-    throw error;
-  }
-
-  // Update last login
-  if (data.user) {
-    await updateLastLogin(data.user.id);
-  }
-
-  return data;
+  const { signIn } = await import('./auth');
+  return signIn({ email, password });
 };
 
-// Update last login timestamp
 export const updateLastLogin = async (userId: string) => {
+  // Update last login se dělá automaticky při přihlášení na backendu
+  // Tato funkce je zachována pro kompatibilitu
   try {
-    const { error } = await supabase.rpc('update_last_login', {
-      user_id: userId
+    await apiCall('/auth/update-last-login', {
+      method: 'POST',
+      body: JSON.stringify({ userId }),
     });
-
-    if (error) {
-      console.error('Update last login error:', error);
-    }
   } catch (err) {
     console.error('Update last login error:', err);
   }
 };
 
-// Get user profile with stats - používá vlastní SQL funkci
+// ============================================
+// USER PROFILE
+// ============================================
+
 export const getUserProfile = async (userId?: string) => {
   const targetUserId = userId || (await getCurrentUser())?.id;
 
@@ -137,31 +152,15 @@ export const getUserProfile = async (userId?: string) => {
     return null;
   }
 
-  const { data, error } = await supabase.rpc('get_user_profile', {
-    user_id: targetUserId
-  });
-
-  if (error) {
+  try {
+    const result = await apiCall<any>(`/profile/${targetUserId}`);
+    return result.profile || null;
+  } catch (error) {
     console.error('Get user profile error:', error);
-    // Fallback - přímý přístup k profiles tabulce
-    const { data: profileData, error: profileError } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', targetUserId)
-      .single();
-
-    if (profileError) {
-      console.error('Fallback profile fetch error:', profileError);
-      return null;
-    }
-
-    return profileData;
+    return null;
   }
-
-  return data;
 };
 
-// Update user profile
 export interface ProfileUpdateData {
   firstName?: string;
   lastName?: string;
@@ -172,25 +171,24 @@ export interface ProfileUpdateData {
 }
 
 export const updateUserProfile = async (userId: string, data: ProfileUpdateData) => {
-  const { data: result, error } = await supabase.rpc('update_user_profile', {
-    user_id: userId,
-    first_name: data.firstName,
-    last_name: data.lastName,
-    phone: data.phone,
-    company: data.company,
-    avatar_url: data.avatarUrl,
-    newsletter: data.newsletter
+  const result = await apiCall<any>('/profile', {
+    method: 'PUT',
+    body: JSON.stringify({
+      userId,
+      ...data,
+    }),
   });
 
-  if (error) {
-    console.error('Update profile error:', error);
-    throw error;
+  if (result.success) {
+    return result.profile;
   }
-
-  return result;
+  throw new Error(result.error || 'Failed to update profile');
 };
 
-// Create hosting order
+// ============================================
+// HOSTING ORDERS
+// ============================================
+
 export interface HostingOrderData {
   planId: string;
   planName: string;
@@ -205,50 +203,37 @@ export interface HostingOrderData {
 }
 
 export const createHostingOrder = async (data: HostingOrderData) => {
-  const { data: result, error } = await supabase.rpc('create_hosting_order', {
-    plan_id: data.planId,
-    plan_name: data.planName,
-    price: data.price,
-    currency: data.currency || 'CZK',
-    billing_email: data.billingEmail,
-    billing_name: data.billingName,
-    billing_company: data.billingCompany,
-    billing_address: data.billingAddress,
-    billing_phone: data.billingPhone,
-    domain_name: data.domainName
+  const result = await apiCall<any>('/orders/hosting', {
+    method: 'POST',
+    body: JSON.stringify(data),
   });
 
-  if (error) {
-    console.error('Create order error:', error);
-    throw error;
+  if (result.success) {
+    return result.order;
   }
-
-  return result;
+  throw new Error(result.error || 'Failed to create hosting order');
 };
 
-// Get user orders - přímý přístup k tabulce místo RPC
-export const getUserOrders = async (userId?: string) => {
+export const getUserOrders = async (userId?: string): Promise<Order[]> => {
   const targetUserId = userId || (await getCurrentUser())?.id;
 
   if (!targetUserId) {
     return [];
   }
 
-  const { data, error } = await supabase
-    .from('user_orders')
-    .select('*')
-    .eq('user_id', targetUserId)
-    .order('created_at', { ascending: false });
-
-  if (error) {
+  try {
+    const result = await apiCall<{ orders: Order[] }>(`/orders/user/${targetUserId}`);
+    return result.orders || [];
+  } catch (error) {
     console.error('Get user orders error:', error);
     return [];
   }
-
-  return data;
 };
 
-// Create support ticket
+// ============================================
+// SUPPORT TICKETS
+// ============================================
+
 export interface SupportTicketData {
   subject: string;
   message: string;
@@ -257,47 +242,25 @@ export interface SupportTicketData {
 }
 
 export const createSupportTicket = async (data: SupportTicketData) => {
-  const { data: result, error } = await supabase.rpc('create_support_ticket', {
-    subject: data.subject,
-    message: data.message,
-    priority: data.priority || 'medium',
-    category: data.category || 'general'
+  const result = await apiCall<any>('/tickets', {
+    method: 'POST',
+    body: JSON.stringify(data),
   });
 
-  if (error) {
-    console.error('Create support ticket error:', error);
-    throw error;
+  if (result.success) {
+    return result.ticket;
   }
-
-  return result;
-};
-
-// Password reset
-export const resetPassword = async (email: string) => {
-  const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${window.location.origin}/reset-password`
-  });
-
-  if (error) {
-    console.error('Password reset error:', error);
-    throw error;
-  }
-};
-
-// Update password
-export const updatePassword = async (newPassword: string) => {
-  const { error } = await supabase.auth.updateUser({
-    password: newPassword
-  });
-
-  if (error) {
-    console.error('Update password error:', error);
-    throw error;
-  }
+  throw new Error(result.error || 'Failed to create support ticket');
 };
 
 // ============================================
-// HOSTING SERVICES - Aktivní hostingy
+// PASSWORD RESET (re-export z auth.ts)
+// ============================================
+
+export { resetPassword, updatePassword } from './auth';
+
+// ============================================
+// HOSTING SERVICES
 // ============================================
 
 export interface HostingService {
@@ -337,73 +300,53 @@ export interface HostingService {
 /**
  * Získá aktivní hosting služby uživatele
  */
-export const getUserHostingServices = async () => {
-  const { data, error } = await supabase
-    .from('user_hosting_services')
-    .select('*')
-    .in('status', ['active', 'pending'])
-    .order('activated_at', { ascending: false });
-
-  if (error) {
+export const getUserHostingServices = async (): Promise<HostingService[]> => {
+  try {
+    const result = await apiCall<{ services: HostingService[] }>('/hosting-services/active');
+    return result.services || [];
+  } catch (error) {
     console.error('Error fetching hosting services:', error);
     throw error;
   }
-
-  return data as HostingService[];
 };
 
 /**
  * Získá všechny hosting služby uživatele (včetně vypršených)
  */
-export const getAllUserHostingServices = async () => {
-  const { data, error } = await supabase
-    .from('user_hosting_services')
-    .select('*')
-    .order('created_at', { ascending: false });
-
-  if (error) {
+export const getAllUserHostingServices = async (): Promise<HostingService[]> => {
+  try {
+    const result = await apiCall<{ services: HostingService[] }>('/hosting-services');
+    return result.services || [];
+  } catch (error) {
     console.error('Error fetching all hosting services:', error);
     throw error;
   }
-
-  return data as HostingService[];
 };
 
 /**
  * Získá detail konkrétní hosting služby
  */
-export const getHostingService = async (serviceId: number) => {
-  const { data, error } = await supabase
-    .from('user_hosting_services')
-    .select('*')
-    .eq('id', serviceId)
-    .single();
-
-  if (error) {
+export const getHostingService = async (serviceId: number): Promise<HostingService> => {
+  try {
+    const result = await apiCall<{ service: HostingService }>(`/hosting-services/${serviceId}`);
+    return result.service;
+  } catch (error) {
     console.error('Error fetching hosting service:', error);
     throw error;
   }
-
-  return data as HostingService;
 };
 
 /**
  * Aktualizace hosting služby (pouze admin)
  */
-export const updateHostingService = async (serviceId: number, updates: Partial<HostingService>) => {
-  const { data, error } = await supabase
-    .from('user_hosting_services')
-    .update({
-      ...updates,
-      updated_at: new Date().toISOString()
-    })
-    .eq('id', serviceId)
-    .select();
+export const updateHostingService = async (serviceId: number, updates: Partial<HostingService>): Promise<HostingService> => {
+  const result = await apiCall<{ success: boolean; service: HostingService; error?: string }>(`/hosting-services/${serviceId}`, {
+    method: 'PUT',
+    body: JSON.stringify(updates),
+  });
 
-  if (error) {
-    console.error('Error updating hosting service:', error);
-    throw error;
+  if (result.success) {
+    return result.service;
   }
-
-  return data[0] as HostingService;
+  throw new Error(result.error || 'Failed to update hosting service');
 };

@@ -32,6 +32,23 @@ HESTIACP-SETUP-GUIDE.md
 # Security documentation (obsahuje citlivé informace)
 SECURITY-ISSUES.md
 
+# Lokální testovací a pomocné skripty (nejsou potřeba v gitu)
+setup-and-run.js
+quick-start.js
+create-admin-user.js
+test-db-connection.js
+test-db-connection-full.js
+test-mysql-service.js
+generate-password-hash.js
+
+# Lokální dokumentace (nejsou potřeba v gitu)
+DIAGNOSTIKA_MYSQL.md
+JAK_SPUSTIT.md
+SECURITY_AUDIT.md
+SECURITY_CHANGES_SUMMARY.md
+TESTING_SETUP.md
+GIT_IGNORE_SUMMARY.md
+
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
