@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCheck, faArrowRight, faHeadset, faServer, faDatabase, faGlobe } from '@fortawesome/free-solid-svg-icons';
 import { usePlanSelection } from '../hooks/usePlanSelection';
@@ -10,6 +11,7 @@ const Hero: React.FC = () => {
   const { plans, selectedPlan, selectPlan } = usePlanSelection();
   const { t } = useLanguage();
   const { formatPrice } = useCurrency();
+  const navigate = useNavigate();
   const [currentPlanIndex, setCurrentPlanIndex] = useState(1); // Start with Business (index 1)
 
   // Auto-cycle through plans
@@ -31,12 +33,15 @@ const Hero: React.FC = () => {
         <div className="hero-content">
           <div className="hero-left">
             <motion.div
-              className="hero-badge"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.2 }}
+              className="hero-badge-button"
             >
-              <span>{t('hero.badge')}</span>
+              <div className="hero-badge-blob1"></div>
+              <div className="hero-badge-inner">
+                {t('hero.badge')}
+              </div>
             </motion.div>
 
             <motion.h1
@@ -86,13 +91,25 @@ const Hero: React.FC = () => {
             >
               <button
                 className="primary-btn"
-                onClick={() => document.getElementById('hosting')?.scrollIntoView({ behavior: 'smooth' })}
+                onClick={() => {
+                  const element = document.getElementById('hosting');
+                  if (element) {
+                    const offset = 0; // Adjust this value to show more of the section
+                    const elementPosition = element.getBoundingClientRect().top + window.pageYOffset;
+                    window.scrollTo({ top: elementPosition - offset, behavior: 'smooth' });
+                  }
+                }}
               >
-                {t('hero.startNow')}
-                <FontAwesomeIcon icon={faArrowRight} />
+                <span>
+                  {t('hero.startNow')}
+                  <FontAwesomeIcon icon={faArrowRight} />
+                </span>
               </button>
-              <button className="secondary-btn">
-                {t('hero.contactSales')}
+              <button
+                className="secondary-btn"
+                onClick={() => navigate('/support')}
+              >
+                <span>{t('hero.contactSales')}</span>
               </button>
             </motion.div>
 
@@ -151,20 +168,7 @@ const Hero: React.FC = () => {
                           stiffness: 400,
                           damping: 30
                         }}
-                        style={{ position: 'relative' }}
                       >
-                        {selectedPlan.id === plan.id && (
-                          <motion.div
-                            layoutId="activeTab"
-                            className="active-tab-background"
-                            initial={false}
-                            transition={{
-                              type: "spring",
-                              stiffness: 500,
-                              damping: 30
-                            }}
-                          />
-                        )}
                         <span className="tab-text">{t(`plans.${plan.id}.name`)}</span>
                       </motion.button>
                     ))}
@@ -211,10 +215,19 @@ const Hero: React.FC = () => {
                         className="preview-show-plans-btn"
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
-                        onClick={() => document.getElementById('hosting')?.scrollIntoView({ behavior: 'smooth' })}
+                        onClick={() => {
+                          const element = document.getElementById('hosting');
+                          if (element) {
+                            const offset = 100; // Adjust this value to show more of the section
+                            const elementPosition = element.getBoundingClientRect().top + window.pageYOffset;
+                            window.scrollTo({ top: elementPosition - offset, behavior: 'smooth' });
+                          }
+                        }}
                       >
-                        {t('hero.showPlans')}
-                        <FontAwesomeIcon icon={faArrowRight} />
+                        <span>
+                          {t('hero.showPlans')}
+                          <FontAwesomeIcon icon={faArrowRight} />
+                        </span>
                       </motion.button>
                     </motion.div>
                   </AnimatePresence>

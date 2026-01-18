@@ -35,6 +35,12 @@ const Hosting: React.FC = () => {
         initial={{ opacity: 0, y: 50 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8 }}
+        style={{
+          backgroundImage: `url(${process.env.PUBLIC_URL}/banner.png)`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat'
+        }}
       >
         <div className="container">
           <div className="hosting-hero-content">

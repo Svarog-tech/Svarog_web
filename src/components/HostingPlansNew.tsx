@@ -32,7 +32,7 @@ const HostingPlansNew: React.FC = () => {
   };
 
   return (
-    <section className="hosting-plans-new">
+    <section id="hosting" className="hosting-plans-new">
       <div className="container">
         {/* Header */}
         <div className="plans-header-new">
