@@ -226,13 +226,11 @@ const Header: React.FC = () => {
       {/* Mobile Menu */}
       <motion.div
         className={`mobile-menu ${isMenuOpen ? 'open' : ''}`}
-        initial={{ opacity: 0, y: -20 }}
+        initial={{ x: -300 }}
         animate={{
-          opacity: isMenuOpen ? 1 : 0,
-          y: isMenuOpen ? 0 : -20,
-          display: isMenuOpen ? 'block' : 'none'
+          x: isMenuOpen ? 0 : -300
         }}
-        transition={{ duration: 0.3 }}
+        transition={{ duration: 0.3, ease: 'easeInOut' }}
       >
         <div className="mobile-menu-content">
           <nav className="mobile-nav-links">
