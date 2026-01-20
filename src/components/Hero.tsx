@@ -159,6 +159,9 @@ const Hero: React.FC = () => {
                         key={plan.id}
                         className={`plan-selector-btn ${selectedPlan.id === plan.id ? 'active' : ''}`}
                         onClick={() => selectPlan(plan.id)}
+                        aria-label={`Select ${t(`plans.${plan.id}.name`)} plan`}
+                        aria-pressed={selectedPlan.id === plan.id}
+                        role="tab"
                         whileHover={{
                           scale: 1.02
                         }}

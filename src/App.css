@@ -669,6 +669,12 @@ body {
   transform: translateY(-2px);
 }
 
+.primary-btn:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+  transform: translateY(-2px);
+}
+
 .secondary-btn {
   cursor: pointer;
   font-size: 1rem;
@@ -737,6 +743,12 @@ body {
 }
 
 .secondary-btn:hover {
+  transform: translateY(-2px);
+}
+
+.secondary-btn:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
   transform: translateY(-2px);
 }
 
@@ -979,6 +991,12 @@ body {
   transform: translateY(-2px);
 }
 
+.plan-selector-btn:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+  transform: translateY(-2px);
+}
+
 /* Billing Toggle */
 .billing-toggle-container {
   display: flex;
@@ -1182,6 +1200,12 @@ body {
 }
 
 .preview-show-plans-btn:hover {
+  transform: translateY(-2px);
+}
+
+.preview-show-plans-btn:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
   transform: translateY(-2px);
 }
 
