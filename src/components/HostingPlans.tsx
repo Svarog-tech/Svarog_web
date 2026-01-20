@@ -144,8 +144,9 @@ const HostingPlans: React.FC = () => {
           animate={{ opacity: isInView ? 1 : 0, y: isInView ? 0 : 30 }}
           transition={{ duration: 0.8, delay: 0.2 }}
         >
-          <motion.div
-            className="plans-header-grid"
+          <div className="plans-header-inner">
+            <motion.div
+              className="plans-header-grid"
             initial={{ opacity: 0 }}
             animate={{ opacity: isInView ? 1 : 0 }}
             transition={{ duration: 0.6, delay: 0.4 }}
@@ -202,19 +203,21 @@ const HostingPlans: React.FC = () => {
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
               >
-                {hostingType === 'webhosting' && (
-                  <motion.div
-                    layoutId="hostingTypeBackground"
-                    className="billing-active-bg"
-                    initial={false}
-                    transition={{
-                      type: "spring",
-                      stiffness: 500,
-                      damping: 30
-                    }}
-                  />
-                )}
-                <span className="billing-text">Webhosting</span>
+                <span>
+                  {hostingType === 'webhosting' && (
+                    <motion.div
+                      layoutId="hostingTypeBackground"
+                      className="billing-active-bg"
+                      initial={false}
+                      transition={{
+                        type: "spring",
+                        stiffness: 500,
+                        damping: 30
+                      }}
+                    />
+                  )}
+                  <span className="billing-text">Webhosting</span>
+                </span>
               </motion.button>
               <motion.button
                 className={`hosting-type-btn ${hostingType === 'wordpress' ? 'active' : ''}`}
@@ -222,19 +225,21 @@ const HostingPlans: React.FC = () => {
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
               >
-                {hostingType === 'wordpress' && (
-                  <motion.div
-                    layoutId="hostingTypeBackground"
-                    className="billing-active-bg"
-                    initial={false}
-                    transition={{
-                      type: "spring",
-                      stiffness: 500,
-                      damping: 30
-                    }}
-                  />
-                )}
-                <span className="billing-text">WordPress</span>
+                <span>
+                  {hostingType === 'wordpress' && (
+                    <motion.div
+                      layoutId="hostingTypeBackground"
+                      className="billing-active-bg"
+                      initial={false}
+                      transition={{
+                        type: "spring",
+                        stiffness: 500,
+                        damping: 30
+                      }}
+                    />
+                  )}
+                  <span className="billing-text">WordPress</span>
+                </span>
               </motion.button>
             </div>
           </motion.div>
@@ -253,19 +258,21 @@ const HostingPlans: React.FC = () => {
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
               >
-                {!isYearly && (
-                  <motion.div
-                    layoutId="billingBackground"
-                    className="billing-active-bg"
-                    initial={false}
-                    transition={{
-                      type: "spring",
-                      stiffness: 500,
-                      damping: 30
-                    }}
-                  />
-                )}
-                <span className="billing-text">Měsíčně</span>
+                <span>
+                  {!isYearly && (
+                    <motion.div
+                      layoutId="billingBackground"
+                      className="billing-active-bg"
+                      initial={false}
+                      transition={{
+                        type: "spring",
+                        stiffness: 500,
+                        damping: 30
+                      }}
+                    />
+                  )}
+                  <span className="billing-text">Měsíčně</span>
+                </span>
               </motion.button>
               <motion.button
                 className={`billing-btn-compact ${isYearly ? 'active' : ''}`}
@@ -273,23 +280,26 @@ const HostingPlans: React.FC = () => {
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
               >
-                {isYearly && (
-                  <motion.div
-                    layoutId="billingBackground"
-                    className="billing-active-bg"
-                    initial={false}
-                    transition={{
-                      type: "spring",
-                      stiffness: 500,
-                      damping: 30
-                    }}
-                  />
-                )}
-                <span className="billing-text">Ročně</span>
-                <span className="billing-badge-compact">-10%</span>
+                <span>
+                  {isYearly && (
+                    <motion.div
+                      layoutId="billingBackground"
+                      className="billing-active-bg"
+                      initial={false}
+                      transition={{
+                        type: "spring",
+                        stiffness: 500,
+                        damping: 30
+                      }}
+                    />
+                  )}
+                  <span className="billing-text">Ročně</span>
+                  <span className="billing-badge-compact">-10%</span>
+                </span>
               </motion.button>
             </div>
           </motion.div>
+          </div>
         </motion.div>
 
         <div className={`plans-grid ${hostingType === 'wordpress' ? 'plans-grid-wp' : ''}`}>
@@ -415,14 +425,15 @@ const HostingPlans: React.FC = () => {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
-                <span className="btn-text">
-                  {selectedPlanId === plan.id ? t('plans.selected') : t('plans.selectPlan')}
+                <span>
+                  <span className="btn-text">
+                    {selectedPlanId === plan.id ? t('plans.selected') : t('plans.selectPlan')}
+                  </span>
+                  <FontAwesomeIcon
+                    icon={selectedPlanId === plan.id ? faCheck : faRocket}
+                    className="btn-icon"
+                  />
                 </span>
-                <FontAwesomeIcon
-                  icon={selectedPlanId === plan.id ? faCheck : faRocket}
-                  className="btn-icon"
-                />
-                <div className="btn-shine"></div>
               </motion.button>
 
               <div className="plan-guarantee">
