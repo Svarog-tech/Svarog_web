@@ -13,19 +13,35 @@ const Hero: React.FC = () => {
   const { formatPrice } = useCurrency();
   const navigate = useNavigate();
   const [currentPlanIndex, setCurrentPlanIndex] = useState(1); // Start with Business (index 1)
+  const [hasUserInteracted, setHasUserInteracted] = useState(false);
+  const [autoPlayDuration, setAutoPlayDuration] = useState(0);
 
-  // Auto-cycle through plans
+  // Auto-cycle through plans - stops after 10 seconds or user interaction
   useEffect(() => {
+    if (hasUserInteracted) return; // Stop if user interacted
+
     const interval = setInterval(() => {
-      setCurrentPlanIndex((prev) => {
-        const nextIndex = (prev + 1) % plans.length;
-        selectPlan(plans[nextIndex].id);
-        return nextIndex;
+      setAutoPlayDuration((prev) => {
+        const newDuration = prev + 3000;
+
+        if (newDuration >= 10000) {
+          // Stop after 10 seconds
+          clearInterval(interval);
+          return newDuration;
+        }
+
+        setCurrentPlanIndex((prevIndex) => {
+          const nextIndex = (prevIndex + 1) % plans.length;
+          selectPlan(plans[nextIndex].id);
+          return nextIndex;
+        });
+
+        return newDuration;
       });
     }, 3000); // Change every 3 seconds
 
     return () => clearInterval(interval);
-  }, [plans, selectPlan]);
+  }, [plans, selectPlan, hasUserInteracted]);
 
   return (
     <section className="modern-hero">
@@ -158,7 +174,10 @@ const Hero: React.FC = () => {
                       <motion.button
                         key={plan.id}
                         className={`plan-selector-btn ${selectedPlan.id === plan.id ? 'active' : ''}`}
-                        onClick={() => selectPlan(plan.id)}
+                        onClick={() => {
+                          setHasUserInteracted(true);
+                          selectPlan(plan.id);
+                        }}
                         aria-label={`Select ${t(`plans.${plan.id}.name`)} plan`}
                         aria-pressed={selectedPlan.id === plan.id}
                         role="tab"
@@ -238,19 +257,29 @@ const Hero: React.FC = () => {
                   <div className="performance-chart">
                     {/* Dynamic chart bars with smooth transitions */}
                     {Array.from({ length: 5 }).map((_, index) => {
-                      let height = '0%';
-                      let color = '#3B82F6';
+                      // Chart data for all 4 plans
+                      const chartData: Record<string, { heights: string[], color: string }> = {
+                        basic: {
+                          heights: ['40%', '50%', '65%', '45%', '55%'],
+                          color: '#6366F1'
+                        },
+                        standard: {
+                          heights: ['70%', '85%', '90%', '75%', '80%'],
+                          color: '#3B82F6'
+                        },
+                        pro: {
+                          heights: ['85%', '92%', '95%', '88%', '90%'],
+                          color: '#8B5CF6'
+                        },
+                        ultimate: {
+                          heights: ['95%', '98%', '100%', '96%', '99%'],
+                          color: '#F59E0B'
+                        }
+                      };
 
-                      if (selectedPlan.id === 'basic') {
-                        height = ['40%', '50%', '65%', '45%', '55%'][index];
-                        color = '#6366F1';
-                      } else if (selectedPlan.id === 'standard') {
-                        height = ['70%', '85%', '90%', '75%', '80%'][index];
-                        color = '#3B82F6';
-                      } else if (selectedPlan.id === 'premium') {
-                        height = ['90%', '95%', '100%', '85%', '98%'][index];
-                        color = '#F59E0B';
-                      }
+                      const currentData = chartData[selectedPlan.id] || chartData.standard;
+                      const height = currentData.heights[index];
+                      const color = currentData.color;
 
                       return (
                         <motion.div
