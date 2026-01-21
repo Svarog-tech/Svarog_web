@@ -4119,43 +4119,204 @@ body {
 
 .hosting-page {
   min-height: 100vh;
-  background: var(--surface);
+  background: transparent;
   color: var(--text-primary);
+  position: relative;
+  z-index: 1;
 }
 
 .hosting-hero {
-  padding: 8rem 0 6rem;
-  background: linear-gradient(135deg, var(--primary-color) 0%, var(--accent-color) 100%);
-  color: white;
+  position: relative;
+  width: 100%;
+  padding: 120px 0 80px;
   text-align: center;
+  overflow: hidden;
+  transition: all 0.3s ease;
+
+  /* Use only cyan color for rain effect */
+  --c: #06b6d4;
+
+  background-color: #000;
+  background-image:
+    radial-gradient(4px 100px at 0px 235px, var(--c), #0000),
+    radial-gradient(4px 100px at 300px 235px, var(--c), #0000),
+    radial-gradient(1.5px 1.5px at 150px 117.5px, var(--c) 100%, #0000 150%),
+    radial-gradient(4px 100px at 0px 252px, var(--c), #0000),
+    radial-gradient(4px 100px at 300px 252px, var(--c), #0000),
+    radial-gradient(1.5px 1.5px at 150px 126px, var(--c) 100%, #0000 150%),
+    radial-gradient(4px 100px at 0px 150px, var(--c), #0000),
+    radial-gradient(4px 100px at 300px 150px, var(--c), #0000),
+    radial-gradient(1.5px 1.5px at 150px 75px, var(--c) 100%, #0000 150%),
+    radial-gradient(4px 100px at 0px 253px, var(--c), #0000),
+    radial-gradient(4px 100px at 300px 253px, var(--c), #0000),
+    radial-gradient(1.5px 1.5px at 150px 126.5px, var(--c) 100%, #0000 150%),
+    radial-gradient(4px 100px at 0px 204px, var(--c), #0000),
+    radial-gradient(4px 100px at 300px 204px, var(--c), #0000),
+    radial-gradient(1.5px 1.5px at 150px 102px, var(--c) 100%, #0000 150%),
+    radial-gradient(4px 100px at 0px 134px, var(--c), #0000),
+    radial-gradient(4px 100px at 300px 134px, var(--c), #0000),
+    radial-gradient(1.5px 1.5px at 150px 67px, var(--c) 100%, #0000 150%),
+    radial-gradient(4px 100px at 0px 179px, var(--c), #0000),
+    radial-gradient(4px 100px at 300px 179px, var(--c), #0000),
+    radial-gradient(1.5px 1.5px at 150px 89.5px, var(--c) 100%, #0000 150%),
+    radial-gradient(4px 100px at 0px 299px, var(--c), #0000),
+    radial-gradient(4px 100px at 300px 299px, var(--c), #0000),
+    radial-gradient(1.5px 1.5px at 150px 149.5px, var(--c) 100%, #0000 150%),
+    radial-gradient(4px 100px at 0px 215px, var(--c), #0000),
+    radial-gradient(4px 100px at 300px 215px, var(--c), #0000),
+    radial-gradient(1.5px 1.5px at 150px 107.5px, var(--c) 100%, #0000 150%),
+    radial-gradient(4px 100px at 0px 281px, var(--c), #0000),
+    radial-gradient(4px 100px at 300px 281px, var(--c), #0000),
+    radial-gradient(1.5px 1.5px at 150px 140.5px, var(--c) 100%, #0000 150%),
+    radial-gradient(4px 100px at 0px 158px, var(--c), #0000),
+    radial-gradient(4px 100px at 300px 158px, var(--c), #0000),
+    radial-gradient(1.5px 1.5px at 150px 79px, var(--c) 100%, #0000 150%),
+    radial-gradient(4px 100px at 0px 210px, var(--c), #0000),
+    radial-gradient(4px 100px at 300px 210px, var(--c), #0000),
+    radial-gradient(1.5px 1.5px at 150px 105px, var(--c) 100%, #0000 150%);
+
+  background-size:
+    300px 235px, 300px 235px, 300px 235px,
+    300px 252px, 300px 252px, 300px 252px,
+    300px 150px, 300px 150px, 300px 150px,
+    300px 253px, 300px 253px, 300px 253px,
+    300px 204px, 300px 204px, 300px 204px,
+    300px 134px, 300px 134px, 300px 134px,
+    300px 179px, 300px 179px, 300px 179px,
+    300px 299px, 300px 299px, 300px 299px,
+    300px 215px, 300px 215px, 300px 215px,
+    300px 281px, 300px 281px, 300px 281px,
+    300px 158px, 300px 158px, 300px 158px,
+    300px 210px, 300px 210px, 300px 210px;
+
+  animation: hosting-hero-rain 150s linear infinite;
+}
+
+/* Animated overlay without color cycling */
+.hosting-hero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background-image: radial-gradient(
+    circle at 50% 50%,
+    #0000 0,
+    #0000 2px,
+    rgba(0, 0, 0, 0.3) 2px
+  );
+  background-size: 8px 8px;
+  backdrop-filter: blur(1em) brightness(6);
+}
+
+/* Ensure content stays above animated background */
+.hosting-hero-content {
+  position: relative;
+  z-index: 2;
 }
 
 .hosting-title {
   font-size: 3.5rem;
-  font-weight: 800;
+  font-weight: 900;
+  line-height: 1.1;
   margin-bottom: 1.5rem;
-  line-height: 1.2;
+  color: #ffffff;
+  letter-spacing: -0.02em;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
 }
 
 .hosting-hero .gradient-text {
-  background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+  background: linear-gradient(135deg, #06b6d4 0%, #2563eb 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
 .hosting-description {
-  font-size: 1.25rem;
+  font-size: 1.125rem;
+  color: rgba(255, 255, 255, 0.9);
   margin-bottom: 2rem;
-  opacity: 0.9;
-  max-width: 600px;
+  line-height: 1.7;
+  max-width: 500px;
   margin-left: auto;
   margin-right: auto;
+  text-shadow: 0 1px 5px rgba(0, 0, 0, 0.5);
+}
+
+/* Rain animation keyframes */
+@keyframes hosting-hero-rain {
+  0% {
+    background-position:
+      0px 220px, 3px 220px, 151.5px 337.5px,
+      25px 24px, 28px 24px, 176.5px 150px,
+      50px 16px, 53px 16px, 201.5px 91px,
+      75px 224px, 78px 224px, 226.5px 350.5px,
+      100px 19px, 103px 19px, 251.5px 121px,
+      125px 120px, 128px 120px, 276.5px 187px,
+      150px 31px, 153px 31px, 301.5px 120.5px,
+      175px 235px, 178px 235px, 326.5px 384.5px,
+      200px 121px, 203px 121px, 351.5px 228.5px,
+      225px 224px, 228px 224px, 376.5px 364.5px,
+      250px 26px, 253px 26px, 401.5px 105px,
+      275px 75px, 278px 75px, 426.5px 180px;
+  }
+  to {
+    background-position:
+      0px 6800px, 3px 6800px, 151.5px 6917.5px,
+      25px 13632px, 28px 13632px, 176.5px 13758px,
+      50px 5416px, 53px 5416px, 201.5px 5491px,
+      75px 17175px, 78px 17175px, 226.5px 17301.5px,
+      100px 5119px, 103px 5119px, 251.5px 5221px,
+      125px 8428px, 128px 8428px, 276.5px 8495px,
+      150px 9876px, 153px 9876px, 301.5px 9965.5px,
+      175px 13391px, 178px 13391px, 326.5px 13540.5px,
+      200px 14741px, 203px 14741px, 351.5px 14848.5px,
+      225px 18770px, 228px 18770px, 376.5px 18910.5px,
+      250px 5082px, 253px 5082px, 401.5px 5161px,
+      275px 6375px, 278px 6375px, 426.5px 6480px;
+  }
 }
 
 .hosting-features {
   padding: 6rem 0;
-  background: var(--surface);
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  position: relative;
+}
+
+[data-theme="dark"] .hosting-features {
+  background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
+}
+
+.hosting-features::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(circle at 70% 20%, rgba(6, 182, 212, 0.05) 0%, transparent 50%),
+              radial-gradient(circle at 30% 80%, rgba(37, 99, 235, 0.05) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+.hosting-features-header {
+  text-align: center;
+  margin-bottom: 56px;
+  width: 100%;
+  display: block;
+  position: relative;
+  z-index: 1;
+}
+
+.hosting-features-title {
+  font-size: 2.75rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin-bottom: 16px;
+  letter-spacing: -0.02em;
+  text-align: center;
+  display: block;
+  width: 100%;
+  line-height: 1.2;
 }
 
 .features-grid {
@@ -4163,6 +4324,8 @@ body {
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 2rem;
   margin-top: 4rem;
+  position: relative;
+  z-index: 1;
 }
 
 .feature-card {
@@ -4172,25 +4335,77 @@ body {
   text-align: center;
   border: 2px solid transparent;
   transition: all 0.3s ease;
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--shadow-md);
+  position: relative;
 }
 
 .feature-card:hover {
   border-color: var(--primary-color);
-  box-shadow: var(--shadow-lg);
+  box-shadow: var(--shadow-xl);
+  transform: translateY(-2px);
 }
 
+/* Gradient Blob Icon Design */
 .feature-icon {
   width: 80px;
   height: 80px;
   margin: 0 auto 1.5rem;
-  background: var(--gradient-primary);
   border-radius: 50%;
+  padding: 2px;
+  background: radial-gradient(circle 50px at 80% -10%, var(--surface), var(--surface-light));
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 2rem;
-  color: white;
+}
+
+.feature-icon::before {
+  content: "";
+  position: absolute;
+  width: 50px;
+  height: 100%;
+  border-radius: 50%;
+  bottom: 0;
+  left: 0;
+  background: radial-gradient(
+    circle 45px at 0% 100%,
+    var(--accent-color),
+    var(--primary-color),
+    transparent
+  );
+  box-shadow: -10px 10px 30px rgba(37, 99, 235, 0.3);
+  z-index: 0;
+}
+
+.feature-icon::after {
+  content: "";
+  position: absolute;
+  width: 60%;
+  height: 60%;
+  border-radius: 50%;
+  top: 0;
+  right: 0;
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+  z-index: -1;
+}
+
+.feature-icon svg {
+  position: relative;
+  z-index: 3;
+  background: radial-gradient(circle 50px at 80% -50%, var(--surface-alt), var(--surface));
+  border-radius: 50%;
+  padding: 1.25rem;
+  color: var(--primary-color);
+}
+
+[data-theme="dark"] .feature-icon {
+  background: radial-gradient(circle 50px at 80% -10%, var(--surface-light), var(--surface));
+}
+
+[data-theme="dark"] .feature-icon svg {
+  background: radial-gradient(circle 50px at 80% -50%, var(--surface-light), var(--surface));
+  color: var(--accent-color);
 }
 
 .feature-title {
@@ -4207,32 +4422,105 @@ body {
 
 .hosting-guarantee {
   padding: 6rem 0;
-  background: var(--surface-alt);
+  background: linear-gradient(135deg, #e2e8f0 0%, #f8fafc 100%);
   text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+[data-theme="dark"] .hosting-guarantee {
+  background: linear-gradient(135deg, #111827 0%, #1f2937 100%);
+}
+
+.hosting-guarantee::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(circle at 50% 50%, rgba(37, 99, 235, 0.08) 0%, transparent 60%);
+  pointer-events: none;
 }
 
 .guarantee-content {
   max-width: 600px;
   margin: 0 auto;
+  position: relative;
+  z-index: 1;
 }
 
 .guarantee-icon {
+  width: 120px;
+  height: 120px;
+  margin: 0 auto 2rem;
+  border-radius: 50%;
+  padding: 2px;
+  background: radial-gradient(circle 70px at 80% -10%, var(--surface), var(--surface-light));
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font-size: 4rem;
+}
+
+.guarantee-icon::before {
+  content: "";
+  position: absolute;
+  width: 70px;
+  height: 100%;
+  border-radius: 50%;
+  bottom: 0;
+  left: 0;
+  background: radial-gradient(
+    circle 60px at 0% 100%,
+    var(--success-color),
+    var(--accent-color),
+    transparent
+  );
+  box-shadow: -12px 12px 35px rgba(16, 185, 129, 0.4);
+  z-index: 0;
+}
+
+.guarantee-icon::after {
+  content: "";
+  position: absolute;
+  width: 65%;
+  height: 65%;
+  border-radius: 50%;
+  top: 0;
+  right: 0;
+  box-shadow: 0 0 25px rgba(255, 255, 255, 0.3);
+  z-index: -1;
+}
+
+.guarantee-icon svg {
+  position: relative;
+  z-index: 3;
   color: var(--success-color);
-  margin-bottom: 2rem;
+}
+
+[data-theme="dark"] .guarantee-icon {
+  background: radial-gradient(circle 70px at 80% -10%, var(--surface-light), var(--surface));
 }
 
 .guarantee-content h2 {
   font-size: 2.5rem;
-  font-weight: 700;
+  font-weight: 800;
   margin-bottom: 1rem;
   color: var(--text-primary);
+  letter-spacing: -0.02em;
 }
 
 .guarantee-content p {
-  font-size: 1.1rem;
+  font-size: 1.125rem;
   color: var(--text-secondary);
   margin-bottom: 3rem;
+  line-height: 1.7;
+}
+
+.guarantee-cta-btn {
+  margin: 0 auto;
 }
 
 /* ========================================
