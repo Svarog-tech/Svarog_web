@@ -4329,7 +4329,6 @@ body {
 }
 
 .feature-card {
-  background: var(--surface-alt);
   padding: 2.5rem 2rem;
   border-radius: 16px;
   text-align: center;
@@ -4337,6 +4336,25 @@ body {
   transition: all 0.3s ease;
   box-shadow: var(--shadow-md);
   position: relative;
+  overflow: hidden;
+  --s: 200px;
+  --c1: rgba(15, 30, 61, 0.5);
+  --c2: rgba(22, 42, 82, 0.5);
+  --c3: rgba(18, 36, 71, 0.5);
+  background: repeating-conic-gradient(
+        from 30deg,
+        #0000 0 120deg,
+        var(--c3) 0 180deg
+      )
+      calc(0.5 * var(--s)) calc(0.5 * var(--s) * 0.577),
+    repeating-conic-gradient(
+      from 30deg,
+      var(--c1) 0 60deg,
+      var(--c2) 0 120deg,
+      var(--c3) 0 180deg
+    );
+  background-size: var(--s) calc(var(--s) * 0.577);
+  background-color: var(--surface-alt);
 }
 
 .feature-card:hover {
