@@ -64,6 +64,7 @@ const DomainsSimple: React.FC = () => {
 
   return (
     <main className="domains-page">
+      <div className="domains-animated-bg" />
       <motion.section
         className="domains-hero"
         initial={{ opacity: 0, y: 50 }}
