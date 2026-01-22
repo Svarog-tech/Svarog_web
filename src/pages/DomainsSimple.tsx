@@ -96,30 +96,63 @@ const DomainsSimple: React.FC = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.6 }}
             >
-              <div className="search-container">
-                <FontAwesomeIcon icon={faSearch} className="search-icon" />
-                <input
-                  type="text"
-                  placeholder="Zadejte název domény (např. mojestranky)"
-                  value={searchDomain}
-                  onChange={(e) => setSearchDomain(e.target.value)}
-                  onKeyPress={handleKeyPress}
-                  className="search-input"
-                  disabled={isSearching}
-                />
-                <motion.button
-                  className="search-button"
-                  whileHover={{ scale: isSearching ? 1 : 1.05 }}
-                  whileTap={{ scale: isSearching ? 1 : 0.95 }}
-                  onClick={handleSearch}
-                  disabled={isSearching}
-                >
-                  {isSearching ? (
-                    <FontAwesomeIcon icon={faSpinner} spin />
-                  ) : (
-                    'Hledat'
-                  )}
-                </motion.button>
+              <div className="domain-search-grid"></div>
+              <div className="domain-search-poda">
+                <div className="domain-search-glow"></div>
+                <div className="domain-search-darkBorderBg"></div>
+                <div className="domain-search-darkBorderBg"></div>
+                <div className="domain-search-darkBorderBg"></div>
+                <div className="domain-search-white"></div>
+                <div className="domain-search-border"></div>
+                <div className="domain-search-main">
+                  <input
+                    placeholder="Zadejte název domény..."
+                    type="text"
+                    value={searchDomain}
+                    onChange={(e) => setSearchDomain(e.target.value)}
+                    onKeyPress={handleKeyPress}
+                    className="domain-search-input"
+                    disabled={isSearching}
+                  />
+                  <div className="domain-search-input-mask"></div>
+                  <div className="domain-search-pink-mask"></div>
+                  <div className="domain-search-filterBorder"></div>
+                  <motion.div
+                    className="domain-search-filter-icon"
+                    whileHover={{ scale: isSearching ? 1 : 1.05 }}
+                    whileTap={{ scale: isSearching ? 1 : 0.95 }}
+                    onClick={handleSearch}
+                    style={{ cursor: isSearching ? 'not-allowed' : 'pointer' }}
+                  >
+                    {isSearching ? (
+                      <FontAwesomeIcon icon={faSpinner} spin style={{ fontSize: '20px' }} />
+                    ) : (
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="24"
+                        viewBox="0 0 24 24"
+                        strokeWidth="2"
+                        strokeLinejoin="round"
+                        strokeLinecap="round"
+                        height="24"
+                        fill="none"
+                      >
+                        <circle stroke="url(#search)" r="8" cy="11" cx="11"></circle>
+                        <line stroke="url(#searchl)" y2="16.65" y1="22" x2="16.65" x1="22"></line>
+                        <defs>
+                          <linearGradient gradientTransform="rotate(50)" id="search">
+                            <stop stopColor="#3b82f6" offset="0%"></stop>
+                            <stop stopColor="#2563eb" offset="50%"></stop>
+                          </linearGradient>
+                          <linearGradient id="searchl">
+                            <stop stopColor="#2563eb" offset="0%"></stop>
+                            <stop stopColor="#1d4ed8" offset="50%"></stop>
+                          </linearGradient>
+                        </defs>
+                      </svg>
+                    )}
+                  </motion.div>
+                </div>
               </div>
             </motion.div>
 
