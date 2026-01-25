@@ -37,7 +37,13 @@ class HestiaCP {
    */
   async callAPI(command, args = [], authMethod = 'headers') {
     try {
-      console.log(`[HestiaCP] Calling command: ${command}`, args, `(auth: ${authMethod})`);
+      // SECURITY: Nelogovat citlivé údaje (passwords, keys)
+      // Logovat pouze command a počet argumentů, ne jejich obsah
+      const logger = require('../utils/logger');
+      logger.debug(`[HestiaCP] Calling command: ${command}`, {
+        argsCount: args.length,
+        authMethod
+      });
 
       const formData = new URLSearchParams();
       const headers = {
@@ -90,7 +96,13 @@ class HestiaCP {
       });
 
       const data = await response.text();
-      console.log(`[HestiaCP] Response: ${data.substring(0, 200)}...`); // Log jen prvních 200 znaků
+      // SECURITY: Nelogovat celou response, může obsahovat citlivé údaje
+      logger.debug(`[HestiaCP] Response received`, {
+        command,
+        status: response.status,
+        responseLength: data.length,
+        isSuccess: data === '0' || data === '' || response.ok
+      });
 
       // HestiaCP vrací 0 pro success, jinak error code nebo error message
       // JSON odpověď může být také validní
@@ -106,7 +118,13 @@ class HestiaCP {
         return { success: false, error: data };
       }
     } catch (error) {
-      console.error('[HestiaCP] API call failed:', error);
+      const logger = require('../utils/logger');
+      logger.error('[HestiaCP] API call failed', {
+        command,
+        error: error.message,
+        // NELOGOVAT stack trace v produkci (může obsahovat citlivé info)
+        ...(process.env.NODE_ENV !== 'production' && { stack: error.stack })
+      });
       return { success: false, error: error.message };
     }
   }

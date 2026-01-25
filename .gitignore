@@ -23,31 +23,43 @@
 # deployment
 deploy.tar.gz
 
-# Local setup guides (necommituj na branch)
-HESTIACP-SETUP-NOW.md
-QUICKSTART-HESTIACP.md
-HESTIACP-SETUP-GUIDE.md
-.env.hestiacp.example
-
-# Security documentation (obsahuje citlivé informace)
-SECURITY-ISSUES.md
-
 # Lokální testovací a pomocné skripty (nejsou potřeba v gitu)
 setup-and-run.js
 quick-start.js
 create-admin-user.js
+create-admin-user-final.js
 test-db-connection.js
 test-db-connection-full.js
 test-mysql-service.js
 generate-password-hash.js
 
-# Lokální dokumentace (nejsou potřeba v gitu)
-DIAGNOSTIKA_MYSQL.md
-JAK_SPUSTIT.md
-SECURITY_AUDIT.md
-SECURITY_CHANGES_SUMMARY.md
-TESTING_SETUP.md
-GIT_IGNORE_SUMMARY.md
+# Všechny testovací .js soubory v root (glob pattern)
+test-*.js
+*-test.js
+*test*.js
+
+# SQL soubory pro lokální testování (pokud nejsou potřeba v produkci)
+create-admin-user-final.sql
+create-admin-user.sql
+
+# Poznámka: 
+# - server.js, ecosystem.config.js a soubory v services/, middleware/, utils/ 
+#   jsou produkční kód a MUSÍ být v gitu!
+# - sql/mysql-setup.sql je produkční schema a MUSÍ být v gitu!
+
+# Všechny .md soubory (dokumentace - nejsou potřeba v gitu)
+*.md
+# Výjimka: README.md může být užitečný (odkomentujte pokud ho chcete ignorovat)
+# !README.md
+
+# Logs
+logs/
+*.log
+*.log.*
+
+# Security scripts
+HESTIACP_SECURITY_SETUP.sh
+HESTIACP_SECURITY_CHECK.sh
 
 npm-debug.log*
 yarn-debug.log*
