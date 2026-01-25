@@ -9,6 +9,7 @@ import Header from './components/Header';
 import Footer from './components/Footer';
 import CookieBanner from './components/CookieBanner';
 import ScrollToTop from './components/ScrollToTop';
+import TriangularBackground from './components/TriangularBackground';
 import Home from './pages/Home';
 import Hosting from './pages/Hosting';
 import DomainsSimple from './pages/DomainsSimple';
@@ -36,6 +37,7 @@ function App() {
             <Router>
               <ScrollToTop />
           <div className="App">
+            <TriangularBackground opacity={0.25} />
             <Header />
             <Routes>
               <Route path="/" element={<Home />} />
