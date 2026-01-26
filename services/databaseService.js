@@ -12,10 +12,16 @@ const dbConfig = {
   password: process.env.MYSQL_PASSWORD || process.env.REACT_APP_MYSQL_PASSWORD || '',
   database: process.env.MYSQL_DATABASE || process.env.REACT_APP_MYSQL_DATABASE || 'alatyr_hosting',
   waitForConnections: true,
-  connectionLimit: 10,
+  connectionLimit: parseInt(process.env.MYSQL_POOL_SIZE || '10'),
   queueLimit: 0,
   enableKeepAlive: true,
   keepAliveInitialDelay: 0,
+  // SECURITY: SSL pro produkci (pokud je MySQL SSL nakonfigurován)
+  ssl: process.env.MYSQL_SSL === 'true' && process.env.NODE_ENV === 'production' ? {
+    rejectUnauthorized: true,
+    // Pokud máte CA certifikát:
+    // ca: process.env.MYSQL_CA_CERT ? fs.readFileSync(process.env.MYSQL_CA_CERT) : undefined
+  } : false
 };
 
 // Connection pool
