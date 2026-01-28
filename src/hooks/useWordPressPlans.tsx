@@ -81,7 +81,10 @@ export const useWordPressPlans = () => {
     return defaultWPPlans.map(plan => ({
       ...plan,
       name: t(`wpPlans.${plan.id}.name`, plan.name),
-      description: t(`wpPlans.${plan.id}.description`, plan.description)
+      description: t(`wpPlans.${plan.id}.description`, plan.description),
+      features: plan.features.map((_, index) =>
+        t(`wpPlans.${plan.id}.feature${index + 1}`)
+      )
     }));
   }, [t]);
 

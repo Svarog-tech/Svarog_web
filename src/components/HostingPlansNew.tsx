@@ -36,8 +36,8 @@ const HostingPlansNew: React.FC = () => {
       <div className="container">
         {/* Header */}
         <div className="plans-header-new">
-          <h2 className="plans-title-new">Vyberte si hosting plán</h2>
-          <p className="plans-subtitle-new">Jednoduché ceny, žádné skryté poplatky</p>
+          <h2 className="plans-title-new">{t('plans.mainTitle')}</h2>
+          <p className="plans-subtitle-new">{t('plans.subtitle')}</p>
         </div>
 
         {/* Toggle Switches */}
@@ -48,13 +48,13 @@ const HostingPlansNew: React.FC = () => {
               className={`toggle-btn ${hostingType === 'webhosting' ? 'active' : ''}`}
               onClick={() => setHostingType('webhosting')}
             >
-              Webhosting
+              {t('plans.webhosting')}
             </button>
             <button
               className={`toggle-btn ${hostingType === 'wordpress' ? 'active' : ''}`}
               onClick={() => setHostingType('wordpress')}
             >
-              WordPress
+              {t('plans.wordpress')}
             </button>
           </div>
 
@@ -64,14 +64,14 @@ const HostingPlansNew: React.FC = () => {
               className={`toggle-btn ${billingCycle === 'monthly' ? 'active' : ''}`}
               onClick={() => setBillingCycle('monthly')}
             >
-              Měsíčně
+              {t('plans.monthly')}
             </button>
             <button
               className={`toggle-btn ${billingCycle === 'yearly' ? 'active' : ''}`}
               onClick={() => setBillingCycle('yearly')}
             >
-              Ročně
-              <span className="save-badge">-10%</span>
+              {t('plans.yearly')}
+              <span className="save-badge">{t('plans.discount')}</span>
             </button>
           </div>
         </div>
@@ -97,7 +97,7 @@ const HostingPlansNew: React.FC = () => {
                 <span className="pricing">
                   <span>
                     {formatPrice(billingCycle === 'yearly' ? plan.yearlyPrice * 12 : plan.price)}{' '}
-                    <small>/ {billingCycle === 'yearly' ? 'rok' : 'měsíc'}</small>
+                    <small>/ {billingCycle === 'yearly' ? t('plans.year') : t('plans.month')}</small>
                   </span>
                 </span>
                 <p className="title">{plan.name}</p>
@@ -144,7 +144,7 @@ const HostingPlansNew: React.FC = () => {
                         ></path>
                       </svg>
                     </span>
-                    Vybrat plán
+                    {t('plans.selectPlan')}
                   </button>
                 </div>
               </div>

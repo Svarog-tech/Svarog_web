@@ -56,6 +56,12 @@ const translations = {
     'plans.uptime99': '99.9% Uptime',
     'plans.securePayments': 'Bezpečné platby',
     'plans.quickActivation': 'Rychlá aktivace',
+    'plans.mainTitle': 'Vyberte si hosting plán',
+    'plans.subtitle': 'Jednoduché ceny, žádné skryté poplatky',
+    'plans.webhosting': 'Webhosting',
+    'plans.wordpress': 'WordPress',
+    'plans.month': 'měsíc',
+    'plans.year': 'rok',
 
     // Plan details - Webhosting
     'plans.basic.name': 'Basic',
@@ -86,12 +92,68 @@ const translations = {
     'plans.ultimate.specs.bandwidth': 'Neomezený',
     'plans.ultimate.specs.support': '24/7 Prioritní podpora',
 
+    // Plan features - Basic
+    'plans.basic.feature1': '5 GB prostoru',
+    'plans.basic.feature2': 'SSL certifikát zdarma',
+    'plans.basic.feature3': 'E-maily: 1 GB (1 mailbox)',
+    'plans.basic.feature4': 'CRON: max 3 úlohy',
+    'plans.basic.feature5': '1 databáze (1 GB)',
+    'plans.basic.feature6': 'Aliases: 0',
+    'plans.basic.feature7': 'Subdomény: 1',
+
+    // Plan features - Standard
+    'plans.standard.feature1': '10 GB prostoru',
+    'plans.standard.feature2': 'SSL certifikát zdarma',
+    'plans.standard.feature3': 'E-maily: 5 GB (5 mailboxů)',
+    'plans.standard.feature4': 'CRON: max 4 úlohy',
+    'plans.standard.feature5': '2 databáze (2 GB)',
+    'plans.standard.feature6': 'Aliases: 3',
+    'plans.standard.feature7': 'Subdomény: 3',
+
+    // Plan features - Pro
+    'plans.pro.feature1': '15 GB prostoru',
+    'plans.pro.feature2': 'SSL certifikát zdarma',
+    'plans.pro.feature3': 'E-maily: 10 GB (10 mailboxů)',
+    'plans.pro.feature4': 'CRON: max 6 úloh',
+    'plans.pro.feature5': '5 databází (5 GB)',
+    'plans.pro.feature6': 'Aliases: 5',
+    'plans.pro.feature7': 'Subdomény: 5',
+
+    // Plan features - Ultimate
+    'plans.ultimate.feature1': '25 GB prostoru',
+    'plans.ultimate.feature2': 'SSL certifikát zdarma',
+    'plans.ultimate.feature3': 'E-maily: Neomezeně',
+    'plans.ultimate.feature4': 'CRON: max 10 úloh',
+    'plans.ultimate.feature5': 'Databáze: Neomezeně (10 GB celkem)',
+    'plans.ultimate.feature6': 'Aliases: Neomezeně',
+    'plans.ultimate.feature7': 'Subdomény: Neomezeně',
+
     // WordPress Plan details
     'wpPlans.wp-start.name': 'WP Start',
     'wpPlans.wp-start.description': 'Optimalizováno pro základní WordPress weby',
 
     'wpPlans.wp-pro.name': 'WP Pro',
     'wpPlans.wp-pro.description': 'Pro profesionální WordPress weby s maximálním výkonem',
+
+    // WordPress features - WP Start
+    'wpPlans.wp-start.feature1': '10 GB prostoru',
+    'wpPlans.wp-start.feature2': 'Bez e-mailu',
+    'wpPlans.wp-start.feature3': '1 databáze',
+    'wpPlans.wp-start.feature4': 'CRON: 3 úlohy',
+    'wpPlans.wp-start.feature5': 'SSL certifikát zdarma',
+    'wpPlans.wp-start.feature6': 'Automatická instalace WordPress',
+    'wpPlans.wp-start.feature7': 'Automatické aktualizace WP',
+
+    // WordPress features - WP Pro
+    'wpPlans.wp-pro.feature1': '15 GB prostoru',
+    'wpPlans.wp-pro.feature2': 'E-maily: 2 GB',
+    'wpPlans.wp-pro.feature3': '1 databáze',
+    'wpPlans.wp-pro.feature4': 'CRON: 5 úloh',
+    'wpPlans.wp-pro.feature5': 'SSL certifikát zdarma',
+    'wpPlans.wp-pro.feature6': 'Automatické zálohy',
+    'wpPlans.wp-pro.feature7': 'WP-CLI přístup',
+    'wpPlans.wp-pro.feature8': 'Optimalizace výkonu',
+    'wpPlans.wp-pro.feature9': 'Staging prostředí',
 
     // Features
     'feature.storage': 'SSD úložiště',
@@ -364,6 +426,12 @@ const translations = {
     'plans.uptime99': '99.9% Uptime',
     'plans.securePayments': 'Secure Payments',
     'plans.quickActivation': 'Quick Activation',
+    'plans.mainTitle': 'Choose your hosting plan',
+    'plans.subtitle': 'Simple pricing, no hidden fees',
+    'plans.webhosting': 'Webhosting',
+    'plans.wordpress': 'WordPress',
+    'plans.month': 'month',
+    'plans.year': 'year',
 
     // Plan details - Webhosting
     'plans.basic.name': 'Basic',
@@ -394,12 +462,68 @@ const translations = {
     'plans.ultimate.specs.bandwidth': 'Unlimited',
     'plans.ultimate.specs.support': '24/7 Priority support',
 
+    // Plan features - Basic
+    'plans.basic.feature1': '5 GB storage',
+    'plans.basic.feature2': 'Free SSL certificate',
+    'plans.basic.feature3': 'Email: 1 GB (1 mailbox)',
+    'plans.basic.feature4': 'CRON: max 3 jobs',
+    'plans.basic.feature5': '1 database (1 GB)',
+    'plans.basic.feature6': 'Aliases: 0',
+    'plans.basic.feature7': 'Subdomains: 1',
+
+    // Plan features - Standard
+    'plans.standard.feature1': '10 GB storage',
+    'plans.standard.feature2': 'Free SSL certificate',
+    'plans.standard.feature3': 'Email: 5 GB (5 mailboxes)',
+    'plans.standard.feature4': 'CRON: max 4 jobs',
+    'plans.standard.feature5': '2 databases (2 GB)',
+    'plans.standard.feature6': 'Aliases: 3',
+    'plans.standard.feature7': 'Subdomains: 3',
+
+    // Plan features - Pro
+    'plans.pro.feature1': '15 GB storage',
+    'plans.pro.feature2': 'Free SSL certificate',
+    'plans.pro.feature3': 'Email: 10 GB (10 mailboxes)',
+    'plans.pro.feature4': 'CRON: max 6 jobs',
+    'plans.pro.feature5': '5 databases (5 GB)',
+    'plans.pro.feature6': 'Aliases: 5',
+    'plans.pro.feature7': 'Subdomains: 5',
+
+    // Plan features - Ultimate
+    'plans.ultimate.feature1': '25 GB storage',
+    'plans.ultimate.feature2': 'Free SSL certificate',
+    'plans.ultimate.feature3': 'Email: Unlimited',
+    'plans.ultimate.feature4': 'CRON: max 10 jobs',
+    'plans.ultimate.feature5': 'Databases: Unlimited (10 GB total)',
+    'plans.ultimate.feature6': 'Aliases: Unlimited',
+    'plans.ultimate.feature7': 'Subdomains: Unlimited',
+
     // WordPress Plan details
     'wpPlans.wp-start.name': 'WP Start',
     'wpPlans.wp-start.description': 'Optimized for basic WordPress websites',
 
     'wpPlans.wp-pro.name': 'WP Pro',
     'wpPlans.wp-pro.description': 'For professional WordPress websites with maximum performance',
+
+    // WordPress features - WP Start
+    'wpPlans.wp-start.feature1': '10 GB storage',
+    'wpPlans.wp-start.feature2': 'No email',
+    'wpPlans.wp-start.feature3': '1 database',
+    'wpPlans.wp-start.feature4': 'CRON: 3 jobs',
+    'wpPlans.wp-start.feature5': 'Free SSL certificate',
+    'wpPlans.wp-start.feature6': 'Automatic WordPress installation',
+    'wpPlans.wp-start.feature7': 'Automatic WP updates',
+
+    // WordPress features - WP Pro
+    'wpPlans.wp-pro.feature1': '15 GB storage',
+    'wpPlans.wp-pro.feature2': 'Email: 2 GB',
+    'wpPlans.wp-pro.feature3': '1 database',
+    'wpPlans.wp-pro.feature4': 'CRON: 5 jobs',
+    'wpPlans.wp-pro.feature5': 'Free SSL certificate',
+    'wpPlans.wp-pro.feature6': 'Automatic backups',
+    'wpPlans.wp-pro.feature7': 'WP-CLI access',
+    'wpPlans.wp-pro.feature8': 'Performance optimization',
+    'wpPlans.wp-pro.feature9': 'Staging environment',
 
     // Features
     'feature.storage': 'SSD storage',
