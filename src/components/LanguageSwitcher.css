@@ -2,6 +2,7 @@
   position: relative;
   display: inline-block;
   margin-right: 1rem;
+  z-index: 9999;
 }
 
 .language-toggle {
@@ -60,20 +61,18 @@
   bottom: 0;
   background: rgba(0, 0, 0, 0.1);
   backdrop-filter: blur(2px);
-  z-index: var(--z-dropdown);
+  z-index: 9998;
 }
 
 .language-dropdown {
-  position: absolute;
-  top: calc(100% + 0.5rem);
-  right: 0;
+  position: fixed;
   min-width: 200px;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 0.75rem;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
   overflow: hidden;
-  z-index: var(--z-dropdown);
+  z-index: 9999;
   backdrop-filter: blur(10px);
 }
 

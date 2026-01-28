@@ -3102,14 +3102,6 @@ body {
   .plans-grid {
     grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   }
-
-  .desktop-menu {
-    display: none;
-  }
-
-  .mobile-menu-toggle {
-    display: block;
-  }
 }
 .faq-container {
   max-width: 100%;
@@ -3582,7 +3574,7 @@ body {
 .domains-page {
   position: relative;
   min-height: 100vh;
-  background: var(--surface);
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--accent-color) 100%);
   color: var(--text-primary);
   overflow: hidden;
 }
@@ -3596,79 +3588,26 @@ body {
 
 .domains-animated-bg {
   position: absolute;
-  inset: 0;
-  --c: 7px;
-  background-color: #000;
-  background-image: radial-gradient(
-      circle at 50% 50%,
-      #0000 1.5px,
-      #000 0 var(--c),
-      #0000 var(--c)
-    ),
-    radial-gradient(
-      circle at 50% 50%,
-      #0000 1.5px,
-      #000 0 var(--c),
-      #0000 var(--c)
-    ),
-    radial-gradient(circle at 50% 50%, #0088ff, #0088ff00 60%),
-    radial-gradient(circle at 50% 50%, #00d4ff, #00d4ff00 60%),
-    radial-gradient(circle at 50% 50%, #0099ff, #0099ff00 60%),
-    radial-gradient(ellipse at 50% 50%, #00bbff, #00bbff00 60%);
-  background-size:
-    12px 20.7846097px,
-    12px 20.7846097px,
-    200% 200%,
-    200% 200%,
-    200% 200%,
-    200% 20.7846097px;
-  --p: 0px 0px, 6px 10.39230485px;
-  background-position:
-    var(--p),
-    0% 0%,
-    0% 0%,
-    0% 0px;
-  animation:
-    wee 40s linear infinite,
-    filt-blue 8s linear infinite;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background:
+    radial-gradient(circle at 20% 30%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 80% 70%, rgba(255, 255, 255, 0.08) 0%, transparent 50%),
+    radial-gradient(circle at 40% 80%, rgba(255, 255, 255, 0.05) 0%, transparent 50%);
+  pointer-events: none;
   z-index: 0;
-  opacity: 0.6;
+}
+
+/* Dark mode adjustments */
+[data-theme="dark"] .domains-page {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
 }
 
 .domains-hero-content {
   position: relative;
   z-index: 10;
-}
-
-@keyframes filt-blue {
-  0% {
-    filter: hue-rotate(0deg) brightness(1);
-  }
-  50% {
-    filter: hue-rotate(30deg) brightness(1.2);
-  }
-  100% {
-    filter: hue-rotate(0deg) brightness(1);
-  }
-}
-
-@keyframes wee {
-  0% {
-    background-position:
-      var(--p),
-      800% 400%,
-      1000% -400%,
-      -1200% -600%,
-      400% 41.5692194px;
-  }
-  100% {
-    background-position:
-      var(--p),
-      0% 0%,
-      0% 0%,
-      0% 0%,
-      0% 0%;
-  }
 }
 
 .domains-title {
@@ -6039,10 +5978,12 @@ body {
 /* User Profile Dropdown Styles */
 .user-profile-section {
   position: relative;
+  z-index: 9999;
 }
 
 .profile-dropdown {
   position: relative;
+  z-index: 9999;
 }
 
 .profile-button {
@@ -6144,16 +6085,13 @@ body {
 }
 
 .profile-menu {
-  position: absolute;
-  top: 100%;
-  right: 0;
-  margin-top: 0.5rem;
+  position: fixed;
   background: var(--surface);
   border: 1px solid var(--border-light);
   border-radius: 12px;
   box-shadow: var(--shadow-xl);
   min-width: 200px;
-  z-index: var(--z-dropdown);
+  z-index: 9999;
   overflow: hidden;
 }
 
