@@ -141,7 +141,7 @@ const CookieBanner: React.FC = () => {
               // Settings panel
               <div className="cookie-settings">
                 <div className="cookie-settings-header">
-                  <h3>Cookie Settings</h3>
+                  <h3>{t('cookies.settingsTitle')}</h3>
                   <motion.button
                     className="cookie-close"
                     onClick={() => setShowSettings(false)}
@@ -165,8 +165,8 @@ const CookieBanner: React.FC = () => {
                         <span className="cookie-toggle-slider"></span>
                       </label>
                       <div>
-                        <h4>Necessary Cookies</h4>
-                        <p>Required for basic website functionality. Cannot be disabled.</p>
+                        <h4>{t('cookies.necessary')}</h4>
+                        <p>{t('cookies.necessaryDescription')}</p>
                       </div>
                     </div>
                   </div>
@@ -182,8 +182,8 @@ const CookieBanner: React.FC = () => {
                         <span className="cookie-toggle-slider"></span>
                       </label>
                       <div>
-                        <h4>Analytics Cookies</h4>
-                        <p>Help us understand how visitors use our website.</p>
+                        <h4>{t('cookies.analytics')}</h4>
+                        <p>{t('cookies.analyticsDescription')}</p>
                       </div>
                     </div>
                   </div>
@@ -199,8 +199,8 @@ const CookieBanner: React.FC = () => {
                         <span className="cookie-toggle-slider"></span>
                       </label>
                       <div>
-                        <h4>Marketing Cookies</h4>
-                        <p>Used to deliver personalized advertisements.</p>
+                        <h4>{t('cookies.marketing')}</h4>
+                        <p>{t('cookies.marketingDescription')}</p>
                       </div>
                     </div>
                   </div>
@@ -213,7 +213,7 @@ const CookieBanner: React.FC = () => {
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                   >
-                    Save Settings
+                    {t('cookies.saveSettings')}
                   </motion.button>
 
                   <motion.button
@@ -222,7 +222,7 @@ const CookieBanner: React.FC = () => {
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                   >
-                    Accept All
+                    {t('cookies.acceptAll')}
                   </motion.button>
                 </div>
               </div>

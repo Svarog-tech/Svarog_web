@@ -4,10 +4,12 @@ import { motion } from 'framer-motion';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSpinner, faCheckCircle, faExclamationTriangle } from '@fortawesome/free-solid-svg-icons';
 import { useAuth } from '../contexts/AuthContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import './AuthCallback.css';
 
 const AuthCallback: React.FC = () => {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const { user, loading: authLoading, initialized } = useAuth();
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
   const [error, setError] = useState<string>('');
@@ -26,17 +28,17 @@ const AuthCallback: React.FC = () => {
         const errorDescription = urlParams.get('error_description') || hashParams.get('error_description');
 
         if (urlError) {
-          let userFriendlyError = 'Přihlášení se nezdařilo';
+          let userFriendlyError = t('auth.loginFailed');
 
           if (errorDescription) {
             const decoded = decodeURIComponent(errorDescription);
 
             if (decoded.includes('access_denied')) {
-              userFriendlyError = 'Přístup byl odepřen. Zkuste to prosím znovu.';
+              userFriendlyError = t('auth.accessDenied');
             } else if (decoded.includes('redirect_uri_mismatch')) {
-              userFriendlyError = 'OAuth není správně nakonfigurovaný. Zkontrolujte redirect URLs v Google Console a v backend konfiguraci.';
+              userFriendlyError = t('auth.oauthError');
             } else {
-              userFriendlyError = `Chyba: ${decoded}`;
+              userFriendlyError = t('auth.errorGeneric').replace('{error}', decoded);
             }
           }
 
@@ -104,24 +106,24 @@ const AuthCallback: React.FC = () => {
   const getStatusMessage = () => {
     switch (status) {
       case 'loading':
-        return 'Zpracovává se přihlášení...';
+        return t('auth.processing');
       case 'success':
-        return 'Přihlášení úspěšné!';
+        return t('auth.success');
       case 'error':
-        return 'Chyba při přihlášení';
+        return t('auth.error');
       default:
-        return 'Zpracovává se...';
+        return t('auth.processing');
     }
   };
 
   const getStatusDescription = () => {
     switch (status) {
       case 'loading':
-        return 'Prosím počkejte, ověřujeme vaše údaje.';
+        return t('auth.waitMessage');
       case 'success':
-        return 'Přesměrováváme vás na dashboard...';
+        return t('auth.redirecting');
       case 'error':
-        return error || 'Něco se pokazilo. Zkuste to prosím znovu.';
+        return error || t('auth.somethingWrong');
       default:
         return '';
     }

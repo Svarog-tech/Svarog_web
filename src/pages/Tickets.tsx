@@ -10,6 +10,7 @@ import {
   faCheckCircle
 } from '@fortawesome/free-solid-svg-icons';
 import { useAuth } from '../contexts/AuthContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import { createSupportTicket } from '../lib/supabase';
 import { getAuthHeader } from '../lib/auth';
 import './Tickets.css';
@@ -26,6 +27,7 @@ interface Ticket {
 
 const Tickets: React.FC = () => {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [loading, setLoading] = useState(true);
   const [showNewTicketForm, setShowNewTicketForm] = useState(false);
@@ -98,7 +100,7 @@ const Tickets: React.FC = () => {
       }, 2000);
     } catch (error) {
       console.error('Error creating ticket:', error);
-      alert('Chyba při vytváření tiketu');
+      alert(t('tickets.error.creating'));
     } finally {
       setSubmitting(false);
     }
@@ -122,13 +124,13 @@ const Tickets: React.FC = () => {
   const getStatusLabel = (status: string) => {
     switch (status) {
       case 'open':
-        return 'Otevřeno';
+        return t('tickets.status.open');
       case 'in_progress':
-        return 'Zpracovává se';
+        return t('tickets.status.processing');
       case 'resolved':
-        return 'Vyřešeno';
+        return t('tickets.status.resolved');
       case 'closed':
-        return 'Uzavřeno';
+        return t('tickets.status.closed');
       default:
         return status;
     }

@@ -154,7 +154,7 @@ const Header: React.FC = () => {
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
                       >
-                        Registrace
+                        {t('header.register')}
                       </motion.button>
                     </Link>
                   </>
@@ -186,25 +186,25 @@ const Header: React.FC = () => {
           >
             <Link to="/dashboard" className="profile-menu-item" onClick={() => setIsProfileOpen(false)}>
               <FontAwesomeIcon icon={faDashboard} />
-              Dashboard
+              {t('header.dashboard')}
             </Link>
             {profile?.is_admin && (
               <Link to="/admin" className="profile-menu-item admin-link" onClick={() => setIsProfileOpen(false)}>
                 <FontAwesomeIcon icon={faUserShield} />
-                Administrace
+                {t('header.administration')}
               </Link>
             )}
             <Link to="/services" className="profile-menu-item" onClick={() => setIsProfileOpen(false)}>
               <FontAwesomeIcon icon={faServer} />
-              Moje služby
+              {t('header.myServices')}
             </Link>
             <Link to="/tickets" className="profile-menu-item" onClick={() => setIsProfileOpen(false)}>
               <FontAwesomeIcon icon={faTicket} />
-              Support tikety
+              {t('header.supportTickets')}
             </Link>
             <Link to="/profile" className="profile-menu-item" onClick={() => setIsProfileOpen(false)}>
               <FontAwesomeIcon icon={faCog} />
-              Nastavení
+              {t('header.settings')}
             </Link>
             <div className="menu-divider"></div>
             <button
@@ -212,7 +212,7 @@ const Header: React.FC = () => {
               className="profile-menu-item logout"
             >
               <FontAwesomeIcon icon={faSignOutAlt} />
-              Odhlásit se
+              {t('header.logout')}
             </button>
           </motion.div>
         )}

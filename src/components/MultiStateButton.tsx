@@ -2,6 +2,7 @@ import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCheck, faSpinner, faExclamationTriangle } from '@fortawesome/free-solid-svg-icons';
+import { useLanguage } from '../contexts/LanguageContext';
 import './MultiStateButton.css';
 
 type ButtonState = 'idle' | 'loading' | 'success' | 'error';
@@ -21,12 +22,19 @@ const MultiStateButton: React.FC<MultiStateButtonProps> = ({
   state,
   onClick,
   disabled = false,
-  idleText = 'Dokončit objednávku',
-  loadingText = 'Zpracování...',
-  successText = 'Objednávka odeslána!',
-  errorText = 'Zkusit znovu',
+  idleText,
+  loadingText,
+  successText,
+  errorText,
   icon
 }) => {
+  const { t } = useLanguage();
+
+  // Use provided text or fallback to translated defaults
+  const textIdle = idleText || t('button.completeOrder');
+  const textLoading = loadingText || t('button.processing');
+  const textSuccess = successText || t('button.orderSent');
+  const textError = errorText || t('button.tryAgain');
   const getButtonContent = () => {
     switch (state) {
       case 'loading':
@@ -44,7 +52,7 @@ const MultiStateButton: React.FC<MultiStateButtonProps> = ({
             >
               <FontAwesomeIcon icon={faSpinner} />
             </motion.div>
-            <span>{loadingText}</span>
+            <span>{textLoading}</span>
           </motion.div>
         );
 
@@ -64,7 +72,7 @@ const MultiStateButton: React.FC<MultiStateButtonProps> = ({
             >
               <FontAwesomeIcon icon={faCheck} />
             </motion.div>
-            <span>{successText}</span>
+            <span>{textSuccess}</span>
           </motion.div>
         );
 
@@ -83,7 +91,7 @@ const MultiStateButton: React.FC<MultiStateButtonProps> = ({
             >
               <FontAwesomeIcon icon={faExclamationTriangle} />
             </motion.div>
-            <span>{errorText}</span>
+            <span>{textError}</span>
           </motion.div>
         );
 
@@ -96,7 +104,7 @@ const MultiStateButton: React.FC<MultiStateButtonProps> = ({
             exit={{ opacity: 0, y: -10 }}
           >
             {icon && <FontAwesomeIcon icon={icon} />}
-            <span>{idleText}</span>
+            <span>{textIdle}</span>
           </motion.div>
         );
     }

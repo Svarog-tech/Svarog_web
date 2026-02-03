@@ -109,20 +109,20 @@ export const validateEmail = (email: string): boolean => {
   return emailRegex.test(email);
 };
 
-export const validatePassword = (password: string): { isValid: boolean; errors: string[] } => {
+export const validatePassword = (password: string, t?: (key: string) => string): { isValid: boolean; errors: string[] } => {
   const errors: string[] = [];
 
   if (password.length < 8) {
-    errors.push('Heslo musí mít alespoň 8 znaků');
+    errors.push(t ? t('validation.password.min8') : 'Heslo musí mít alespoň 8 znaků');
   }
   if (!/[A-Z]/.test(password)) {
-    errors.push('Heslo musí obsahovat alespoň jedno velké písmeno');
+    errors.push(t ? t('validation.password.uppercase') : 'Heslo musí obsahovat alespoň jedno velké písmeno');
   }
   if (!/[a-z]/.test(password)) {
-    errors.push('Heslo musí obsahovat alespoň jedno malé písmeno');
+    errors.push(t ? t('validation.password.lowercase') : 'Heslo musí obsahovat alespoň jedno malé písmeno');
   }
   if (!/\d/.test(password)) {
-    errors.push('Heslo musí obsahovat alespoň jednu číslici');
+    errors.push(t ? t('validation.password.digit') : 'Heslo musí obsahovat alespoň jednu číslici');
   }
 
   return {
@@ -131,28 +131,28 @@ export const validatePassword = (password: string): { isValid: boolean; errors: 
   };
 };
 
-export const validateRegistrationData = (data: RegistrationData): { isValid: boolean; errors: Record<string, string> } => {
+export const validateRegistrationData = (data: RegistrationData, t?: (key: string) => string): { isValid: boolean; errors: Record<string, string> } => {
   const errors: Record<string, string> = {};
 
   if (!validateEmail(data.email)) {
-    errors.email = 'Zadejte platnou emailovou adresu';
+    errors.email = t ? t('validation.email.invalid') : 'Zadejte platnou emailovou adresu';
   }
 
   if (!data.firstName || data.firstName.trim().length < 2) {
-    errors.firstName = 'Jméno musí mít alespoň 2 znaky';
+    errors.firstName = t ? t('validation.firstName.min2') : 'Jméno musí mít alespoň 2 znaky';
   }
 
   if (!data.lastName || data.lastName.trim().length < 2) {
-    errors.lastName = 'Příjmení musí mít alespoň 2 znaky';
+    errors.lastName = t ? t('validation.lastName.min2') : 'Příjmení musí mít alespoň 2 znaky';
   }
 
-  const passwordValidation = validatePassword(data.password);
+  const passwordValidation = validatePassword(data.password, t);
   if (!passwordValidation.isValid) {
     errors.password = passwordValidation.errors[0];
   }
 
   if (!data.agreeToTerms) {
-    errors.terms = 'Musíte souhlasit s obchodními podmínkami';
+    errors.terms = t ? t('registration.errors.termsRequired') : 'Musíte souhlasit s obchodními podmínkami';
   }
 
   return {

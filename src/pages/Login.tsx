@@ -5,6 +5,7 @@ import { faEnvelope, faLock, faEye, faEyeSlash, faSignInAlt } from '@fortawesome
 import { faGoogle, faGithub } from '@fortawesome/free-brands-svg-icons';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import { LoginData, OAuthProvider } from '../types/auth';
 import { validateEmail } from '../lib/auth';
 import './Login.css';
@@ -13,6 +14,7 @@ const Login: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { signIn, signInWithOAuth, loading, user } = useAuth();
+  const { t } = useLanguage();
 
   const [formData, setFormData] = useState<LoginData>({
     email: '',
@@ -64,13 +66,13 @@ const Login: React.FC = () => {
     const errors: Record<string, string> = {};
 
     if (!formData.email) {
-      errors.email = 'Email je povinný';
+      errors.email = t('login.errors.emailRequired');
     } else if (!validateEmail(formData.email)) {
-      errors.email = 'Zadejte platnou emailovou adresu';
+      errors.email = t('login.errors.emailInvalid');
     }
 
     if (!formData.password) {
-      errors.password = 'Heslo je povinné';
+      errors.password = t('login.errors.passwordRequired');
     }
 
     setFieldErrors(errors);
@@ -93,10 +95,10 @@ const Login: React.FC = () => {
       if (result.success) {
         navigate('/dashboard');
       } else {
-        setError(result.error || 'Přihlášení se nezdařilo');
+        setError(result.error || t('auth.loginFailed'));
       }
     } catch (error: any) {
-      setError('Nastala neočekávaná chyba');
+      setError(t('profile.error.unexpected'));
     } finally {
       setIsSubmitting(false);
     }
@@ -107,7 +109,7 @@ const Login: React.FC = () => {
       await signInWithOAuth(provider);
     } catch (error: any) {
       console.error(`OAuth ${provider} login failed:`, error);
-      setError(`OAuth ${provider} přihlášení se nezdařilo. Zkuste to prosím znovu.`);
+      setError(t('auth.loginFailed'));
     }
   };
 
@@ -136,8 +138,8 @@ const Login: React.FC = () => {
             >
               <FontAwesomeIcon icon={faSignInAlt} />
             </motion.div>
-            <h1 className="login-title">Přihlášení</h1>
-            <p className="login-subtitle">Vítejte zpět! Přihlaste se ke svému účtu.</p>
+            <h1 className="login-title">{t('login.title')}</h1>
+            <p className="login-subtitle">{t('login.subtitle')}</p>
           </div>
 
           {/* OAuth Buttons */}
@@ -163,7 +165,7 @@ const Login: React.FC = () => {
                 >
                   <FontAwesomeIcon icon={provider.icon} className="oauth-icon" />
                   <span className="oauth-text">
-                    Pokračovat s {provider.name}
+                    {t('login.continueWith').replace('{provider}', provider.name)}
                   </span>
                 </motion.button>
               ))}
@@ -175,7 +177,7 @@ const Login: React.FC = () => {
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 1 }}
             >
-              <span className="divider-text">nebo pokračovat s emailem</span>
+              <span className="divider-text">{t('login.orContinueWithEmail')}</span>
             </motion.div>
           </motion.div>
 
@@ -200,7 +202,7 @@ const Login: React.FC = () => {
               transition={{ delay: 0.3 }}
             >
               <label htmlFor="email" className="form-label">
-                Email
+                {t('login.emailLabel')}
               </label>
               <div className="input-wrapper">
                 <FontAwesomeIcon icon={faEnvelope} className="input-icon" />
@@ -211,7 +213,7 @@ const Login: React.FC = () => {
                   value={formData.email}
                   onChange={handleInputChange}
                   className={`form-input ${fieldErrors.email ? 'error' : ''}`}
-                  placeholder="Zadejte váš email"
+                  placeholder={t('login.emailPlaceholder')}
                   disabled={isFormDisabled}
                   autoFocus
                   autoComplete="email"
@@ -229,7 +231,7 @@ const Login: React.FC = () => {
               transition={{ delay: 0.4 }}
             >
               <label htmlFor="password" className="form-label">
-                Heslo
+                {t('login.passwordLabel')}
               </label>
               <div className="input-wrapper">
                 <FontAwesomeIcon icon={faLock} className="input-icon" />
@@ -240,7 +242,7 @@ const Login: React.FC = () => {
                   value={formData.password}
                   onChange={handleInputChange}
                   className={`form-input ${fieldErrors.password ? 'error' : ''}`}
-                  placeholder="Zadejte vaše heslo"
+                  placeholder={t('login.passwordPlaceholder')}
                   disabled={isFormDisabled}
                   autoComplete="current-password"
                 />
@@ -269,7 +271,7 @@ const Login: React.FC = () => {
               transition={{ delay: 0.5 }}
             >
               <FontAwesomeIcon icon={faSignInAlt} />
-              {isSubmitting ? 'Přihlašuji...' : 'Přihlásit se'}
+              {isSubmitting ? t('login.submitting') : t('login.submit')}
             </motion.button>
           </form>
 
@@ -280,10 +282,10 @@ const Login: React.FC = () => {
             transition={{ delay: 0.6 }}
           >
             <p className="register-link">
-              Nemáte účet? <Link to="/register">Zaregistrujte se</Link>
+              {t('login.noAccount')} <Link to="/register">{t('login.registerLink')}</Link>
             </p>
             <p className="forgot-password">
-              <Link to="/forgot-password">Zapomněli jste heslo?</Link>
+              <Link to="/forgot-password">{t('login.forgotPassword')}</Link>
             </p>
           </motion.div>
         </motion.div>

@@ -5,6 +5,7 @@ import { faUser, faEnvelope, faLock, faEye, faEyeSlash, faUserPlus } from '@fort
 import { faGoogle, faGithub } from '@fortawesome/free-brands-svg-icons';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import { RegistrationData, OAuthProvider } from '../types/auth';
 import { validateRegistrationData } from '../lib/auth';
 import './Register.css';
@@ -12,6 +13,7 @@ import './Register.css';
 const Register: React.FC = () => {
   const navigate = useNavigate();
   const { signUp, signInWithOAuth, loading, user } = useAuth();
+  const { t } = useLanguage();
 
   const [step, setStep] = useState<'email' | 'details'>('email');
   const [formData, setFormData] = useState<RegistrationData>({
@@ -67,7 +69,7 @@ const Register: React.FC = () => {
     const errors: Record<string, string> = {};
 
     if (!formData.email) {
-      errors.email = 'Email je povinný';
+      errors.email = t('register.emailRequired');
     }
 
     if (Object.keys(errors).length > 0) {
@@ -79,11 +81,11 @@ const Register: React.FC = () => {
   };
 
   const validateForm = (): boolean => {
-    const validation = validateRegistrationData(formData);
+    const validation = validateRegistrationData(formData, t);
     const errors = { ...validation.errors };
 
     if (formData.password !== confirmPassword) {
-      errors.confirmPassword = 'Hesla se neshodují';
+      errors.confirmPassword = t('registration.errors.passwordMismatch');
     }
 
     setFieldErrors(errors);
@@ -106,10 +108,10 @@ const Register: React.FC = () => {
       if (result.success) {
         navigate('/dashboard');
       } else {
-        setError(result.error || 'Registrace se nezdařila');
+        setError(result.error || t('auth.loginFailed'));
       }
     } catch (error: any) {
-      setError('Nastala neočekávaná chyba');
+      setError(t('profile.error.unexpected'));
     } finally {
       setIsSubmitting(false);
     }
@@ -126,7 +128,7 @@ const Register: React.FC = () => {
       await signInWithOAuth(provider);
     } catch (error: any) {
       console.error(`OAuth ${provider} registration failed:`, error);
-      setError(`OAuth ${provider} registrace se nezdařila. Zkuste to prosím znovu.`);
+      setError(t('auth.loginFailed'));
     }
   };
 
@@ -155,8 +157,8 @@ const Register: React.FC = () => {
             >
               <FontAwesomeIcon icon={faUserPlus} />
             </motion.div>
-            <h1 className="register-title">Registrace</h1>
-            <p className="register-subtitle">Vytvořte si nový účet a začněte s námi.</p>
+            <h1 className="register-title">{t('register.title')}</h1>
+            <p className="register-subtitle">{t('register.subtitle')}</p>
           </div>
 
           {step === 'email' && (
@@ -183,7 +185,7 @@ const Register: React.FC = () => {
                     >
                       <FontAwesomeIcon icon={provider.icon} className="oauth-icon" />
                       <span className="oauth-text">
-                        Pokračovat s {provider.name}
+                        {t('register.continueWithGoogle').replace('Google', provider.name)}
                       </span>
                     </motion.button>
                   ))}
@@ -195,7 +197,7 @@ const Register: React.FC = () => {
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: 1 }}
                 >
-                  <span className="divider-text">nebo pokračovat s emailem</span>
+                  <span className="divider-text">{t('register.orEmail')}</span>
                 </motion.div>
               </motion.div>
 
@@ -207,7 +209,7 @@ const Register: React.FC = () => {
                   transition={{ delay: 0.3 }}
                 >
                   <label htmlFor="email" className="form-label">
-                    Email
+                    {t('register.email')}
                   </label>
                   <div className="input-wrapper">
                     <FontAwesomeIcon icon={faEnvelope} className="input-icon" />
@@ -218,7 +220,7 @@ const Register: React.FC = () => {
                       value={formData.email}
                       onChange={handleInputChange}
                       className={`form-input ${fieldErrors.email ? 'error' : ''}`}
-                      placeholder="Zadejte váš email"
+                      placeholder={t('register.emailPlaceholder')}
                       disabled={isFormDisabled}
                       autoFocus
                       autoComplete="email"
@@ -240,7 +242,7 @@ const Register: React.FC = () => {
                   transition={{ delay: 0.5 }}
                 >
                   <FontAwesomeIcon icon={faUserPlus} />
-                  Pokračovat s emailem
+                  {t('register.continueWithEmail')}
                 </motion.button>
               </form>
             </>
@@ -259,7 +261,7 @@ const Register: React.FC = () => {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.2 }}
               >
-                ← Zpět
+                ← {t('register.back')}
               </motion.button>
 
               {error && (
@@ -282,7 +284,7 @@ const Register: React.FC = () => {
                     transition={{ delay: 0.1 }}
                   >
                     <label htmlFor="firstName" className="form-label">
-                      Jméno
+                      {t('register.firstName')}
                     </label>
                     <div className="input-wrapper">
                       <FontAwesomeIcon icon={faUser} className="input-icon" />
@@ -293,7 +295,7 @@ const Register: React.FC = () => {
                         value={formData.firstName}
                         onChange={handleInputChange}
                         className={`form-input ${fieldErrors.firstName ? 'error' : ''}`}
-                        placeholder="Vaše jméno"
+                        placeholder={t('register.firstNamePlaceholder')}
                         disabled={isFormDisabled}
                         autoComplete="given-name"
                       />
@@ -310,7 +312,7 @@ const Register: React.FC = () => {
                     transition={{ delay: 0.2 }}
                   >
                     <label htmlFor="lastName" className="form-label">
-                      Příjmení
+                      {t('register.lastName')}
                     </label>
                     <div className="input-wrapper">
                       <FontAwesomeIcon icon={faUser} className="input-icon" />
@@ -321,7 +323,7 @@ const Register: React.FC = () => {
                         value={formData.lastName}
                         onChange={handleInputChange}
                         className={`form-input ${fieldErrors.lastName ? 'error' : ''}`}
-                        placeholder="Vaše příjmení"
+                        placeholder={t('register.lastNamePlaceholder')}
                         disabled={isFormDisabled}
                         autoComplete="family-name"
                       />
@@ -339,7 +341,7 @@ const Register: React.FC = () => {
                   transition={{ delay: 0.3 }}
                 >
                   <label htmlFor="email" className="form-label">
-                    Email
+                    {t('register.email')}
                   </label>
                   <div className="input-wrapper">
                     <FontAwesomeIcon icon={faEnvelope} className="input-icon" />
@@ -350,7 +352,7 @@ const Register: React.FC = () => {
                       value={formData.email}
                       onChange={handleInputChange}
                       className={`form-input ${fieldErrors.email ? 'error' : ''}`}
-                      placeholder="Zadejte váš email"
+                      placeholder={t('register.emailPlaceholder')}
                       disabled={isFormDisabled}
                       autoComplete="email"
                     />
@@ -367,7 +369,7 @@ const Register: React.FC = () => {
                   transition={{ delay: 0.4 }}
                 >
                   <label htmlFor="password" className="form-label">
-                    Heslo
+                    {t('register.password')}
                   </label>
                   <div className="input-wrapper">
                     <FontAwesomeIcon icon={faLock} className="input-icon" />
@@ -378,7 +380,7 @@ const Register: React.FC = () => {
                       value={formData.password}
                       onChange={handleInputChange}
                       className={`form-input ${fieldErrors.password ? 'error' : ''}`}
-                      placeholder="Vytvořte si heslo"
+                      placeholder={t('register.passwordPlaceholder')}
                       disabled={isFormDisabled}
                       autoComplete="new-password"
                     />
@@ -403,7 +405,7 @@ const Register: React.FC = () => {
                   transition={{ delay: 0.5 }}
                 >
                   <label htmlFor="confirmPassword" className="form-label">
-                    Potvrdit heslo
+                    {t('register.confirmPassword')}
                   </label>
                   <div className="input-wrapper">
                     <FontAwesomeIcon icon={faLock} className="input-icon" />
@@ -414,7 +416,7 @@ const Register: React.FC = () => {
                       value={confirmPassword}
                       onChange={handleInputChange}
                       className={`form-input ${fieldErrors.confirmPassword ? 'error' : ''}`}
-                      placeholder="Potvrďte vaše heslo"
+                      placeholder={t('register.confirmPasswordPlaceholder')}
                       disabled={isFormDisabled}
                       autoComplete="new-password"
                     />
@@ -449,7 +451,7 @@ const Register: React.FC = () => {
                     />
                     <span className="checkbox-custom"></span>
                     <span className="checkbox-text">
-                      Souhlasím s <Link to="/terms" className="terms-link">obchodními podmínkami</Link>
+                      {t('register.agreeToTerms')} <Link to="/terms" className="terms-link">{t('register.termsLink')}</Link>
                     </span>
                   </label>
                   {fieldErrors.terms && (
@@ -468,7 +470,7 @@ const Register: React.FC = () => {
                   transition={{ delay: 0.7 }}
                 >
                   <FontAwesomeIcon icon={faUserPlus} />
-                  {isSubmitting ? 'Vytváří se...' : 'Vytvořit účet'}
+                  {isSubmitting ? t('register.creating') : t('register.createAccount')}
                 </motion.button>
               </form>
 
@@ -479,7 +481,7 @@ const Register: React.FC = () => {
                 transition={{ delay: 0.8 }}
               >
                 <p className="login-link">
-                  Již máte účet? <Link to="/login">Přihlaste se</Link>
+                  {t('register.haveAccount')} <Link to="/login">{t('register.loginLink')}</Link>
                 </p>
               </motion.div>
             </>

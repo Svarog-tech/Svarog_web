@@ -17,12 +17,14 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import { QRCodeSVG } from 'qrcode.react';
 import { useAuth } from '../contexts/AuthContext';
+import { useLanguage } from '../contexts/LanguageContext';
 // MFA není momentálně implementováno v MySQL verzi
 // import { supabase } from '../lib/auth';
 import './Profile.css';
 
 const Profile: React.FC = () => {
   const { user, profile, updateProfile } = useAuth();
+  const { t } = useLanguage();
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -90,10 +92,10 @@ const Profile: React.FC = () => {
         setSuccess(true);
         setTimeout(() => setSuccess(false), 3000);
       } else {
-        setError(result.error || 'Chyba při ukládání');
+        setError(result.error || t('profile.error.saving'));
       }
     } catch (err) {
-      setError('Nastala neočekávaná chyba');
+      setError(t('profile.error.unexpected'));
     } finally {
       setSaving(false);
     }
@@ -101,21 +103,21 @@ const Profile: React.FC = () => {
 
   // Enable 2FA - MFA není momentálně implementováno
   const enable2FA = async () => {
-    setError('Dvoufaktorové ověření není momentálně dostupné. Bude implementováno v budoucí verzi.');
+    setError(t('profile.2fa.notAvailable'));
     // MFA není momentálně implementováno v MySQL verzi
     // TODO: Implementovat MFA
   };
 
   // Verify 2FA code - MFA není momentálně implementováno
   const verify2FA = async () => {
-    setError('Dvoufaktorové ověření není momentálně dostupné.');
+    setError(t('profile.2fa.comingSoon'));
     // MFA není momentálně implementováno v MySQL verzi
     // TODO: Implementovat MFA
   };
 
   // Disable 2FA - MFA není momentálně implementováno
   const disable2FA = async () => {
-    setError('Dvoufaktorové ověření není momentálně dostupné.');
+    setError(t('profile.2fa.comingSoon'));
     // MFA není momentálně implementováno v MySQL verzi
     // TODO: Implementovat MFA
   };
