@@ -511,9 +511,6 @@ app.post('/api/gopay/webhook',
       }
     }
     
-    // Fallback na 'unknown' pokud stále není IP
-    clientIp = clientIp || 'unknown';
-    
     const allowedGoPayIPs = [
       // GoPay produkční IP adresy (zkontrolujte v GoPay dokumentaci)
       '185.71.76.0/27',
@@ -524,6 +521,42 @@ app.post('/api/gopay/webhook',
 
     // V produkci kontrolovat IP whitelisting
     if (process.env.NODE_ENV === 'production') {
+      // BUG FIX: Pokud IP není k dispozici, blokovat webhook (bezpečnější než povolit)
+      // ipRangeCheck očekává validní IP adresu, ne 'unknown'
+      if (!clientIp) {
+        logger.warn('GoPay webhook blocked - IP address not available', {
+          requestId: req.id,
+          ip: 'unknown',
+          path: req.path,
+          headers: {
+            'x-forwarded-for': req.headers['x-forwarded-for'],
+            'x-real-ip': req.headers['x-real-ip']
+          }
+        });
+        // BUG FIX: Vždy vraťme 200, i když IP není k dispozici (aby GoPay neopakoval)
+        return res.status(200).json({
+          success: false,
+          error: 'Forbidden'
+        });
+      }
+      
+      // BUG FIX: Zkontroluj, zda clientIp je validní IP adresa před voláním ipRangeCheck
+      // ipRangeCheck může selhat nebo vrátit neočekávané výsledky s nevalidními hodnotami
+      const isValidIp = /^(\d{1,3}\.){3}\d{1,3}$/.test(clientIp) || 
+                       /^([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}$/.test(clientIp); // IPv4 nebo IPv6
+      
+      if (!isValidIp) {
+        logger.warn('GoPay webhook blocked - invalid IP address format', {
+          requestId: req.id,
+          ip: clientIp,
+          path: req.path
+        });
+        return res.status(200).json({
+          success: false,
+          error: 'Forbidden'
+        });
+      }
+      
       const isAllowed = allowedGoPayIPs.some(range => 
         ipRangeCheck(clientIp, range)
       );
@@ -541,9 +574,12 @@ app.post('/api/gopay/webhook',
         });
       }
     }
+    
+    // Fallback pro logging - použij 'unknown' pouze pro logování, ne pro IP check
+    const clientIpForLogging = clientIp || 'unknown';
 
     logger.request(req, 'GoPay webhook received', {
-      ip: clientIp,
+      ip: clientIpForLogging,
       paymentId: req.body.id,
       state: req.body.state
     });
