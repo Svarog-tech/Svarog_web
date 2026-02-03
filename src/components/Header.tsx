@@ -21,6 +21,7 @@ import { useAuth } from '../contexts/AuthContext';
 
 const Header: React.FC = () => {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [profileMenuPosition, setProfileMenuPosition] = useState({ top: 0, left: 0 });
   const profileButtonRef = useRef<HTMLButtonElement>(null);
   const { t } = useLanguage();
@@ -29,6 +30,23 @@ const Header: React.FC = () => {
   const navigate = useNavigate();
 
   const isActive = (path: string) => location.pathname === path;
+
+  // Close mobile menu when route changes
+  useEffect(() => {
+    setIsMobileMenuOpen(false);
+  }, [location.pathname]);
+
+  // Prevent body scroll when mobile menu is open
+  useEffect(() => {
+    if (isMobileMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isMobileMenuOpen]);
 
   // Get user initials for avatar fallback
   const getUserInitials = () => {
@@ -91,7 +109,19 @@ const Header: React.FC = () => {
               </Link>
             </motion.div>
 
-            <div className="desktop-menu">
+            {/* Mobile hamburger button */}
+            <button
+              className={`hamburger mobile-nav ${isMobileMenuOpen ? 'open' : ''}`}
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              aria-label="Toggle menu"
+            >
+              <span className="hamburger-line"></span>
+              <span className="hamburger-line"></span>
+              <span className="hamburger-line"></span>
+            </button>
+
+            {/* Desktop menu */}
+            <div className="desktop-menu desktop-nav">
               <nav className="nav-links">
                 <Link to="/" className={`nav-link ${isActive('/') ? 'active' : ''}`}>{t('nav.home')}</Link>
                 <Link to="/hosting" className={`nav-link ${isActive('/hosting') ? 'active' : ''}`}>{t('nav.hosting')}</Link>
@@ -168,6 +198,153 @@ const Header: React.FC = () => {
         </div>
       </nav>
     </header>
+
+    {/* Mobile navigation drawer */}
+    <AnimatePresence>
+      {isMobileMenuOpen && (
+        <>
+          <motion.div
+            className="nav-overlay open"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            onClick={() => setIsMobileMenuOpen(false)}
+          />
+          <motion.div
+            className="nav-drawer open"
+            initial={{ x: '-100%' }}
+            animate={{ x: 0 }}
+            exit={{ x: '-100%' }}
+            transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+          >
+            <div className="mobile-nav-content">
+              {/* User profile section in mobile menu */}
+              {user && (
+                <div className="mobile-profile-section">
+                  <div className="mobile-profile-info">
+                    <div className="profile-avatar">
+                      {profile?.avatar_url ? (
+                        <img src={profile.avatar_url} alt="Avatar" />
+                      ) : (
+                        <div className="avatar-initials">
+                          {getUserInitials()}
+                        </div>
+                      )}
+                    </div>
+                    <div className="mobile-profile-text">
+                      <div className="mobile-profile-name">
+                        {(profile?.first_name && profile.first_name.trim()) ||
+                         (user?.user_metadata?.first_name && user.user_metadata.first_name.trim()) ||
+                         (user?.email?.split('@')[0]) ||
+                         'User'}
+                        {profile?.is_admin && (
+                          <span className="admin-badge" title="Administrátor">
+                            <FontAwesomeIcon icon={faUserShield} />
+                          </span>
+                        )}
+                      </div>
+                      <div className="mobile-profile-email">{user?.email}</div>
+                    </div>
+                  </div>
+                  <div className="mobile-menu-divider"></div>
+                </div>
+              )}
+
+              {/* Navigation links */}
+              <nav className="mobile-nav-links">
+                <Link to="/" className={`mobile-nav-link ${isActive('/') ? 'active' : ''}`}>
+                  {t('nav.home')}
+                </Link>
+                <Link to="/hosting" className={`mobile-nav-link ${isActive('/hosting') ? 'active' : ''}`}>
+                  {t('nav.hosting')}
+                </Link>
+                <Link to="/domains" className={`mobile-nav-link ${isActive('/domains') ? 'active' : ''}`}>
+                  {t('nav.domains')}
+                </Link>
+                <Link to="/support" className={`mobile-nav-link ${isActive('/support') ? 'active' : ''}`}>
+                  {t('nav.support')}
+                </Link>
+                <Link to="/about" className={`mobile-nav-link ${isActive('/about') ? 'active' : ''}`}>
+                  {t('nav.about')}
+                </Link>
+
+                {user && (
+                  <>
+                    <div className="mobile-menu-divider"></div>
+                    <Link to="/dashboard" className={`mobile-nav-link ${isActive('/dashboard') ? 'active' : ''}`}>
+                      <FontAwesomeIcon icon={faDashboard} />
+                      {t('header.dashboard')}
+                    </Link>
+                    {profile?.is_admin && (
+                      <Link to="/admin" className={`mobile-nav-link admin-link ${isActive('/admin') ? 'active' : ''}`}>
+                        <FontAwesomeIcon icon={faUserShield} />
+                        {t('header.administration')}
+                      </Link>
+                    )}
+                    <Link to="/services" className={`mobile-nav-link ${isActive('/services') ? 'active' : ''}`}>
+                      <FontAwesomeIcon icon={faServer} />
+                      {t('header.myServices')}
+                    </Link>
+                    <Link to="/tickets" className={`mobile-nav-link ${isActive('/tickets') ? 'active' : ''}`}>
+                      <FontAwesomeIcon icon={faTicket} />
+                      {t('header.supportTickets')}
+                    </Link>
+                    <Link to="/profile" className={`mobile-nav-link ${isActive('/profile') ? 'active' : ''}`}>
+                      <FontAwesomeIcon icon={faCog} />
+                      {t('header.settings')}
+                    </Link>
+                  </>
+                )}
+              </nav>
+
+              {/* Settings section */}
+              <div className="mobile-menu-divider"></div>
+              <div className="mobile-settings">
+                <div className="mobile-settings-label">{t('header.settings') || 'Settings'}</div>
+                <div className="mobile-settings-controls">
+                  <ThemeToggle />
+                  <CurrencySwitcher />
+                  <LanguageSwitcher />
+                </div>
+              </div>
+
+              {/* CTA buttons */}
+              <div className="mobile-cta">
+                {user ? (
+                  <motion.button
+                    className="mobile-logout-button"
+                    onClick={handleLogout}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <FontAwesomeIcon icon={faSignOutAlt} />
+                    {t('header.logout')}
+                  </motion.button>
+                ) : (
+                  <>
+                    <motion.button
+                      className="mobile-login-button"
+                      onClick={handleLogin}
+                      whileTap={{ scale: 0.98 }}
+                    >
+                      {t('nav.login')}
+                    </motion.button>
+                    <Link to="/register">
+                      <motion.button
+                        className="mobile-cta-button"
+                        whileTap={{ scale: 0.98 }}
+                      >
+                        {t('header.register')}
+                      </motion.button>
+                    </Link>
+                  </>
+                )}
+              </div>
+            </div>
+          </motion.div>
+        </>
+      )}
+    </AnimatePresence>
 
     {/* Render profile menu in a portal */}
     {user && createPortal(
