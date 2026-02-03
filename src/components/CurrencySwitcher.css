@@ -1,6 +1,6 @@
 .currency-switcher {
   position: relative;
-  z-index: var(--z-dropdown);
+  z-index: 9999;
 }
 
 .currency-toggle {
@@ -50,21 +50,19 @@
   left: 0;
   right: 0;
   bottom: 0;
-  z-index: var(--z-dropdown);
+  z-index: 9998;
   background: transparent;
 }
 
 .currency-dropdown {
-  position: absolute;
-  top: calc(100% + 0.5rem);
-  right: 0;
+  position: fixed;
   background: var(--surface);
   border: 1px solid var(--border-light);
   border-radius: 12px;
   box-shadow: var(--shadow-xl);
   min-width: 200px;
   overflow: hidden;
-  z-index: 1001;
+  z-index: 9999;
 }
 
 .currency-option {

@@ -128,7 +128,10 @@ export const usePlanSelection = () => {
     return defaultPlans.map(plan => ({
       ...plan,
       name: t(`plans.${plan.id}.name`),
-      description: t(`plans.${plan.id}.description`)
+      description: t(`plans.${plan.id}.description`),
+      features: plan.features.map((_, index) =>
+        t(`plans.${plan.id}.feature${index + 1}`)
+      )
     }));
   }, [t]);
 

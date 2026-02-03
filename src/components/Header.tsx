@@ -1,10 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
-  faBars,
-  faTimes,
   faUser,
   faChevronDown,
   faDashboard,
@@ -21,8 +20,9 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
 
 const Header: React.FC = () => {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [profileMenuPosition, setProfileMenuPosition] = useState({ top: 0, left: 0 });
+  const profileButtonRef = useRef<HTMLButtonElement>(null);
   const { t } = useLanguage();
   const { user, profile, signOut } = useAuth();
   const location = useLocation();
@@ -59,7 +59,19 @@ const Header: React.FC = () => {
     navigate('/login');
   };
 
+  // Calculate profile menu position when it opens
+  useEffect(() => {
+    if (isProfileOpen && profileButtonRef.current) {
+      const rect = profileButtonRef.current.getBoundingClientRect();
+      setProfileMenuPosition({
+        top: rect.bottom + 8,
+        left: rect.right - 200 // 200px is the min-width of the menu
+      });
+    }
+  }, [isProfileOpen]);
+
   return (
+    <>
     <header className="modern-header">
       <nav className="main-nav">
         <div className="container">
@@ -95,6 +107,7 @@ const Header: React.FC = () => {
                       whileHover={{ scale: 1.02 }}
                     >
                       <button
+                        ref={profileButtonRef}
                         className="profile-button"
                         onClick={() => setIsProfileOpen(!isProfileOpen)}
                       >
@@ -123,49 +136,6 @@ const Header: React.FC = () => {
                           className={`dropdown-arrow ${isProfileOpen ? 'open' : ''}`}
                         />
                       </button>
-
-                      <AnimatePresence>
-                        {isProfileOpen && (
-                          <motion.div
-                            className="profile-menu"
-                            initial={{ opacity: 0, y: -10, scale: 0.95 }}
-                            animate={{ opacity: 1, y: 0, scale: 1 }}
-                            exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                            transition={{ duration: 0.2 }}
-                          >
-                            <Link to="/dashboard" className="profile-menu-item">
-                              <FontAwesomeIcon icon={faDashboard} />
-                              Dashboard
-                            </Link>
-                            {profile?.is_admin && (
-                              <Link to="/admin" className="profile-menu-item admin-link">
-                                <FontAwesomeIcon icon={faUserShield} />
-                                Administrace
-                              </Link>
-                            )}
-                            <Link to="/services" className="profile-menu-item">
-                              <FontAwesomeIcon icon={faServer} />
-                              Moje služby
-                            </Link>
-                            <Link to="/tickets" className="profile-menu-item">
-                              <FontAwesomeIcon icon={faTicket} />
-                              Support tikety
-                            </Link>
-                            <Link to="/profile" className="profile-menu-item">
-                              <FontAwesomeIcon icon={faCog} />
-                              Nastavení
-                            </Link>
-                            <div className="menu-divider"></div>
-                            <button
-                              onClick={handleLogout}
-                              className="profile-menu-item logout"
-                            >
-                              <FontAwesomeIcon icon={faSignOutAlt} />
-                              Odhlásit se
-                            </button>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
                     </motion.div>
                   </div>
                 ) : (
@@ -194,104 +164,62 @@ const Header: React.FC = () => {
                 <LanguageSwitcher />
               </div>
             </div>
-
-            <div className="mobile-menu-toggle">
-              <motion.button
-                className="menu-button"
-                onClick={() => setIsMenuOpen(!isMenuOpen)}
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
-              >
-                <FontAwesomeIcon icon={isMenuOpen ? faTimes : faBars} />
-              </motion.button>
-            </div>
           </div>
         </div>
       </nav>
-
-      {/* Mobile Menu Backdrop */}
-      <AnimatePresence>
-        {isMenuOpen && (
-          <motion.div
-            className="mobile-menu-backdrop open"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.3 }}
-            onClick={() => setIsMenuOpen(false)}
-          />
-        )}
-      </AnimatePresence>
-
-      {/* Mobile Menu */}
-      <motion.div
-        className={`mobile-menu ${isMenuOpen ? 'open' : ''}`}
-        initial={{ x: -300 }}
-        animate={{
-          x: isMenuOpen ? 0 : -300
-        }}
-        transition={{ duration: 0.3, ease: 'easeInOut' }}
-      >
-        <div className="mobile-menu-content">
-          <nav className="mobile-nav-links">
-            <Link to="/" className={`mobile-nav-link ${isActive('/') ? 'active' : ''}`} onClick={() => setIsMenuOpen(false)}>{t('nav.home')}</Link>
-            <Link to="/hosting" className={`mobile-nav-link ${isActive('/hosting') ? 'active' : ''}`} onClick={() => setIsMenuOpen(false)}>{t('nav.hosting')}</Link>
-            <Link to="/domains" className={`mobile-nav-link ${isActive('/domains') ? 'active' : ''}`} onClick={() => setIsMenuOpen(false)}>{t('nav.domains')}</Link>
-            <Link to="/support" className={`mobile-nav-link ${isActive('/support') ? 'active' : ''}`} onClick={() => setIsMenuOpen(false)}>{t('nav.support')}</Link>
-            <Link to="/about" className={`mobile-nav-link ${isActive('/about') ? 'active' : ''}`} onClick={() => setIsMenuOpen(false)}>{t('nav.about')}</Link>
-          </nav>
-          <div className="mobile-cta">
-            <div className="mobile-controls">
-              <ThemeToggle />
-              <CurrencySwitcher />
-              <LanguageSwitcher />
-            </div>
-            {user ? (
-              <div className="mobile-user-section">
-                <div className="mobile-profile-info">
-                  <div className="mobile-profile-avatar">
-                    {profile?.avatar_url ? (
-                      <img src={profile.avatar_url} alt="Avatar" />
-                    ) : (
-                      <div className="avatar-initials">
-                        {getUserInitials()}
-                      </div>
-                    )}
-                  </div>
-                  <span className="mobile-profile-name">
-                    {(profile?.first_name && profile.first_name.trim()) ||
-                     (user?.user_metadata?.first_name && user.user_metadata.first_name.trim()) ||
-                     (user?.email?.split('@')[0]) ||
-                     'User'} {(profile?.last_name && profile.last_name.trim()) || (user?.user_metadata?.last_name && user.user_metadata.last_name.trim()) || ''}
-                  </span>
-                </div>
-                <Link to="/dashboard" className="mobile-dashboard-link" onClick={() => setIsMenuOpen(false)}>
-                  Dashboard
-                </Link>
-                <button onClick={handleLogout} className="mobile-logout-button">
-                  Odhlásit se
-                </button>
-              </div>
-            ) : (
-              <>
-                <button className="mobile-login-button" onClick={handleLogin}>
-                  {t('nav.login')}
-                </button>
-                <Link
-                  to="/register"
-                  className="mobile-cta-button-link"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  <button className="mobile-cta-button">
-                    Registrace
-                  </button>
-                </Link>
-              </>
-            )}
-          </div>
-        </div>
-      </motion.div>
     </header>
+
+    {/* Render profile menu in a portal */}
+    {user && createPortal(
+      <AnimatePresence>
+        {isProfileOpen && (
+          <motion.div
+            className="profile-menu"
+            style={{
+              top: `${profileMenuPosition.top}px`,
+              left: `${profileMenuPosition.left}px`
+            }}
+            initial={{ opacity: 0, y: -10, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -10, scale: 0.95 }}
+            transition={{ duration: 0.2 }}
+          >
+            <Link to="/dashboard" className="profile-menu-item" onClick={() => setIsProfileOpen(false)}>
+              <FontAwesomeIcon icon={faDashboard} />
+              Dashboard
+            </Link>
+            {profile?.is_admin && (
+              <Link to="/admin" className="profile-menu-item admin-link" onClick={() => setIsProfileOpen(false)}>
+                <FontAwesomeIcon icon={faUserShield} />
+                Administrace
+              </Link>
+            )}
+            <Link to="/services" className="profile-menu-item" onClick={() => setIsProfileOpen(false)}>
+              <FontAwesomeIcon icon={faServer} />
+              Moje služby
+            </Link>
+            <Link to="/tickets" className="profile-menu-item" onClick={() => setIsProfileOpen(false)}>
+              <FontAwesomeIcon icon={faTicket} />
+              Support tikety
+            </Link>
+            <Link to="/profile" className="profile-menu-item" onClick={() => setIsProfileOpen(false)}>
+              <FontAwesomeIcon icon={faCog} />
+              Nastavení
+            </Link>
+            <div className="menu-divider"></div>
+            <button
+              onClick={handleLogout}
+              className="profile-menu-item logout"
+            >
+              <FontAwesomeIcon icon={faSignOutAlt} />
+              Odhlásit se
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>,
+      document.body
+    )}
+    </>
   );
 };
 

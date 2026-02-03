@@ -1184,6 +1184,184 @@ app.post('/api/auth/change-password',
 );
 
 // ============================================
+// SUPPORT TICKETS API
+// ============================================
+
+const discordService = require('./services/discordService');
+
+/**
+ * Create a new support ticket
+ * POST /api/tickets
+ * Protected route - requires authentication
+ */
+app.post('/api/tickets',
+  authenticateUser,
+  asyncHandler(async (req, res) => {
+    const { subject, message, priority, category } = req.body;
+    const userId = req.user.id;
+
+    // Validation
+    if (!subject || !message) {
+      throw new AppError('Subject and message are required', 400);
+    }
+
+    // Validate priority
+    const validPriorities = ['low', 'medium', 'high', 'urgent'];
+    const ticketPriority = priority && validPriorities.includes(priority) ? priority : 'medium';
+
+    // Validate category
+    const validCategories = ['general', 'technical', 'billing', 'domain', 'hosting'];
+    const ticketCategory = category && validCategories.includes(category) ? category : 'general';
+
+    // Insert ticket into database
+    const insertQuery = `
+      INSERT INTO support_tickets (user_id, subject, message, priority, category, status)
+      VALUES (?, ?, ?, ?, ?, 'open')
+    `;
+
+    const result = await db.execute(insertQuery, [
+      userId,
+      subject,
+      message,
+      ticketPriority,
+      ticketCategory
+    ]);
+
+    const ticketId = result.insertId;
+
+    // Get user info for Discord notification
+    const userQuery = 'SELECT email, name FROM users WHERE id = ?';
+    const userResult = await db.queryOne(userQuery, [userId]);
+
+    // Send Discord notification (non-blocking)
+    if (userResult) {
+      discordService.sendTicketNotification({
+        ticketId: ticketId,
+        name: userResult.name || 'Unknown',
+        email: userResult.email || 'Unknown',
+        subject: subject,
+        message: message,
+        priority: ticketPriority,
+        category: ticketCategory
+      }).catch(error => {
+        // Log error but don't fail the request
+        logger.error('Failed to send Discord notification:', error);
+      });
+    }
+
+    logger.info(`Ticket #${ticketId} created by user ${userId}`, {
+      requestId: req.id,
+      ticketId,
+      userId,
+      priority: ticketPriority,
+      category: ticketCategory
+    });
+
+    res.status(201).json({
+      success: true,
+      message: 'Ticket created successfully',
+      ticket: {
+        id: ticketId,
+        subject,
+        message,
+        priority: ticketPriority,
+        category: ticketCategory,
+        status: 'open',
+        created_at: new Date().toISOString()
+      }
+    });
+  })
+);
+
+/**
+ * Get user's tickets
+ * GET /api/tickets
+ * Protected route - requires authentication
+ */
+app.get('/api/tickets',
+  authenticateUser,
+  asyncHandler(async (req, res) => {
+    const userId = req.user.id;
+
+    const query = `
+      SELECT
+        id,
+        subject,
+        message,
+        status,
+        priority,
+        category,
+        created_at,
+        updated_at,
+        last_reply_at,
+        resolved_at
+      FROM support_tickets
+      WHERE user_id = ?
+      ORDER BY created_at DESC
+    `;
+
+    const tickets = await db.query(query, [userId]);
+
+    logger.info(`Retrieved ${tickets.length} tickets for user ${userId}`, {
+      requestId: req.id,
+      userId,
+      ticketCount: tickets.length
+    });
+
+    res.json({
+      success: true,
+      tickets: tickets || []
+    });
+  })
+);
+
+/**
+ * Get a specific ticket by ID
+ * GET /api/tickets/:id
+ * Protected route - requires authentication
+ */
+app.get('/api/tickets/:id',
+  authenticateUser,
+  asyncHandler(async (req, res) => {
+    const ticketId = req.params.id;
+    const userId = req.user.id;
+
+    const query = `
+      SELECT
+        id,
+        subject,
+        message,
+        status,
+        priority,
+        category,
+        created_at,
+        updated_at,
+        last_reply_at,
+        resolved_at
+      FROM support_tickets
+      WHERE id = ? AND user_id = ?
+    `;
+
+    const ticket = await db.queryOne(query, [ticketId, userId]);
+
+    if (!ticket) {
+      throw new AppError('Ticket not found', 404);
+    }
+
+    logger.info(`Retrieved ticket #${ticketId} for user ${userId}`, {
+      requestId: req.id,
+      ticketId,
+      userId
+    });
+
+    res.json({
+      success: true,
+      ticket
+    });
+  })
+);
+
+// ============================================
 // Health Check Endpoint
 // ============================================
 

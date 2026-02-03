@@ -64,3 +64,4 @@ HESTIACP_SECURITY_CHECK.sh
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+notes.txt
