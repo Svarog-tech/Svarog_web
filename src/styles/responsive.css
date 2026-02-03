@@ -7,6 +7,7 @@
    BREAKPOINT CONSTANTS
    ============================================ */
 :root {
+  --breakpoint-xs: 390px;  /* Modern phones (iPhone 14 Mini, etc.) */
   --breakpoint-sm: 576px;
   --breakpoint-md: 768px;
   --breakpoint-lg: 992px;
@@ -527,6 +528,266 @@
 @media (min-width: 1200px) {
   .card-grid {
     gap: 2rem;
+  }
+}
+
+/* ============================================
+   CONTAINER QUERIES
+   ============================================ */
+
+/* Container query utilities for component-level responsiveness */
+@supports (container-type: inline-size) {
+  .container-query {
+    container-type: inline-size;
+    container-name: responsive-container;
+  }
+
+  /* Use in card grids, modals, sidebars */
+  @container responsive-container (min-width: 400px) {
+    .cq-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  @container responsive-container (min-width: 600px) {
+    .cq-grid { grid-template-columns: repeat(3, 1fr); }
+  }
+
+  @container responsive-container (min-width: 800px) {
+    .cq-grid { grid-template-columns: repeat(4, 1fr); }
+  }
+}
+
+/* ============================================
+   MOBILE NAVIGATION UTILITIES
+   ============================================ */
+
+/* Mobile vs Desktop navigation visibility */
+.mobile-nav {
+  display: block;
+}
+
+.desktop-nav {
+  display: none;
+}
+
+@media (min-width: 992px) {
+  .mobile-nav {
+    display: none;
+  }
+
+  .desktop-nav {
+    display: block;
+  }
+}
+
+/* Hamburger menu button */
+.hamburger {
+  width: 44px;
+  height: 44px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+  padding: 0;
+  position: relative;
+  z-index: 101;
+}
+
+.hamburger-line {
+  width: 24px;
+  height: 2px;
+  background: var(--text-primary);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 2px;
+}
+
+.hamburger.open .hamburger-line:nth-child(1) {
+  transform: rotate(45deg) translate(7px, 7px);
+}
+
+.hamburger.open .hamburger-line:nth-child(2) {
+  opacity: 0;
+}
+
+.hamburger.open .hamburger-line:nth-child(3) {
+  transform: rotate(-45deg) translate(7px, -7px);
+}
+
+/* Mobile navigation drawer */
+.nav-drawer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  background: var(--surface);
+  transform: translateX(-100%);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 100;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.nav-drawer.open {
+  transform: translateX(0);
+}
+
+/* Overlay for mobile menu */
+.nav-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.5);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+  z-index: 99;
+}
+
+.nav-overlay.open {
+  opacity: 1;
+  visibility: visible;
+}
+
+@media (min-width: 992px) {
+  .nav-drawer {
+    position: static;
+    width: auto;
+    height: auto;
+    background: transparent;
+    transform: none;
+    overflow: visible;
+  }
+
+  .nav-overlay {
+    display: none;
+  }
+}
+
+/* ============================================
+   RESPONSIVE TABLE UTILITIES
+   ============================================ */
+
+/* Responsive table wrapper with horizontal scroll */
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Card-based table layout for mobile */
+.table-card-mobile thead {
+  border: none;
+  clip: rect(0 0 0 0);
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  padding: 0;
+  position: absolute;
+  width: 1px;
+}
+
+.table-card-mobile tbody {
+  display: block;
+  width: 100%;
+}
+
+.table-card-mobile tr {
+  display: block;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.table-card-mobile tr:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.table-card-mobile td {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 0;
+  border: none;
+  text-align: right;
+}
+
+.table-card-mobile td:first-child {
+  padding-top: 0;
+}
+
+.table-card-mobile td:last-child {
+  padding-bottom: 0;
+}
+
+.table-card-mobile td::before {
+  content: attr(data-label);
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-align: left;
+  margin-right: 1rem;
+  flex-shrink: 0;
+}
+
+/* Desktop table layout - restore at tablet breakpoint */
+@media (min-width: 768px) {
+  .table-card-mobile thead {
+    border: initial;
+    clip: initial;
+    height: auto;
+    margin: 0;
+    overflow: visible;
+    padding: 0;
+    position: static;
+    width: auto;
+    display: table-header-group;
+  }
+
+  .table-card-mobile tbody {
+    display: table-row-group;
+  }
+
+  .table-card-mobile tr {
+    display: table-row;
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    padding: 0;
+    margin: 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .table-card-mobile tr:hover {
+    transform: none;
+    box-shadow: none;
+    background: var(--surface-hover);
+  }
+
+  .table-card-mobile td {
+    display: table-cell;
+    justify-content: flex-start;
+    padding: 1rem 1.5rem;
+    text-align: left;
+    border: none;
+  }
+
+  .table-card-mobile td:first-child,
+  .table-card-mobile td:last-child {
+    padding: 1rem 1.5rem;
+  }
+
+  .table-card-mobile td::before {
+    display: none;
+    content: none;
   }
 }
 
