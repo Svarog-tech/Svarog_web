@@ -1,24 +1,28 @@
-/* Login page uses the same styling as Register */
+/* ============================================
+   LOGIN PAGE - MOBILE FIRST
+   ============================================ */
+
+/* Base mobile styles (390px+) */
 .login-page {
   min-height: 100vh;
   background: var(--background);
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 2rem 0;
+  padding: 1rem 0;
 }
 
 .login-container {
   width: 100%;
-  max-width: 420px;
+  max-width: 100%;
   margin: 0 auto;
   padding: 0 1rem;
 }
 
 .login-card {
   background: var(--surface);
-  border-radius: 20px;
-  padding: 3rem 2rem;
+  border-radius: 16px;
+  padding: 2rem 1.5rem;
   box-shadow: var(--shadow-xl);
   border: 1px solid var(--border);
   backdrop-filter: blur(20px);
@@ -37,27 +41,27 @@
   border-radius: 20px 20px 0 0;
 }
 
-/* Header */
+/* Header - mobile first */
 .login-header {
   text-align: center;
-  margin-bottom: 2.5rem;
+  margin-bottom: 2rem;
 }
 
 .login-icon {
-  width: 80px;
-  height: 80px;
+  width: 70px;
+  height: 70px;
   background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
-  border-radius: 20px;
+  border-radius: 18px;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 0 auto 1.5rem;
+  margin: 0 auto 1.25rem;
   color: white;
-  font-size: 2rem;
+  font-size: 1.75rem;
 }
 
 .login-title {
-  font-size: 2rem;
+  font-size: 1.75rem;
   font-weight: 700;
   color: var(--text-primary);
   margin: 0 0 0.5rem 0;
@@ -85,20 +89,22 @@
 
 .oauth-btn {
   width: 100%;
-  padding: 0.875rem 1rem;
+  padding: 0.75rem 1rem;
   border: 2px solid var(--border);
   border-radius: 12px;
   background: var(--surface);
   color: var(--text-primary);
   font-weight: 500;
+  font-size: 0.9rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.75rem;
+  gap: 0.5rem;
   cursor: pointer;
   transition: all 0.3s ease;
   position: relative;
   overflow: hidden;
+  min-height: 48px;
 }
 
 .oauth-btn::before {
@@ -237,15 +243,16 @@
 
 .form-input {
   width: 100%;
-  padding: 1rem 1rem 1rem 4.5rem;
+  padding: 0.875rem 1rem 0.875rem 3.5rem;
   border: 2px solid var(--border);
   border-radius: 12px;
   background: var(--surface-alt);
   color: var(--text-primary);
-  font-size: 0.95rem;
+  font-size: 1rem;
   transition: all 0.3s ease;
   outline: none;
   box-sizing: border-box;
+  min-height: 48px;
 }
 
 /* Zajistit, že placeholder text neleze pod ikonku */
@@ -391,33 +398,67 @@
   background: #7f1d1d;
 }
 
-/* Responsive Design */
-@media (max-width: 480px) {
+/* ============================================
+   RESPONSIVE - MOBILE FIRST
+   ============================================ */
+
+/* Base mobile styles already applied above (390px+) */
+
+/* Tablet - 480px */
+@media (min-width: 480px) {
   .login-page {
-    padding: 1rem 0;
+    padding: 1.5rem 0;
+  }
+
+  .login-container {
+    max-width: 420px;
   }
 
   .login-card {
-    padding: 2rem 1.5rem;
-    margin: 0 0.5rem;
-    border-radius: 16px;
+    padding: 2.5rem 2rem;
+    border-radius: 18px;
+  }
+
+  .login-icon {
+    width: 80px;
+    height: 80px;
+    border-radius: 20px;
+    font-size: 2rem;
+    margin-bottom: 1.5rem;
   }
 
   .login-title {
-    font-size: 1.75rem;
-  }
-
-  .oauth-buttons {
-    gap: 0.5rem;
+    font-size: 2rem;
   }
 
   .oauth-btn {
-    padding: 0.75rem 1rem;
-    font-size: 0.9rem;
+    padding: 0.875rem 1rem;
+    font-size: 0.95rem;
+    gap: 0.75rem;
   }
 
-  .oauth-text {
-    font-size: 0.875rem;
+  .oauth-buttons {
+    gap: 0.75rem;
+  }
+
+  .form-input {
+    padding: 1rem 1rem 1rem 4.5rem;
+  }
+}
+
+/* Desktop - 768px */
+@media (min-width: 768px) {
+  .login-page {
+    padding: 2rem 0;
+  }
+
+  .login-card {
+    padding: 3rem 2rem;
+    border-radius: 20px;
+  }
+
+  .login-header {
+    margin-bottom: 2.5rem;
   }
 }
 

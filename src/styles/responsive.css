@@ -581,31 +581,70 @@
 
 /* Hamburger menu button */
 .hamburger {
-  width: 44px;
-  height: 44px;
-  background: none;
+  width: 56px !important;
+  height: 56px !important;
+  min-width: 56px !important;
+  min-height: 56px !important;
+  max-width: 56px !important;
+  max-height: 56px !important;
+  background: rgba(0, 0, 0, 0.05);
   border: none;
+  border-radius: 12px;
   cursor: pointer;
-  display: flex;
+  display: flex !important;
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  gap: 6px;
-  padding: 0;
+  gap: 8px;
+  padding: 12px;
   position: relative;
   z-index: 101;
+  flex-shrink: 0 !important;
+  transform: none !important;
+  transition: background 0.3s ease;
+}
+
+.hamburger:hover {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.hamburger:active {
+  background: rgba(0, 0, 0, 0.15);
+}
+
+/* Dark mode hamburger button */
+[data-theme="dark"] .hamburger {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+[data-theme="dark"] .hamburger:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .hamburger:active {
+  background: rgba(255, 255, 255, 0.15);
 }
 
 .hamburger-line {
-  width: 24px;
-  height: 2px;
-  background: var(--text-primary);
+  width: 32px !important;
+  height: 4px !important;
+  min-width: 32px !important;
+  min-height: 4px !important;
+  background: #1e293b !important;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  border-radius: 2px;
+  border-radius: 3px;
+  display: block !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+/* Dark mode support */
+[data-theme="dark"] .hamburger-line {
+  background: #f1f5f9 !important;
 }
 
 .hamburger.open .hamburger-line:nth-child(1) {
-  transform: rotate(45deg) translate(7px, 7px);
+  transform: rotate(45deg) translate(9px, 9px);
 }
 
 .hamburger.open .hamburger-line:nth-child(2) {
@@ -613,7 +652,7 @@
 }
 
 .hamburger.open .hamburger-line:nth-child(3) {
-  transform: rotate(-45deg) translate(7px, -7px);
+  transform: rotate(-45deg) translate(9px, -9px);
 }
 
 /* Mobile navigation drawer */
