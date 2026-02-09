@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faRocket, faUsers, faHeart, faShield, faBolt } from '@fortawesome/free-solid-svg-icons';
 import { useLanguage } from '../contexts/LanguageContext';
+import TriangularBackground from '../components/TriangularBackground';
 
 const About: React.FC = () => {
   const { t } = useLanguage();
@@ -51,7 +52,9 @@ const About: React.FC = () => {
   ];
 
   return (
-    <main className="about-page">
+    <>
+      <TriangularBackground opacity={0.12} />
+      <main className="about-page">
       <motion.section
         className="about-hero"
         initial={{ opacity: 0, y: 50 }}
@@ -91,8 +94,9 @@ const About: React.FC = () => {
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: index * 0.1 }}
                 viewport={{ once: true }}
-                whileHover={{ y: -5, scale: 1.05 }}
+                whileHover={{ y: -5, scale: 1.02 }}
               >
+                <div className="card-glow"></div>
                 <div className="stat-number">{stat.number}</div>
                 <div className="stat-label">{t(stat.label)}</div>
               </motion.div>
@@ -157,6 +161,7 @@ const About: React.FC = () => {
                 viewport={{ once: true }}
                 whileHover={{ y: -5, scale: 1.02 }}
               >
+                <div className="card-glow"></div>
                 <div className="value-icon">
                   <FontAwesomeIcon icon={value.icon} />
                 </div>
@@ -205,6 +210,7 @@ const About: React.FC = () => {
                 viewport={{ once: true }}
                 whileHover={{ y: -5, scale: 1.02 }}
               >
+                <div className="card-glow"></div>
                 <div className="member-avatar">
                   <FontAwesomeIcon icon={faUsers} />
                 </div>
@@ -239,6 +245,7 @@ const About: React.FC = () => {
         </div>
       </section>
     </main>
+    </>
   );
 };
 
