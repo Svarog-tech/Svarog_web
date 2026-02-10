@@ -16,6 +16,7 @@ import {
   faExclamationTriangle
 } from '@fortawesome/free-solid-svg-icons';
 import { getAuthHeader } from '../lib/auth';
+import { useLanguage } from '../contexts/LanguageContext';
 import './OrderDetailModal.css';
 
 interface Order {
@@ -57,6 +58,7 @@ interface OrderDetailModalProps {
 }
 
 const OrderDetailModal: React.FC<OrderDetailModalProps> = ({ order, isOpen, onClose, onUpdate }) => {
+  const { t } = useLanguage();
   const [status, setStatus] = useState(order?.status || 'pending');
   const [paymentStatus, setPaymentStatus] = useState(order?.payment_status || 'unpaid');
   const [saving, setSaving] = useState(false);
@@ -91,7 +93,7 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({ order, isOpen, onCl
       onClose();
     } catch (err) {
       console.error('Error updating order:', err);
-      setError('Nepodařilo se uložit změny');
+      setError(t('order.error.save'));
     } finally {
       setSaving(false);
     }
@@ -117,7 +119,7 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({ order, isOpen, onCl
   const getStatusBadge = (statusValue: string) => {
     const statusMap: Record<string, { color: string; icon: any; label: string }> = {
       pending: { color: '#f59e0b', icon: faClock, label: 'Čeká' },
-      processing: { color: '#3b82f6', icon: faClock, label: 'Zpracovává se' },
+      processing: { color: '#3b82f6', icon: faClock, label: t('order.status.processing') },
       active: { color: '#10b981', icon: faCheckCircle, label: 'Aktivní' },
       cancelled: { color: '#ef4444', icon: faTimesCircle, label: 'Zrušeno' },
       expired: { color: '#6b7280', icon: faTimesCircle, label: 'Expirováno' }

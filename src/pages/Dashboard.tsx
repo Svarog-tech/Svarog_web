@@ -15,6 +15,7 @@ import {
   faCalendarAlt
 } from '@fortawesome/free-solid-svg-icons';
 import { useAuth } from '../contexts/AuthContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import { useCurrency } from '../contexts/CurrencyContext';
 import { getUserOrders, getAllUserHostingServices, HostingService } from '../lib/supabase';
 import './Dashboard.css';
@@ -39,6 +40,7 @@ interface DashboardStats {
 
 const Dashboard: React.FC = () => {
   const { user, profile } = useAuth();
+  const { t } = useLanguage();
   const { formatPrice } = useCurrency();
   const navigate = useNavigate();
   const [orders, setOrders] = useState<Order[]>([]);
@@ -91,7 +93,7 @@ const Dashboard: React.FC = () => {
     return (
       <div className="dashboard-loading">
         <div className="loading-spinner"></div>
-        <p>Načítání dashboardu...</p>
+        <p>{t('dashboard.loading')}</p>
       </div>
     );
   }
@@ -108,10 +110,10 @@ const Dashboard: React.FC = () => {
         >
           <div className="welcome-section">
             <h1 className="dashboard-title">
-              Vítej zpět, <span className="user-name">{profile?.first_name || 'Uživateli'}</span>! 👋
+              {t('dashboard.welcomeBack').replace('{name}', profile?.first_name || 'User')}
             </h1>
             <p className="dashboard-subtitle">
-              Spravuj své hosting služby a sleduj jejich stav
+              {t('dashboard.subtitle')}
             </p>
           </div>
 
@@ -122,7 +124,7 @@ const Dashboard: React.FC = () => {
             onClick={() => navigate('/hosting')}
           >
             <FontAwesomeIcon icon={faPlus} />
-            Nová služba
+            {t('dashboard.newService')}
           </motion.button>
         </motion.div>
 
@@ -139,7 +141,7 @@ const Dashboard: React.FC = () => {
             </div>
             <div className="stat-content">
               <h3 className="stat-number">{stats.activeServices}</h3>
-              <p className="stat-label">Aktivní služby</p>
+              <p className="stat-label">{t('dashboard.activeServices')}</p>
             </div>
           </div>
 

@@ -380,7 +380,101 @@ const translations = {
     'registration.errors.passwordRequired': 'Heslo je povinné',
     'registration.errors.passwordTooShort': 'Heslo musí mít alespoň 8 znaků',
     'registration.errors.passwordMismatch': 'Hesla se neshodují',
-    'registration.errors.termsRequired': 'Musíte souhlasit s obchodními podmínkami'
+    'registration.errors.termsRequired': 'Musíte souhlasit s obchodními podmínkami',
+
+    // Header
+    'header.register': 'Registrace',
+    'header.dashboard': 'Dashboard',
+    'header.administration': 'Administrace',
+    'header.myServices': 'Moje služby',
+    'header.supportTickets': 'Support tikety',
+    'header.settings': 'Nastavení',
+    'header.logout': 'Odhlásit se',
+
+    // Login page
+    'login.title': 'Přihlášení',
+    'login.subtitle': 'Vítejte zpět! Přihlaste se ke svému účtu.',
+    'login.emailLabel': 'Email',
+    'login.emailPlaceholder': 'Zadejte váš email',
+    'login.passwordLabel': 'Heslo',
+    'login.passwordPlaceholder': 'Zadejte vaše heslo',
+    'login.submit': 'Přihlásit se',
+    'login.submitting': 'Přihlašuji...',
+    'login.noAccount': 'Nemáte účet?',
+    'login.registerLink': 'Zaregistrujte se',
+    'login.forgotPassword': 'Zapomněli jste heslo?',
+    'login.continueWith': 'Pokračovat s {provider}',
+    'login.orContinueWithEmail': 'nebo pokračovat s emailem',
+    'login.errors.emailRequired': 'Email je povinný',
+    'login.errors.emailInvalid': 'Zadejte platnou emailovou adresu',
+    'login.errors.passwordRequired': 'Heslo je povinné',
+
+    // Register page additions
+    'register.emailRequired': 'Email je povinný',
+    'register.orEmail': 'nebo pokračovat s emailem',
+    'register.creating': 'Vytváří se...',
+    'register.haveAccount': 'Již máte účet?',
+
+    // Cookie settings
+    'cookies.settingsTitle': 'Nastavení cookies',
+    'cookies.necessary': 'Nezbytné cookies',
+    'cookies.necessaryDescription': 'Nutné pro základní funkčnost webu. Nelze vypnout.',
+    'cookies.analytics': 'Analytické cookies',
+    'cookies.analyticsDescription': 'Pomáhají nám pochopit, jak návštěvníci používají náš web.',
+    'cookies.marketing': 'Marketingové cookies',
+    'cookies.marketingDescription': 'Používají se pro zobrazení personalizované reklamy.',
+    'cookies.saveSettings': 'Uložit nastavení',
+    'cookies.acceptAll': 'Přijmout vše',
+
+    // Dashboard
+    'dashboard.loading': 'Načítání dashboardu...',
+    'dashboard.welcomeBack': 'Vítej zpět, {name}! 👋',
+    'dashboard.subtitle': 'Spravuj své hosting služby a sleduj jejich stav',
+    'dashboard.newService': 'Nová služba',
+    'dashboard.activeServices': 'Aktivní služby',
+
+    // Auth callback additions
+    'auth.loginFailed': 'Přihlášení se nezdařilo',
+    'auth.accessDenied': 'Přístup byl odepřen. Zkuste to prosím znovu.',
+    'auth.oauthError': 'OAuth není správně nakonfigurovaný. Kontaktujte prosím podporu.',
+    'auth.errorGeneric': 'Chyba: {error}',
+    'auth.waitMessage': 'Prosím počkejte, ověřujeme vaše údaje.',
+    'auth.redirecting': 'Přesměrováváme vás na dashboard...',
+    'auth.somethingWrong': 'Něco se pokazilo. Zkuste to prosím znovu.',
+    'auth.tryEmailRegister': 'Zkusit registraci emailem',
+    'auth.login': 'Přihlásit se',
+
+    // Profile
+    'profile.error.saving': 'Chyba při ukládání',
+    'profile.error.unexpected': 'Nastala neočekávaná chyba',
+    'profile.2fa.notAvailable': 'Dvoufaktorové ověření není momentálně dostupné. Bude implementováno v budoucí verzi.',
+    'profile.2fa.comingSoon': 'Dvoufaktorové ověření není momentálně dostupné.',
+
+    // Tickets
+    'tickets.error.creating': 'Chyba při vytváření tiketu',
+    'tickets.status.open': 'Otevřeno',
+    'tickets.status.processing': 'Zpracovává se',
+    'tickets.status.resolved': 'Vyřešeno',
+    'tickets.status.closed': 'Uzavřeno',
+
+    // Order modal
+    'order.error.save': 'Nepodařilo se uložit změny',
+    'order.status.processing': 'Zpracovává se',
+
+    // Multi-state button
+    'button.completeOrder': 'Dokončit objednávku',
+    'button.processing': 'Zpracování...',
+    'button.orderSent': 'Objednávka odeslána!',
+    'button.tryAgain': 'Zkusit znovu',
+
+    // Validation messages
+    'validation.password.min8': 'Heslo musí mít alespoň 8 znaků',
+    'validation.password.uppercase': 'Heslo musí obsahovat alespoň jedno velké písmeno',
+    'validation.password.lowercase': 'Heslo musí obsahovat alespoň jedno malé písmeno',
+    'validation.password.digit': 'Heslo musí obsahovat alespoň jednu číslici',
+    'validation.email.invalid': 'Zadejte platnou emailovou adresu',
+    'validation.firstName.min2': 'Jméno musí mít alespoň 2 znaky',
+    'validation.lastName.min2': 'Příjmení musí mít alespoň 2 znaky'
   },
   en: {
     // Navigation
@@ -750,7 +844,101 @@ const translations = {
     'registration.errors.passwordRequired': 'Password is required',
     'registration.errors.passwordTooShort': 'Password must be at least 8 characters',
     'registration.errors.passwordMismatch': 'Passwords do not match',
-    'registration.errors.termsRequired': 'You must agree to the terms and conditions'
+    'registration.errors.termsRequired': 'You must agree to the terms and conditions',
+
+    // Header
+    'header.register': 'Register',
+    'header.dashboard': 'Dashboard',
+    'header.administration': 'Administration',
+    'header.myServices': 'My Services',
+    'header.supportTickets': 'Support Tickets',
+    'header.settings': 'Settings',
+    'header.logout': 'Sign out',
+
+    // Login page
+    'login.title': 'Sign in',
+    'login.subtitle': 'Welcome back! Sign in to your account.',
+    'login.emailLabel': 'Email',
+    'login.emailPlaceholder': 'Enter your email',
+    'login.passwordLabel': 'Password',
+    'login.passwordPlaceholder': 'Enter your password',
+    'login.submit': 'Sign in',
+    'login.submitting': 'Signing in...',
+    'login.noAccount': 'Don\'t have an account?',
+    'login.registerLink': 'Sign up',
+    'login.forgotPassword': 'Forgot your password?',
+    'login.continueWith': 'Continue with {provider}',
+    'login.orContinueWithEmail': 'or continue with email',
+    'login.errors.emailRequired': 'Email is required',
+    'login.errors.emailInvalid': 'Please enter a valid email address',
+    'login.errors.passwordRequired': 'Password is required',
+
+    // Register page additions
+    'register.emailRequired': 'Email is required',
+    'register.orEmail': 'or continue with email',
+    'register.creating': 'Creating...',
+    'register.haveAccount': 'Already have an account?',
+
+    // Cookie settings
+    'cookies.settingsTitle': 'Cookie Settings',
+    'cookies.necessary': 'Necessary Cookies',
+    'cookies.necessaryDescription': 'Required for basic website functionality. Cannot be disabled.',
+    'cookies.analytics': 'Analytics Cookies',
+    'cookies.analyticsDescription': 'Help us understand how visitors use our website.',
+    'cookies.marketing': 'Marketing Cookies',
+    'cookies.marketingDescription': 'Used to deliver personalized advertisements.',
+    'cookies.saveSettings': 'Save Settings',
+    'cookies.acceptAll': 'Accept All',
+
+    // Dashboard
+    'dashboard.loading': 'Loading dashboard...',
+    'dashboard.welcomeBack': 'Welcome back, {name}! 👋',
+    'dashboard.subtitle': 'Manage your hosting services and monitor their status',
+    'dashboard.newService': 'New Service',
+    'dashboard.activeServices': 'Active Services',
+
+    // Auth callback additions
+    'auth.loginFailed': 'Login failed',
+    'auth.accessDenied': 'Access was denied. Please try again.',
+    'auth.oauthError': 'OAuth is not properly configured. Please contact support.',
+    'auth.errorGeneric': 'Error: {error}',
+    'auth.waitMessage': 'Please wait, verifying your credentials.',
+    'auth.redirecting': 'Redirecting you to the dashboard...',
+    'auth.somethingWrong': 'Something went wrong. Please try again.',
+    'auth.tryEmailRegister': 'Try email registration',
+    'auth.login': 'Sign in',
+
+    // Profile
+    'profile.error.saving': 'Error saving',
+    'profile.error.unexpected': 'An unexpected error occurred',
+    'profile.2fa.notAvailable': 'Two-factor authentication is not currently available. Will be implemented in a future version.',
+    'profile.2fa.comingSoon': 'Two-factor authentication is not currently available.',
+
+    // Tickets
+    'tickets.error.creating': 'Error creating ticket',
+    'tickets.status.open': 'Open',
+    'tickets.status.processing': 'Processing',
+    'tickets.status.resolved': 'Resolved',
+    'tickets.status.closed': 'Closed',
+
+    // Order modal
+    'order.error.save': 'Failed to save changes',
+    'order.status.processing': 'Processing',
+
+    // Multi-state button
+    'button.completeOrder': 'Complete Order',
+    'button.processing': 'Processing...',
+    'button.orderSent': 'Order sent!',
+    'button.tryAgain': 'Try Again',
+
+    // Validation messages
+    'validation.password.min8': 'Password must be at least 8 characters',
+    'validation.password.uppercase': 'Password must contain at least one uppercase letter',
+    'validation.password.lowercase': 'Password must contain at least one lowercase letter',
+    'validation.password.digit': 'Password must contain at least one digit',
+    'validation.email.invalid': 'Please enter a valid email address',
+    'validation.firstName.min2': 'First name must be at least 2 characters',
+    'validation.lastName.min2': 'Last name must be at least 2 characters'
   }
 };
 
