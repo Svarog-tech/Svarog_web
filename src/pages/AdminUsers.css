@@ -274,3 +274,96 @@
     min-width: 900px;
   }
 }
+
+/* Modal: Vytvořit webhosting */
+.admin-create-web-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.admin-create-web-modal {
+  background: var(--surface-light, #fff);
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+  max-width: 420px;
+  width: 100%;
+  overflow: hidden;
+}
+
+.admin-create-web-modal-header {
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.admin-create-web-modal-header h3 {
+  margin: 0 0 0.25rem 0;
+  font-size: 1.25rem;
+}
+
+.admin-create-web-user {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--text-secondary, #64748b);
+}
+
+.admin-create-web-modal-body {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.admin-create-web-modal-body label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.admin-create-web-modal-body input,
+.admin-create-web-modal-body select {
+  padding: 0.6rem 0.75rem;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  border-radius: 8px;
+  font-size: 1rem;
+}
+
+.admin-create-web-modal-footer {
+  padding: 1rem 1.5rem;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
+.admin-create-web-cancel {
+  padding: 0.5rem 1rem;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+  background: transparent;
+  cursor: pointer;
+  font-size: 0.95rem;
+}
+
+.admin-create-web-submit {
+  padding: 0.5rem 1.25rem;
+  border-radius: 8px;
+  border: none;
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  color: #fff;
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.admin-create-web-submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

@@ -53,6 +53,12 @@ const AdminUsers: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterRole, setFilterRole] = useState<string>('all');
   const [editingUser, setEditingUser] = useState<string | null>(null);
+  const [createWebModal, setCreateWebModal] = useState<{ open: boolean; target: User | null }>({ open: false, target: null });
+  const [createWebDomain, setCreateWebDomain] = useState('');
+  const [createWebPackage, setCreateWebPackage] = useState('');
+  const [hestiaPackages, setHestiaPackages] = useState<string[]>([]);
+  const [loadingPackages, setLoadingPackages] = useState(false);
+  const [creatingWeb, setCreatingWeb] = useState(false);
 
   useEffect(() => {
     if (!user || !profile?.is_admin) {
@@ -144,13 +150,47 @@ const AdminUsers: React.FC = () => {
     }
   };
 
-  const createWebForUser = async (target: User) => {
-    const domain = window.prompt(`Zadej doménu pro web uživatele ${target.email} (např. example.cz):`);
-    if (!domain) return;
+  const openCreateWebModal = async (target: User) => {
+    setCreateWebModal({ open: true, target });
+    setCreateWebDomain('');
+    setCreateWebPackage('');
+    setHestiaPackages([]);
+    setLoadingPackages(true);
+    try {
+      const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
+      const res = await fetch(`${API_URL}/admin/hestiacp-packages`, { headers: getAuthHeader() });
+      const data = await res.json();
+      if (data.success && Array.isArray(data.packages) && data.packages.length > 0) {
+        setHestiaPackages(data.packages);
+        setCreateWebPackage(data.packages[0]);
+      } else {
+        setHestiaPackages(['default']);
+        setCreateWebPackage('default');
+      }
+    } catch {
+      setHestiaPackages(['default']);
+      setCreateWebPackage('default');
+    } finally {
+      setLoadingPackages(false);
+    }
+  };
 
-    const trimmedDomain = domain.trim();
-    if (!trimmedDomain) return;
+  const closeCreateWebModal = () => {
+    setCreateWebModal({ open: false, target: null });
+    setCreateWebDomain('');
+    setCreatingWeb(false);
+  };
 
+  const createWebForUser = async () => {
+    const target = createWebModal.target;
+    if (!target) return;
+    const trimmedDomain = createWebDomain.trim();
+    if (!trimmedDomain) {
+      alert('Zadej doménu (např. example.cz).');
+      return;
+    }
+
+    setCreatingWeb(true);
     try {
       const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
       const response = await fetch(`${API_URL}/admin/create-hosting-service`, {
@@ -164,7 +204,8 @@ const AdminUsers: React.FC = () => {
           domain: trimmedDomain,
           planId: 'admin_custom',
           planName: 'Admin Webhosting',
-          price: 0
+          price: 0,
+          hestiaPackage: createWebPackage || 'default'
         })
       });
 
@@ -172,12 +213,15 @@ const AdminUsers: React.FC = () => {
 
       if (response.ok && result.success) {
         alert(`Webhosting pro ${target.email} byl vytvořen.\nHestiaCP uživatel: ${result.hestia?.username || 'neznámý'}`);
+        closeCreateWebModal();
       } else {
-        alert(`Služba byla částečně/nebyla vytvořena: ${result.error || result.warning || 'Neznámá chyba'}`);
+        alert(`Služba byla částečně/nebyla vytvořena: ${result.error || result.warning || result.hestiaError || 'Neznámá chyba'}`);
       }
     } catch (error) {
       console.error('Error creating hosting service for user:', error);
       alert('Chyba při vytváření webu pro uživatele');
+    } finally {
+      setCreatingWeb(false);
     }
   };
 
@@ -430,7 +474,7 @@ const AdminUsers: React.FC = () => {
                           <button
                             className="action-btn create-web"
                             title="Vytvořit webhosting pro tohoto uživatele"
-                            onClick={() => createWebForUser(u)}
+                            onClick={() => openCreateWebModal(u)}
                           >
                             <FontAwesomeIcon icon={faServer} />
                           </button>
@@ -443,6 +487,65 @@ const AdminUsers: React.FC = () => {
             </div>
           )}
         </motion.div>
+
+        {/* Modal: Vytvořit webhosting */}
+        {createWebModal.open && createWebModal.target && (
+          <div className="admin-create-web-overlay" onClick={closeCreateWebModal}>
+            <motion.div
+              className="admin-create-web-modal"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="admin-create-web-modal-header">
+                <h3>Vytvořit webhosting</h3>
+                <p className="admin-create-web-user">{createWebModal.target.email}</p>
+              </div>
+              <div className="admin-create-web-modal-body">
+                <label>
+                  Doména
+                  <input
+                    type="text"
+                    placeholder="example.cz"
+                    value={createWebDomain}
+                    onChange={e => setCreateWebDomain(e.target.value)}
+                    autoFocus
+                  />
+                </label>
+                <label>
+                  HestiaCP balíček
+                  <select
+                    value={createWebPackage}
+                    onChange={e => setCreateWebPackage(e.target.value)}
+                    disabled={loadingPackages}
+                  >
+                    {loadingPackages ? (
+                      <option>Načítám balíčky…</option>
+                    ) : (
+                      hestiaPackages.map(pkg => (
+                        <option key={pkg} value={pkg}>{pkg}</option>
+                      ))
+                    )}
+                  </select>
+                </label>
+              </div>
+              <div className="admin-create-web-modal-footer">
+                <button type="button" className="admin-create-web-cancel" onClick={closeCreateWebModal}>
+                  Zrušit
+                </button>
+                <button
+                  type="button"
+                  className="admin-create-web-submit"
+                  onClick={createWebForUser}
+                  disabled={creatingWeb || !createWebDomain.trim()}
+                >
+                  {creatingWeb ? 'Vytvářím…' : 'Vytvořit web'}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
       </div>
     </div>
   );

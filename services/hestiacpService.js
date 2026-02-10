@@ -25,20 +25,21 @@ class HestiaCP {
 
   /**
    * Volá HestiaCP API příkaz.
-   * access_key a secret_key jsou vždy v POST body (application/x-www-form-urlencoded),
-   * jak vyžaduje HestiaCP REST API - ZMĚNA OPROTI MINULYM HLAVIČKAM DOPIČE
+   * access_key a secret_key jsou vždy v POST body (application/x-www-form-urlencoded).
    *
    * @param {string} command - HestiaCP příkaz (např. 'v-add-user')
    * @param {Array} args - Argumenty příkazu
+   * @param {{ returnCode?: boolean }} options - returnCode: true (default) = body je return code (0/1/3...); false = body je výstup příkazu (např. JSON)
    * @returns {Promise<{success: boolean, data?: any, error?: string}>}
    */
-  async callAPI(command, args = []) {
+  async callAPI(command, args = [], options = {}) {
+    const { returnCode = true } = options;
+
     try {
-      // HestiaCP REST API vyžaduje access_key a secret_key v POST body, ne v hlavičkách jo ne v hlavičkach.
       const logger = require('../utils/logger');
       logger.debug(`[HestiaCP] Calling command: ${command}`, {
         argsCount: args.length,
-        authMethod: 'params'
+        returnCode
       });
 
       const formData = new URLSearchParams();
@@ -46,11 +47,12 @@ class HestiaCP {
         'Content-Type': 'application/x-www-form-urlencoded'
       };
 
-      // VŽDY POST body
       formData.append('access_key', this.accessKey);
       formData.append('secret_key', this.secretKey);
 
-      formData.append('returncode', 'yes');
+      if (returnCode) {
+        formData.append('returncode', 'yes');
+      }
       formData.append('cmd', command);
 
       // Přidej argumenty
@@ -83,29 +85,38 @@ class HestiaCP {
       const data = await response.text();
       const dataTrimmed = (data || '').trim();
 
-      // Při returncode=yes HestiaCP vrací v body číselný kód: 0 = OK, jinak chyba (např. 3 = user not found).
-      // HTTP status je vždy 200 i u chyb — rozhoduje obsah body, ne response.ok.
-      const isSuccess = dataTrimmed === '0';
-
       logger.debug(`[HestiaCP] Response received`, {
         command,
         status: response.status,
         responseLength: data.length,
-        returnCode: dataTrimmed,
-        isSuccess
+        returnCodeMode: returnCode,
+        bodyPreview: dataTrimmed.substring(0, 50)
       });
 
-      if (isSuccess) {
-        try {
-          const jsonData = JSON.parse(data);
-          return { success: true, data: jsonData };
-        } catch {
-          return { success: true, data };
+      if (returnCode) {
+        // Při returncode=yes: body je číselný kód (0 = OK, jinak chyba).
+        const isSuccess = dataTrimmed === '0';
+        if (isSuccess) {
+          try {
+            const jsonData = JSON.parse(data);
+            return { success: true, data: jsonData };
+          } catch {
+            return { success: true, data };
+          }
         }
+        return { success: false, error: dataTrimmed || data || 'Unknown error' };
       }
 
-      // Ne-nulový return code nebo text chyby
-      return { success: false, error: dataTrimmed || data || 'Unknown error' };
+      // Bez returncode: body je výstup příkazu (např. JSON u v-list-user-packages json).
+      try {
+        const jsonData = JSON.parse(dataTrimmed || '{}');
+        if (jsonData && typeof jsonData === 'object') {
+          return { success: true, data: jsonData };
+        }
+      } catch {
+        // ne-JSON výstup
+      }
+      return { success: false, error: dataTrimmed || 'Invalid or empty response' };
     } catch (error) {
       const logger = require('../utils/logger');
       logger.error('[HestiaCP] API call failed', {
@@ -156,6 +167,19 @@ class HestiaCP {
   async domainExists(username, domain) {
     const result = await this.callAPI('v-list-web-domain', [username, domain]);
     return result.success;
+  }
+
+  /**
+   * Vrátí seznam dostupných HestiaCP balíčků (pro výběr při vytváření účtu).
+   * @returns {Promise<{success: boolean, packages?: string[], error?: string}>}
+   */
+  async listPackages() {
+    const result = await this.callAPI('v-list-user-packages', ['json'], { returnCode: false });
+    if (!result.success || !result.data || typeof result.data !== 'object') {
+      return { success: false, error: result.error || 'Failed to list packages' };
+    }
+    const packageNames = Object.keys(result.data).filter(Boolean).sort();
+    return { success: true, packages: packageNames };
   }
 
   /**
