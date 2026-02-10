@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useLayoutEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
@@ -22,6 +22,7 @@ import { useAuth } from '../contexts/AuthContext';
 const Header: React.FC = () => {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [profileMenuPosition, setProfileMenuPosition] = useState({ top: 0, left: 0 });
+  const [profileMenuPositionReady, setProfileMenuPositionReady] = useState(false);
   const profileButtonRef = useRef<HTMLButtonElement>(null);
   const { t } = useLanguage();
   const { user, profile, signOut } = useAuth();
@@ -59,15 +60,38 @@ const Header: React.FC = () => {
     navigate('/login');
   };
 
-  // Calculate profile menu position when it opens
-  useEffect(() => {
-    if (isProfileOpen && profileButtonRef.current) {
-      const rect = profileButtonRef.current.getBoundingClientRect();
-      setProfileMenuPosition({
-        top: rect.bottom + 8,
-        left: rect.right - 200 // 200px is the min-width of the menu
-      });
+  // Calculate profile menu position before paint; recalc on open, resize, and scroll (fixed position follows button)
+  useLayoutEffect(() => {
+    if (!isProfileOpen) {
+      setProfileMenuPositionReady(false);
+      return;
     }
+
+    const updatePosition = () => {
+      if (!profileButtonRef.current) return;
+      const rect = profileButtonRef.current.getBoundingClientRect();
+      const menuWidth = 200;
+      const menuHeight = 280; // approximate height for vertical clamping
+      const viewportWidth = window.innerWidth || document.documentElement.clientWidth || 0;
+      const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0;
+      const padding = 16;
+      let left = rect.left;
+      if (left + menuWidth > viewportWidth - padding) left = viewportWidth - menuWidth - padding;
+      if (left < padding) left = padding;
+      let top = rect.bottom + 8;
+      if (top + menuHeight > viewportHeight - padding) top = viewportHeight - menuHeight - padding;
+      if (top < padding) top = padding;
+      setProfileMenuPosition({ top, left });
+      setProfileMenuPositionReady(true);
+    };
+
+    updatePosition();
+    window.addEventListener('resize', updatePosition);
+    window.addEventListener('scroll', updatePosition, { passive: true });
+    return () => {
+      window.removeEventListener('resize', updatePosition);
+      window.removeEventListener('scroll', updatePosition);
+    };
   }, [isProfileOpen]);
 
   return (
@@ -169,52 +193,64 @@ const Header: React.FC = () => {
       </nav>
     </header>
 
-    {/* Render profile menu in a portal */}
+    {/* Render profile menu in a portal only after position is set to avoid (0,0) flash */}
     {user && createPortal(
       <AnimatePresence>
-        {isProfileOpen && (
-          <motion.div
-            className="profile-menu"
-            style={{
-              top: `${profileMenuPosition.top}px`,
-              left: `${profileMenuPosition.left}px`
-            }}
-            initial={{ opacity: 0, y: -10, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -10, scale: 0.95 }}
-            transition={{ duration: 0.2 }}
-          >
-            <Link to="/dashboard" className="profile-menu-item" onClick={() => setIsProfileOpen(false)}>
-              <FontAwesomeIcon icon={faDashboard} />
-              Dashboard
-            </Link>
-            {profile?.is_admin && (
-              <Link to="/admin" className="profile-menu-item admin-link" onClick={() => setIsProfileOpen(false)}>
-                <FontAwesomeIcon icon={faUserShield} />
-                Administrace
-              </Link>
-            )}
-            <Link to="/services" className="profile-menu-item" onClick={() => setIsProfileOpen(false)}>
-              <FontAwesomeIcon icon={faServer} />
-              Moje služby
-            </Link>
-            <Link to="/tickets" className="profile-menu-item" onClick={() => setIsProfileOpen(false)}>
-              <FontAwesomeIcon icon={faTicket} />
-              Support tikety
-            </Link>
-            <Link to="/profile" className="profile-menu-item" onClick={() => setIsProfileOpen(false)}>
-              <FontAwesomeIcon icon={faCog} />
-              Nastavení
-            </Link>
-            <div className="menu-divider"></div>
-            <button
-              onClick={handleLogout}
-              className="profile-menu-item logout"
+        {isProfileOpen && profileMenuPositionReady && (
+          <>
+            {/* Backdrop to close menu on outside click */}
+            <motion.div
+              className="profile-backdrop"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsProfileOpen(false)}
+            />
+
+            {/* Floating profile menu */}
+            <motion.div
+              className="profile-menu"
+              style={{
+                top: `${profileMenuPosition.top}px`,
+                left: `${profileMenuPosition.left}px`
+              }}
+              initial={{ opacity: 0, y: -10, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -10, scale: 0.95 }}
+              transition={{ duration: 0.2 }}
             >
-              <FontAwesomeIcon icon={faSignOutAlt} />
-              Odhlásit se
-            </button>
-          </motion.div>
+              <Link to="/dashboard" className="profile-menu-item" onClick={() => setIsProfileOpen(false)}>
+                <FontAwesomeIcon icon={faDashboard} />
+                Dashboard
+              </Link>
+              {profile?.is_admin && (
+                <Link to="/admin" className="profile-menu-item admin-link" onClick={() => setIsProfileOpen(false)}>
+                  <FontAwesomeIcon icon={faUserShield} />
+                  Administrace
+                </Link>
+              )}
+              <Link to="/services" className="profile-menu-item" onClick={() => setIsProfileOpen(false)}>
+                <FontAwesomeIcon icon={faServer} />
+                Moje služby
+              </Link>
+              <Link to="/tickets" className="profile-menu-item" onClick={() => setIsProfileOpen(false)}>
+                <FontAwesomeIcon icon={faTicket} />
+                Support tikety
+              </Link>
+              <Link to="/profile" className="profile-menu-item" onClick={() => setIsProfileOpen(false)}>
+                <FontAwesomeIcon icon={faCog} />
+                Nastavení
+              </Link>
+              <div className="menu-divider"></div>
+              <button
+                onClick={handleLogout}
+                className="profile-menu-item logout"
+              >
+                <FontAwesomeIcon icon={faSignOutAlt} />
+                Odhlásit se
+              </button>
+            </motion.div>
+          </>
         )}
       </AnimatePresence>,
       document.body

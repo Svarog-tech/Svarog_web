@@ -12,7 +12,8 @@ import {
   faCrown,
   faCheckCircle,
   faTimesCircle,
-  faEdit
+  faEdit,
+  faServer
 } from '@fortawesome/free-solid-svg-icons';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -143,6 +144,43 @@ const AdminUsers: React.FC = () => {
     }
   };
 
+  const createWebForUser = async (target: User) => {
+    const domain = window.prompt(`Zadej doménu pro web uživatele ${target.email} (např. example.cz):`);
+    if (!domain) return;
+
+    const trimmedDomain = domain.trim();
+    if (!trimmedDomain) return;
+
+    try {
+      const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
+      const response = await fetch(`${API_URL}/admin/create-hosting-service`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthHeader()
+        },
+        body: JSON.stringify({
+          userId: target.id,
+          domain: trimmedDomain,
+          planId: 'admin_custom',
+          planName: 'Admin Webhosting',
+          price: 0
+        })
+      });
+
+      const result = await response.json();
+
+      if (response.ok && result.success) {
+        alert(`Webhosting pro ${target.email} byl vytvořen.\nHestiaCP uživatel: ${result.hestia?.username || 'neznámý'}`);
+      } else {
+        alert(`Služba byla částečně/nebyla vytvořena: ${result.error || result.warning || 'Neznámá chyba'}`);
+      }
+    } catch (error) {
+      console.error('Error creating hosting service for user:', error);
+      alert('Chyba při vytváření webu pro uživatele');
+    }
+  };
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('cs-CZ', {
       year: 'numeric',
@@ -167,7 +205,7 @@ const AdminUsers: React.FC = () => {
   return (
     <div className="admin-users-page">
       <div className="admin-users-container">
-        {/* Header */}
+        {/* Header + Back link */}
         <motion.div
           className="admin-users-header"
           initial={{ opacity: 0, y: 20 }}
@@ -184,6 +222,9 @@ const AdminUsers: React.FC = () => {
                 <p>Správa účtů a oprávnění uživatelů</p>
               </div>
             </div>
+            <button className="back-to-admin-btn" onClick={() => navigate('/admin')}>
+              ← Zpět na administraci
+            </button>
           </div>
         </motion.div>
 
@@ -361,30 +402,39 @@ const AdminUsers: React.FC = () => {
                         {u.last_login ? formatDate(u.last_login) : 'Nikdy'}
                       </td>
                       <td>
-                        {editingUser === u.id ? (
-                          <div className="edit-actions">
+                        <div className="user-actions">
+                          {editingUser === u.id ? (
+                            <div className="edit-actions">
+                              <button
+                                className="confirm-btn"
+                                onClick={() => toggleAdminRole(u.id, u.is_admin)}
+                              >
+                                <FontAwesomeIcon icon={faCheckCircle} />
+                              </button>
+                              <button
+                                className="cancel-btn"
+                                onClick={() => setEditingUser(null)}
+                              >
+                                <FontAwesomeIcon icon={faTimesCircle} />
+                              </button>
+                            </div>
+                          ) : (
                             <button
-                              className="confirm-btn"
-                              onClick={() => toggleAdminRole(u.id, u.is_admin)}
+                              className="action-btn edit"
+                              title="Změnit roli"
+                              onClick={() => setEditingUser(u.id)}
                             >
-                              <FontAwesomeIcon icon={faCheckCircle} />
+                              <FontAwesomeIcon icon={faEdit} />
                             </button>
-                            <button
-                              className="cancel-btn"
-                              onClick={() => setEditingUser(null)}
-                            >
-                              <FontAwesomeIcon icon={faTimesCircle} />
-                            </button>
-                          </div>
-                        ) : (
+                          )}
                           <button
-                            className="action-btn edit"
-                            title="Změnit roli"
-                            onClick={() => setEditingUser(u.id)}
+                            className="action-btn create-web"
+                            title="Vytvořit webhosting pro tohoto uživatele"
+                            onClick={() => createWebForUser(u)}
                           >
-                            <FontAwesomeIcon icon={faEdit} />
+                            <FontAwesomeIcon icon={faServer} />
                           </button>
-                        )}
+                        </div>
                       </td>
                     </motion.tr>
                   ))}

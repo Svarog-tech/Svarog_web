@@ -248,6 +248,17 @@ body {
   gap: 1rem;
 }
 
+/* Profile menu backdrop (for portal-based profile dropdown) - 9998 so it sits below .profile-menu (9999) and is clickable */
+.profile-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 9998;
+  background: transparent;
+}
+
 .login-button {
   background: transparent;
   color: var(--text-primary);

@@ -4,6 +4,26 @@
   padding-top: 100px;
 }
 
+.back-to-admin-btn {
+  border: none;
+  background: transparent;
+  color: #e5e7eb;
+  cursor: pointer;
+  font-size: 0.9rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  transition: background 0.2s ease, color 0.2s ease, transform 0.1s ease;
+}
+
+.back-to-admin-btn:hover {
+  background: rgba(15, 23, 42, 0.25);
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
 .admin-container {
   max-width: 1400px;
   margin: 0 auto;

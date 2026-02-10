@@ -10,7 +10,23 @@ import type {
 } from '../types/auth';
 
 // API Base URL
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
+// Chování:
+// - pokud je nastaveno REACT_APP_API_URL → použij ho (např. https://alatyrhosting.eu/api)
+// - jinak:
+//   - v dev prostředí na localhost:3000 voláme backend na http://localhost:3001/api
+//   - ve všech ostatních případech použijeme relativní /api (stejná doména)
+const resolveDefaultApiBaseUrl = (): string => {
+  if (typeof window !== 'undefined') {
+    const origin = window.location.origin;
+    if (origin.includes('localhost:3000')) {
+      return 'http://localhost:3001/api';
+    }
+    return '/api';
+  }
+  return '/api';
+};
+
+const API_BASE_URL = process.env.REACT_APP_API_URL || resolveDefaultApiBaseUrl();
 
 // Token storage keys
 const ACCESS_TOKEN_KEY = 'auth_access_token';
@@ -258,7 +274,16 @@ export const signIn = async (data: LoginData) => {
       }),
     });
 
-    const result = await response.json();
+    // Bezpečné parsování odpovědi – pokud není JSON (např. HTML 404), nespadne to na SyntaxError
+    let result: any = null;
+    const contentType = response.headers.get('content-type') || '';
+    if (contentType.includes('application/json')) {
+      result = await response.json();
+    } else {
+      const text = await response.text();
+      // Zkusíme text zabalit do objektu, aby volající dostal aspoň zprávu
+      result = { success: false, error: text || 'Neplatná odpověď serveru (neočekávaný obsah)' };
+    }
 
     if (result.success && result.accessToken && result.refreshToken) {
       // Ulož tokeny
@@ -352,7 +377,8 @@ export const resetPassword = async (email: string) => {
       return { success: false, error: 'Neplatná emailová adresa' };
     }
 
-    const response = await fetch(`${API_BASE_URL}/auth/request-password-reset`, {
+    // Backend endpoint: POST /api/auth/reset-password-request
+    const response = await fetch(`${API_BASE_URL}/auth/reset-password-request`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -428,7 +454,8 @@ export const getCurrentUser = async (): Promise<AppUser | null> => {
     }
 
     // Zkus refresh token pokud je access token neplatný
-    let response = await fetch(`${API_BASE_URL}/auth/me`, {
+    // Backend endpoint: GET /api/auth/user
+    let response = await fetch(`${API_BASE_URL}/auth/user`, {
       method: 'GET',
       headers: {
         ...getAuthHeader(),
@@ -443,7 +470,7 @@ export const getCurrentUser = async (): Promise<AppUser | null> => {
       }
 
       // Zkus znovu s novým tokenem
-      response = await fetch(`${API_BASE_URL}/auth/me`, {
+      response = await fetch(`${API_BASE_URL}/auth/user`, {
         method: 'GET',
         headers: {
           ...getAuthHeader(),
@@ -525,7 +552,8 @@ export const onAuthStateChange = (callback: (user: AppUser | null) => void) => {
 
 export const getUserProfile = async (userId: string): Promise<UserProfile | null> => {
   try {
-    const response = await fetch(`${API_BASE_URL}/auth/me`, {
+    // Backend endpoint: GET /api/auth/user
+    const response = await fetch(`${API_BASE_URL}/auth/user`, {
       method: 'GET',
       headers: {
         ...getAuthHeader(),
@@ -539,7 +567,7 @@ export const getUserProfile = async (userId: string): Promise<UserProfile | null
         return null;
       }
 
-      const retryResponse = await fetch(`${API_BASE_URL}/auth/me`, {
+      const retryResponse = await fetch(`${API_BASE_URL}/auth/user`, {
         method: 'GET',
         headers: {
           ...getAuthHeader(),
@@ -572,8 +600,8 @@ export const getUserProfile = async (userId: string): Promise<UserProfile | null
 export const updateProfile = async (userId: string, updates: Partial<UserProfile>) => {
   try {
     // TODO: Implementovat update profile API endpoint na backendu
-    // Prozatím použijeme existující /auth/me endpoint
-    const response = await fetch(`${API_BASE_URL}/auth/me`, {
+    // Zatím předpokládáme, že backend podporuje PUT /api/auth/user
+    const response = await fetch(`${API_BASE_URL}/auth/user`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',

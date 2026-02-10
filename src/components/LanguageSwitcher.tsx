@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useLayoutEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -24,14 +24,28 @@ const LanguageSwitcher: React.FC = () => {
     setIsOpen(false);
   };
 
-  // Calculate dropdown position when it opens
-  useEffect(() => {
-    if (isOpen && toggleRef.current) {
+  // Calculate dropdown position before paint; recalc on open and on window resize
+  useLayoutEffect(() => {
+    const updatePosition = () => {
+      if (!isOpen || !toggleRef.current) return;
       const rect = toggleRef.current.getBoundingClientRect();
-      setDropdownPosition({
-        top: rect.bottom + 8,
-        left: rect.right - 200 // 200px is the min-width of dropdown
-      });
+      const dropdownWidth = 200;
+      const viewportWidth = window.innerWidth || document.documentElement.clientWidth || 0;
+      const padding = 16;
+      let left = rect.left;
+      if (left + dropdownWidth > viewportWidth - padding) left = viewportWidth - dropdownWidth - padding;
+      if (left < padding) left = padding;
+      setDropdownPosition({ top: rect.bottom + 8, left });
+    };
+
+    updatePosition();
+    if (isOpen) {
+      window.addEventListener('resize', updatePosition);
+      window.addEventListener('scroll', updatePosition, { passive: true });
+      return () => {
+        window.removeEventListener('resize', updatePosition);
+        window.removeEventListener('scroll', updatePosition);
+      };
     }
   }, [isOpen]);
 

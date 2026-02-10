@@ -176,6 +176,21 @@
   overflow: hidden;
 }
 
+.user-actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.action-btn.create-web {
+  background: linear-gradient(135deg, #2563eb 0%, #06b6d4 100%);
+  color: #ffffff;
+}
+
+.action-btn.create-web:hover {
+  background: linear-gradient(135deg, #1d4ed8 0%, #0596c7 100%);
+}
+
 .users-table {
   width: 100%;
   border-collapse: collapse;

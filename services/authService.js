@@ -232,6 +232,8 @@ async function login(email, password) {
     );
 
     if (!user) {
+      // Detailní log pouze na serveru (frontend dostane obecnou hlášku)
+      console.warn('[Auth] Login failed: user not found', { email });
       return {
         success: false,
         error: 'Nesprávný email nebo heslo',
@@ -242,6 +244,8 @@ async function login(email, password) {
     const passwordValid = await bcrypt.compare(password, user.password_hash);
 
     if (!passwordValid) {
+      // Nevracíme hash ani heslo, jen info že nesouhlasí
+      console.warn('[Auth] Login failed: invalid password', { email, userId: user.id });
       return {
         success: false,
         error: 'Nesprávný email nebo heslo',

@@ -27,15 +27,15 @@ class HestiaCP {
    * Volá HestiaCP API příkaz
    * Podporuje 3 metody autentizace:
    * 1. Hash parametr (stará metoda): hash=ACCESS_KEY:SECRET_KEY
-   * 2. POST parametry: access_key_id + secret_access_key
-   * 3. Headers (doporučeno): x-access-key-id + x-secret-access-key
+   * 2. POST parametry: access_key + secret_key  ✅ (doporučeno podle HestiaCP docs)
+   * 3. Headers (pouze pokud máte vlastní proxy)
    * 
    * @param {string} command - HestiaCP příkaz (např. 'v-add-user')
    * @param {Array} args - Argumenty příkazu
-   * @param {string} authMethod - Metoda autentizace: 'hash', 'params', 'headers' (default: 'headers')
+   * @param {string} authMethod - Metoda autentizace: 'hash', 'params', 'headers' (default: 'params')
    * @returns {Promise<{success: boolean, data?: any, error?: string}>}
    */
-  async callAPI(command, args = [], authMethod = 'headers') {
+  async callAPI(command, args = [], authMethod = 'params') {
     try {
       // SECURITY: Nelogovat citlivé údaje (passwords, keys)
       // Logovat pouze command a počet argumentů, ne jejich obsah
@@ -50,15 +50,16 @@ class HestiaCP {
         'Content-Type': 'application/x-www-form-urlencoded'
       };
 
-      // Metoda 3: Headers (doporučeno) - nejbezpečnější
+      // Metoda 3: Headers – použijte jen pokud máte vlastní proxy před HestiaCP
       if (authMethod === 'headers') {
         headers['x-access-key-id'] = this.accessKey;
         headers['x-secret-access-key'] = this.secretKey;
       }
-      // Metoda 2: POST parametry
+      // Metoda 2: POST parametry – podle oficiální HestiaCP REST API dokumentace
       else if (authMethod === 'params') {
-        formData.append('access_key_id', this.accessKey);
-        formData.append('secret_access_key', this.secretKey);
+        // DŮLEŽITÉ: HestiaCP očekává konkrétně názvy "access_key" a "secret_key"
+        formData.append('access_key', this.accessKey);
+        formData.append('secret_key', this.secretKey);
       }
       // Metoda 1: Hash parametr (stará metoda, fallback)
       else {

@@ -8,6 +8,8 @@ const { AppError } = require('./errorHandler');
 
 /**
  * Middleware pro validaci výsledků
+ * BUG FIX: Používá next(error) místo throw error pro správné Express error handling
+ * Synchronní throw v middleware může způsobit unhandled exceptions, pokud není middleware wrapped v asyncHandler
  */
 const validate = (req, res, next) => {
   const errors = validationResult(req);
@@ -21,7 +23,9 @@ const validate = (req, res, next) => {
 
     const error = new AppError('Validation failed', 400);
     error.validationErrors = errorMessages;
-    throw error;
+    // BUG FIX: Použij next(error) místo throw error pro správné Express error handling
+    // next(error) zajistí, že error bude předán do error handler middleware
+    return next(error);
   }
   
   next();

@@ -3,6 +3,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const path = require('path');
+const net = require('net');
 const fetch = require('node-fetch');
 const ipRangeCheck = require('ip-range-check');
 require('dotenv').config();
@@ -50,6 +51,22 @@ if (missing.length > 0) {
   console.error('');
   console.error('💡 Vytvořte .env soubor s těmito proměnnými.');
   process.exit(1);
+}
+
+// SECURITY: V produkci zkontroluj HestiaCP konfiguraci a zaloguj varování pokud něco chybí
+if (process.env.NODE_ENV === 'production') {
+  const hestiaRequired = [
+    'HESTIACP_URL',
+    'HESTIACP_USERNAME',
+    'HESTIACP_ACCESS_KEY',
+    'HESTIACP_SECRET_KEY'
+  ];
+  const missingHestia = hestiaRequired.filter(v => !process.env[v]);
+  if (missingHestia.length > 0) {
+    logger.warn('HestiaCP integration is not fully configured (some env vars are missing). HestiaCP API features may be disabled.', {
+      missingHestia
+    });
+  }
 }
 
 const hestiacp = require('./services/hestiacpService');
@@ -123,11 +140,11 @@ app.use(cors({
   origin: function (origin, callback) {
     // SECURITY: V produkci nepovoluj requesty bez origin
     if (!origin) {
-      // V development módu povolujeme (pro testování)
-      if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV !== 'production') {
+      // Povolit bez origin pouze když je explicitně development (ne undefined, test, atd.)
+      if (process.env.NODE_ENV === 'development') {
         return callback(null, true);
       }
-      // V produkci zamítni
+      // V produkci i při NODE_ENV !== 'development' (včetně undefined) zamítni
       return callback(new Error('Origin required in production'));
     }
 
@@ -321,9 +338,16 @@ app.post('/api/gopay/create-payment',
       customerEmail = req.user.email.trim();
     }
     
-    // Pokud stále není email, použij prázdný string (GoPay API může vyžadovat email)
-    customerEmail = customerEmail || '';
-    
+    // BUG FIX: Neposílat platbu do GoPay s prázdným emailem – API může odmítnout nebo špatně zpracovat.
+    // Pokud po všech fallbackách nemáme platný email, vrátit 400 a vyžadovat ho od klienta.
+    if (!customerEmail || typeof customerEmail !== 'string' || !customerEmail.trim() || !customerEmail.includes('@')) {
+      return res.status(400).json({
+        success: false,
+        error: 'Valid customer email is required for payment. Please provide a valid email or ensure your profile has one.'
+      });
+    }
+    customerEmail = customerEmail.trim();
+
     // BUG FIX: customerName je nyní vždy neprázdný string (minimálně 'Customer'), takže split je bezpečný
     const nameParts = customerName.split(' ');
     const firstName = nameParts[0] || 'Customer';
@@ -412,46 +436,24 @@ app.post('/api/gopay/create-payment',
 /**
  * Wrapper middleware pro webhook validaci
  * BUG FIX: Zachytí validační chyby a vždy vrátí 200 OK (aby GoPay neopakoval webhook)
- * BUG FIX: express-validator 7.x validátory musí používat .run(req) metodu
+ * BUG FIX: express-validator 7.x řetězce voláme přes .run(req); položka validate v poli nemá .run(),
+ *          proto ji nepoužíváme – místo toho kontrolu výsledků děláme zde přes validationResult(req).
+ *          Webhook input JE validován: řetězce naplní req, validationResult() je přečte a při chybách throw.
  */
 const validateWebhookSafe = async (req, res, next) => {
   try {
-    // BUG FIX: express-validator 7.x validátory musí používat .run(req) metodu
-    // Spusť všechny validátory z validateWebhook
+    // Full validation coverage: run all chain validators (.run()); skip the final validate() in the array
+    // (it has no .run()) and replace it with validationResult() check below – same outcome, no double next().
     for (const validator of validateWebhook) {
-      // express-validator 7.x validátory mají .run(req) metodu
       if (typeof validator.run === 'function') {
         await validator.run(req);
-      } else {
-        // Pokud to není validátor s .run(), zkus jako middleware (fallback)
-        await new Promise((resolve, reject) => {
-          try {
-            const result = validator(req, res, (err) => {
-              if (err) {
-                reject(err);
-              } else {
-                resolve();
-              }
-            });
-            
-            // Pokud middleware vrací Promise
-            if (result && typeof result.catch === 'function') {
-              result.then(() => resolve()).catch(reject);
-            } else if (result === undefined) {
-              // Synchronní middleware dokončil
-              resolve();
-            }
-          } catch (syncError) {
-            reject(syncError);
-          }
-        });
       }
+      // Položky bez .run() (např. validate) přeskočíme – nevoláme je, abychom nezpůsobili dvojí next()
     }
-    
-    // Zkontroluj výsledky validace pomocí validationResult
+
+    // Položka validate v validateWebhook nemá .run(), proto ji nevoláme; výsledky kontrolujeme zde.
     const { validationResult } = require('express-validator');
     const errors = validationResult(req);
-    
     if (!errors.isEmpty()) {
       const errorMessages = errors.array().map(err => ({
         field: err.path || err.param,
@@ -492,8 +494,9 @@ const validateWebhookSafe = async (req, res, next) => {
  */
 app.post('/api/gopay/webhook', 
   validateWebhookSafe,
-  async (req, res) => {
-    try {
+  async (req, res, next) => {
+    const handleWebhook = async (req, res) => {
+      try {
     // SECURITY: IP whitelisting - povolit pouze GoPay IP adresy
     // BUG FIX: Safely extract IP address - check if req.connection exists before accessing properties
     // BUG FIX: Zkontroluj, zda výsledek není prázdný string (x-forwarded-for může být prázdný string)
@@ -540,10 +543,9 @@ app.post('/api/gopay/webhook',
         });
       }
       
-      // BUG FIX: Zkontroluj, zda clientIp je validní IP adresa před voláním ipRangeCheck
-      // ipRangeCheck může selhat nebo vrátit neočekávané výsledky s nevalidními hodnotami
-      const isValidIp = /^(\d{1,3}\.){3}\d{1,3}$/.test(clientIp) || 
-                       /^([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}$/.test(clientIp); // IPv4 nebo IPv6
+      // BUG FIX: Použít net.isIP() pro správnou validaci IPv4 i IPv6 (struktura, segmenty, ::).
+      // Původní regex /^[0-9a-fA-F:]+$/ byl příliš permisivní (::::::::, aaaaaaaa).
+      const isValidIp = net.isIP(clientIp) !== 0;
       
       if (!isValidIp) {
         logger.warn('GoPay webhook blocked - invalid IP address format', {
@@ -650,7 +652,7 @@ app.post('/api/gopay/webhook',
       const updateFields = [
         'payment_status = ?',
         'gopay_status = ?',
-        'transaction_id = ?'
+        'payment_id = ?'
       ];
       const updateValues = [paymentStatus, paymentState, paymentId];
 
@@ -710,8 +712,9 @@ app.post('/api/gopay/webhook',
             orderId: order.id
           });
 
-          // Vytvoř HestiaCP účet (asynchronně, aby webhook odpověděl rychle)
-          // POZNÁMKA: V produkci byste měli použít queue systém (např. Bull, RabbitMQ)
+          // Vytvoř HestiaCP účet (asynchronně, aby webhook odpověděl rychle).
+          // TODO: setImmediate nemá garanci dokončení při restartu – v produkci použít queue (Bull, RabbitMQ)
+          // a po 200 odpovědi job zpracovat; jinak může být účet nevytvořen a webhook už neopakuje.
           setImmediate(async () => {
             try {
               const userProfile = await db.queryOne(
@@ -720,21 +723,32 @@ app.post('/api/gopay/webhook',
               );
 
               if (userProfile) {
-                // BUG FIX: Zkontroluj, zda email není null nebo undefined před split
-                const userEmail = userProfile.email || order.billing_email;
-                // BUG FIX: Zkontroluj, zda order.user_id není null nebo undefined před substring
-                const userId = order.user_id || order.id || 'unknown';
-                const userIdStr = typeof userId === 'string' ? userId : userId.toString();
-                const username = userEmail && userEmail.includes('@') 
-                  ? userEmail.split('@')[0] 
-                  : `user${userIdStr.substring(0, 8)}`;
-                
-                const hestiaResult = await hestiacp.createHostingAccount({
-                  email: userEmail,
-                  domain: order.domain_name || `${order.id}.alatyr.cz`,
-                  package: order.plan_id,
-                  username: username
-                });
+                const userEmail = (userProfile.email && String(userProfile.email).trim()) || (order.billing_email && String(order.billing_email).trim()) || null;
+                // Fallback username: z emailu, jinak user_{user_id} nebo order_{order_id}. HestiaCP: 8–32 znaků.
+                const rawUsername = userEmail && userEmail.includes('@')
+                  ? userEmail.split('@')[0]
+                  : order.user_id
+                    ? `user${String(order.user_id).replace(/-/g, '').substring(0, 8)}`
+                    : `order${String(order.id).substring(0, 8)}`;
+                const username = rawUsername.length > 32 ? rawUsername.substring(0, 32) : rawUsername;
+
+                // HestiaCP vyžaduje platný email – bez něj nevolat API
+                if (!userEmail || !userEmail.includes('@')) {
+                  await db.execute(
+                    `UPDATE user_hosting_services SET hestia_error = ?, hestia_created = FALSE WHERE order_id = ?`,
+                    ['Missing or invalid email for HestiaCP account', order.id]
+                  );
+                  logger.warn('HestiaCP account skipped: missing/invalid email', {
+                    requestId: req.id,
+                    orderId: order.id
+                  });
+                } else {
+                  const hestiaResult = await hestiacp.createHostingAccount({
+                    email: userEmail,
+                    domain: order.domain_name || `${order.id}.alatyr.cz`,
+                    package: order.plan_id,
+                    username: username
+                  });
 
                 if (hestiaResult.success) {
                   // Aktualizuj hosting službu s HestiaCP údaji
@@ -780,6 +794,7 @@ app.post('/api/gopay/webhook',
                     error: hestiaResult.error
                   });
                 }
+                }
               }
             } catch (error) {
               logger.errorRequest(req, error, { context: 'webhook_hestiacp_creation' });
@@ -798,16 +813,24 @@ app.post('/api/gopay/webhook',
       success: true,
       message: 'Webhook processed'
     });
-  } catch (error) {
-    // BUG FIX: Catch všechny neočekávané chyby a vždy vraťme 200
-    // Chyby jsou zalogovány, ale webhook musí vrátit 200, aby GoPay neopakoval
-    logger.errorRequest(req, error, { context: 'webhook_unexpected_error' });
-    res.status(200).json({
-      success: false,
-      error: 'Webhook processing error (logged)'
-    });
-  }
-});
+      } catch (error) {
+        // BUG FIX: Catch všechny neočekávané chyby a vždy vraťme 200
+        logger.errorRequest(req, error, { context: 'webhook_unexpected_error' });
+        res.status(200).json({
+          success: false,
+          error: 'Webhook processing error (logged)'
+        });
+      }
+    };
+    try {
+      await handleWebhook(req, res);
+    } catch (err) {
+      logger.errorRequest(req, err, { context: 'webhook_handler_rejection' });
+      if (!res.headersSent) {
+        res.status(200).json({ success: false, error: 'Webhook processing error (logged)' });
+      }
+    }
+  });
 
 /**
  * Kontrola statusu platby
@@ -900,6 +923,93 @@ app.post('/api/hestiacp/create-account',
       domain: result.domain,
       cpanelUrl: result.cpanelUrl,
       package: result.package
+    });
+  })
+);
+
+/**
+ * HestiaCP - Vytvoření WEB DOMÉNY pro existujícího uživatele
+ * SECURITY: Vyžaduje admin práva
+ */
+app.post('/api/hestiacp/create-domain',
+  authenticateUser,
+  requireAdmin,
+  asyncHandler(async (req, res) => {
+    logger.request(req, 'Creating HestiaCP web domain (admin)', {
+      body: { username: req.body?.username, domain: req.body?.domain }
+    });
+
+    const { username, domain, ip } = req.body || {};
+
+    if (!username || typeof username !== 'string') {
+      throw new AppError('Username is required', 400);
+    }
+    if (!domain || typeof domain !== 'string') {
+      throw new AppError('Domain is required', 400);
+    }
+
+    const domainResult = await hestiacp.createWebDomain({ username, domain, ip });
+
+    if (!domainResult.success) {
+      logger.error('HestiaCP createWebDomain failed', {
+        requestId: req.id,
+        username,
+        domain,
+        error: domainResult.error
+      });
+      throw new AppError(domainResult.error || 'Failed to create web domain', 500);
+    }
+
+    res.json({
+      success: true,
+      domain: domainResult.domain,
+      ip: domainResult.ip,
+      message: domainResult.message
+    });
+  })
+);
+
+/**
+ * HestiaCP - Nastavení SSL (Let\'s Encrypt) pro doménu
+ * SECURITY: Vyžaduje admin práva
+ */
+app.post('/api/hestiacp/setup-ssl',
+  authenticateUser,
+  requireAdmin,
+  asyncHandler(async (req, res) => {
+    logger.request(req, 'Setting up HestiaCP SSL (admin)', {
+      body: { username: req.body?.username, domain: req.body?.domain }
+    });
+
+    const { username, domain } = req.body || {};
+
+    if (!username || typeof username !== 'string') {
+      throw new AppError('Username is required', 400);
+    }
+    if (!domain || typeof domain !== 'string') {
+      throw new AppError('Domain is required', 400);
+    }
+
+    const sslResult = await hestiacp.setupSSL({ username, domain });
+
+    if (!sslResult.success) {
+      // SSL může selhat kvůli DNS, takže vracíme 200, ale s warningem
+      logger.warn('HestiaCP SSL setup failed', {
+        requestId: req.id,
+        username,
+        domain,
+        error: sslResult.error
+      });
+      return res.status(200).json({
+        success: false,
+        warning: sslResult.warning || 'SSL setup failed (domain DNS may not be ready yet)',
+        error: sslResult.error
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'SSL configured successfully'
     });
   })
 );
@@ -1115,9 +1225,43 @@ app.post('/api/auth/logout',
 app.get('/api/auth/user',
   authenticateUser,
   asyncHandler(async (req, res) => {
+    // Načti plný profil uživatele z MySQL (users + profiles)
+    const fullUser = await db.queryOne(
+      `SELECT 
+         u.id,
+         u.email,
+         u.email_verified,
+         u.provider,
+         u.created_at,
+         u.updated_at,
+         p.first_name,
+         p.last_name,
+         p.is_admin,
+         p.avatar_url
+       FROM users u
+       LEFT JOIN profiles p ON p.id = u.id
+       WHERE u.id = ?`,
+      [req.user.id]
+    );
+
+    if (!fullUser) {
+      throw new AppError('User not found', 404);
+    }
+
+    // Response tvar přizpůsobený frontend typům UserProfile / AppUser
     res.json({
       success: true,
-      user: req.user
+      user: {
+        id: fullUser.id,
+        email: fullUser.email,
+        first_name: fullUser.first_name,
+        last_name: fullUser.last_name,
+        is_admin: !!fullUser.is_admin,
+        avatar_url: fullUser.avatar_url,
+        email_verified: !!fullUser.email_verified,
+        created_at: fullUser.created_at,
+        updated_at: fullUser.updated_at
+      }
     });
   })
 );
@@ -1200,9 +1344,14 @@ app.post('/api/tickets',
     const { subject, message, priority, category } = req.body;
     const userId = req.user.id;
 
-    // Validation
-    if (!subject || !message) {
-      throw new AppError('Subject and message are required', 400);
+    // Validation: must be strings with non-whitespace content (reject arrays, objects, whitespace-only)
+    if (typeof subject !== 'string' || typeof message !== 'string') {
+      throw new AppError('Subject and message must be strings', 400);
+    }
+    const subjectTrimmed = subject.trim();
+    const messageTrimmed = message.trim();
+    if (!subjectTrimmed || !messageTrimmed) {
+      throw new AppError('Subject and message are required and cannot be whitespace-only', 400);
     }
 
     // Validate priority
@@ -1221,8 +1370,8 @@ app.post('/api/tickets',
 
     const result = await db.execute(insertQuery, [
       userId,
-      subject,
-      message,
+      subjectTrimmed,
+      messageTrimmed,
       ticketPriority,
       ticketCategory
     ]);
@@ -1230,22 +1379,28 @@ app.post('/api/tickets',
     const ticketId = result.insertId;
 
     // Get user info for Discord notification
-    const userQuery = 'SELECT email, name FROM users WHERE id = ?';
+    // BUG FIX: users tabulka nemá sloupec \"name\" – jméno je v tabulce profiles (first_name, last_name)
+    const userQuery = 'SELECT email, first_name, last_name FROM profiles WHERE id = ?';
     const userResult = await db.queryOne(userQuery, [userId]);
 
     // Send Discord notification (non-blocking)
     if (userResult) {
+      const fullName = [userResult.first_name, userResult.last_name]
+        .filter(Boolean)
+        .join(' ')
+        .trim();
+
       discordService.sendTicketNotification({
         ticketId: ticketId,
-        name: userResult.name || 'Unknown',
+        name: fullName || userResult.email || 'Unknown',
         email: userResult.email || 'Unknown',
-        subject: subject,
-        message: message,
+        subject: subjectTrimmed,
+        message: messageTrimmed,
         priority: ticketPriority,
         category: ticketCategory
       }).catch(error => {
-        // Log error but don't fail the request
-        logger.error('Failed to send Discord notification:', error);
+        // Log error but don't fail the request (Winston expects message + structured meta)
+        logger.error('Failed to send Discord notification', { error: error?.message || String(error) });
       });
     }
 
@@ -1262,8 +1417,8 @@ app.post('/api/tickets',
       message: 'Ticket created successfully',
       ticket: {
         id: ticketId,
-        subject,
-        message,
+        subject: subjectTrimmed,
+        message: messageTrimmed,
         priority: ticketPriority,
         category: ticketCategory,
         status: 'open',
@@ -1357,6 +1512,852 @@ app.get('/api/tickets/:id',
     res.json({
       success: true,
       ticket
+    });
+  })
+);
+
+// ============================================
+// ADMIN & DASHBOARD API (Orders, Users, Hosting Services, Tickets)
+// ============================================
+
+/**
+ * Admin: get list of all users with basic stats
+ * GET /api/admin/users
+ */
+app.get('/api/admin/users',
+  authenticateUser,
+  requireAdmin,
+  asyncHandler(async (req, res) => {
+    const rows = await db.query(
+      `SELECT 
+         u.id,
+         u.email,
+         u.email_verified,
+         u.created_at,
+         u.last_login,
+         p.first_name,
+         p.last_name,
+         p.is_admin
+       FROM users u
+       LEFT JOIN profiles p ON p.id = u.id
+       ORDER BY u.created_at DESC`
+    );
+
+    const users = (rows || []).map(row => ({
+      id: row.id,
+      email: row.email,
+      first_name: row.first_name || '',
+      last_name: row.last_name || '',
+      is_admin: !!row.is_admin,
+      email_verified: !!row.email_verified,
+      created_at: row.created_at,
+      last_login: row.last_login
+    }));
+
+    res.json({
+      success: true,
+      users
+    });
+  })
+);
+
+/**
+ * Get profile for specific user
+ * GET /api/profile/:userId
+ * - user can load own profile
+ * - admin can load any profile
+ */
+app.get('/api/profile/:userId',
+  authenticateUser,
+  asyncHandler(async (req, res) => {
+    const targetUserId = req.params.userId;
+
+    if (req.user.id !== targetUserId) {
+      // Only admins can access other users' profiles
+      const adminProfile = await db.queryOne(
+        'SELECT is_admin FROM profiles WHERE id = ?',
+        [req.user.id]
+      );
+      if (!adminProfile || !adminProfile.is_admin) {
+        throw new AppError('Forbidden', 403);
+      }
+    }
+
+    const profile = await db.queryOne(
+      `SELECT 
+         p.id,
+         p.email,
+         p.first_name,
+         p.last_name,
+         p.is_admin,
+         p.avatar_url,
+         p.phone,
+         p.company,
+         p.created_at,
+         p.updated_at,
+         p.last_login,
+         u.email_verified
+       FROM profiles p
+       LEFT JOIN users u ON u.id = p.id
+       WHERE p.id = ?`,
+      [targetUserId]
+    );
+
+    if (!profile) {
+      throw new AppError('Profile not found', 404);
+    }
+
+    res.json({
+      success: true,
+      profile: {
+        id: profile.id,
+        email: profile.email,
+        first_name: profile.first_name,
+        last_name: profile.last_name,
+        is_admin: !!profile.is_admin,
+        avatar_url: profile.avatar_url,
+        phone: profile.phone,
+        company: profile.company,
+        created_at: profile.created_at,
+        updated_at: profile.updated_at,
+        last_login: profile.last_login,
+        email_verified: !!profile.email_verified
+      }
+    });
+  })
+);
+
+/**
+ * Admin: update user role / profile
+ * PUT /api/profile/:userId  { is_admin?: boolean }
+ */
+app.put('/api/profile/:userId',
+  authenticateUser,
+  requireAdmin,
+  asyncHandler(async (req, res) => {
+    const targetUserId = req.params.userId;
+    const { is_admin } = req.body;
+
+    if (typeof is_admin !== 'boolean') {
+      throw new AppError('is_admin must be boolean', 400);
+    }
+
+    await db.execute(
+      'UPDATE profiles SET is_admin = ?, updated_at = NOW() WHERE id = ?',
+      [is_admin ? 1 : 0, targetUserId]
+    );
+
+    const updated = await db.queryOne(
+      `SELECT 
+         p.id,
+         p.email,
+         p.first_name,
+         p.last_name,
+         p.is_admin,
+         p.avatar_url,
+         p.phone,
+         p.company,
+         p.created_at,
+         p.updated_at,
+         p.last_login,
+         u.email_verified
+       FROM profiles p
+       LEFT JOIN users u ON u.id = p.id
+       WHERE p.id = ?`,
+      [targetUserId]
+    );
+
+    res.json({
+      success: true,
+      profile: {
+        id: updated.id,
+        email: updated.email,
+        first_name: updated.first_name,
+        last_name: updated.last_name,
+        is_admin: !!updated.is_admin,
+        avatar_url: updated.avatar_url,
+        phone: updated.phone,
+        company: updated.company,
+        created_at: updated.created_at,
+        updated_at: updated.updated_at,
+        last_login: updated.last_login,
+        email_verified: !!updated.email_verified
+      }
+    });
+  })
+);
+
+/**
+ * User: update own profile
+ * PUT /api/profile
+ */
+app.put('/api/profile',
+  authenticateUser,
+  asyncHandler(async (req, res) => {
+    const { userId, firstName, lastName, phone, company, avatarUrl, newsletter } = req.body || {};
+    const targetUserId = userId || req.user.id;
+
+    if (targetUserId !== req.user.id) {
+      // Only admins may update other users; keep it simple for now (deny)
+      throw new AppError('Forbidden', 403);
+    }
+
+    const fields = [];
+    const values = [];
+
+    if (typeof firstName === 'string') {
+      fields.push('first_name = ?');
+      values.push(firstName);
+    }
+    if (typeof lastName === 'string') {
+      fields.push('last_name = ?');
+      values.push(lastName);
+    }
+    if (typeof phone === 'string') {
+      fields.push('phone = ?');
+      values.push(phone);
+    }
+    if (typeof company === 'string') {
+      fields.push('company = ?');
+      values.push(company);
+    }
+    if (typeof avatarUrl === 'string') {
+      fields.push('avatar_url = ?');
+      values.push(avatarUrl);
+    }
+    if (typeof newsletter === 'boolean') {
+      fields.push('newsletter_subscription = ?');
+      values.push(newsletter ? 1 : 0);
+    }
+
+    if (fields.length === 0) {
+      throw new AppError('No valid fields to update', 400);
+    }
+
+    fields.push('updated_at = NOW()');
+
+    const updateQuery = `
+      UPDATE profiles
+      SET ${fields.join(', ')}
+      WHERE id = ?
+    `;
+    values.push(targetUserId);
+
+    await db.execute(updateQuery, values);
+
+    const updated = await db.queryOne(
+      `SELECT 
+         p.id,
+         p.email,
+         p.first_name,
+         p.last_name,
+         p.is_admin,
+         p.avatar_url,
+         p.phone,
+         p.company,
+         p.created_at,
+         p.updated_at,
+         p.last_login,
+         u.email_verified
+       FROM profiles p
+       LEFT JOIN users u ON u.id = p.id
+       WHERE p.id = ?`,
+      [targetUserId]
+    );
+
+    res.json({
+      success: true,
+      profile: {
+        id: updated.id,
+        email: updated.email,
+        first_name: updated.first_name,
+        last_name: updated.last_name,
+        is_admin: !!updated.is_admin,
+        avatar_url: updated.avatar_url,
+        phone: updated.phone,
+        company: updated.company,
+        created_at: updated.created_at,
+        updated_at: updated.updated_at,
+        last_login: updated.last_login,
+        email_verified: !!updated.email_verified
+      }
+    });
+  })
+);
+
+/**
+ * Create generic order (admin / internal)
+ * POST /api/orders
+ */
+app.post('/api/orders',
+  authenticateUser,
+  asyncHandler(async (req, res) => {
+    const userId = req.user.id;
+    const {
+      plan_id,
+      plan_name,
+      price,
+      currency,
+      billing_email,
+      billing_name,
+      billing_company,
+      billing_address,
+      billing_phone,
+      customer_email,
+      customer_name,
+      status,
+      payment_status,
+      domain_name,
+      notes
+    } = req.body || {};
+
+    if (!plan_id || !plan_name || typeof price !== 'number') {
+      throw new AppError('plan_id, plan_name and price are required', 400);
+    }
+
+    const insertResult = await db.execute(
+      `INSERT INTO user_orders (
+         user_id, plan_id, plan_name, price, currency,
+         billing_email, billing_name, billing_company, billing_address, billing_phone,
+         customer_email, customer_name,
+         status, payment_status,
+         domain_name, notes
+       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        userId,
+        plan_id,
+        plan_name,
+        price,
+        currency || 'CZK',
+        billing_email || null,
+        billing_name || null,
+        billing_company || null,
+        billing_address || null,
+        billing_phone || null,
+        customer_email || billing_email || null,
+        customer_name || billing_name || null,
+        status || 'pending',
+        payment_status || 'unpaid',
+        domain_name || null,
+        notes || null
+      ]
+    );
+
+    const orderId = insertResult.insertId;
+
+    const order = await db.queryOne(
+      'SELECT * FROM user_orders WHERE id = ?',
+      [orderId]
+    );
+
+    res.status(201).json({
+      success: true,
+      order
+    });
+  })
+);
+
+/**
+ * Create hosting order (used by frontend)
+ * POST /api/orders/hosting
+ */
+app.post('/api/orders/hosting',
+  authenticateUser,
+  asyncHandler(async (req, res) => {
+    const userId = req.user.id;
+    const {
+      planId,
+      planName,
+      price,
+      currency,
+      billingEmail,
+      billingName,
+      billingCompany,
+      billingAddress,
+      billingPhone,
+      domainName
+    } = req.body || {};
+
+    if (!planId || !planName || typeof price !== 'number') {
+      throw new AppError('planId, planName and price are required', 400);
+    }
+
+    const insertResult = await db.execute(
+      `INSERT INTO user_orders (
+         user_id, plan_id, plan_name, price, currency,
+         billing_email, billing_name, billing_company, billing_address, billing_phone,
+         customer_email, customer_name,
+         status, payment_status,
+         domain_name
+       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', 'unpaid', ?)`,
+      [
+        userId,
+        planId,
+        planName,
+        price,
+        currency || 'CZK',
+        billingEmail || null,
+        billingName || null,
+        billingCompany || null,
+        billingAddress || null,
+        billingPhone || null,
+        billingEmail || null,
+        billingName || null,
+        domainName || null
+      ]
+    );
+
+    const orderId = insertResult.insertId;
+    const order = await db.queryOne(
+      'SELECT * FROM user_orders WHERE id = ?',
+      [orderId]
+    );
+
+    res.status(201).json({
+      success: true,
+      order
+    });
+  })
+);
+
+/**
+ * Admin: get all orders
+ * GET /api/orders
+ */
+app.get('/api/orders',
+  authenticateUser,
+  requireAdmin,
+  asyncHandler(async (req, res) => {
+    const orders = await db.query(
+      'SELECT * FROM user_orders ORDER BY created_at DESC'
+    );
+
+    res.json({
+      success: true,
+      orders: orders || []
+    });
+  })
+);
+
+/**
+ * Get orders for specific user
+ * GET /api/orders/user/:userId
+ */
+app.get('/api/orders/user/:userId',
+  authenticateUser,
+  asyncHandler(async (req, res) => {
+    const targetUserId = req.params.userId;
+
+    if (targetUserId !== req.user.id) {
+      // Only admins can read other users' orders
+      const adminProfile = await db.queryOne(
+        'SELECT is_admin FROM profiles WHERE id = ?',
+        [req.user.id]
+      );
+      if (!adminProfile || !adminProfile.is_admin) {
+        throw new AppError('Forbidden', 403);
+      }
+    }
+
+    const orders = await db.query(
+      'SELECT * FROM user_orders WHERE user_id = ? ORDER BY created_at DESC',
+      [targetUserId]
+    );
+
+    res.json({
+      success: true,
+      orders: orders || []
+    });
+  })
+);
+
+/**
+ * Get single order by ID (used by HestiaCP integration)
+ * GET /api/orders/:id
+ */
+app.get('/api/orders/:id',
+  authenticateUser,
+  asyncHandler(async (req, res) => {
+    const orderId = req.params.id;
+
+    const order = await db.queryOne(
+      `SELECT 
+         o.*,
+         p.email AS profile_email,
+         p.first_name,
+         p.last_name
+       FROM user_orders o
+       LEFT JOIN profiles p ON p.id = o.user_id
+       WHERE o.id = ?`,
+      [orderId]
+    );
+
+    if (!order) {
+      throw new AppError('Order not found', 404);
+    }
+
+    // Only owner or admin can see order
+    if (order.user_id !== req.user.id) {
+      const adminProfile = await db.queryOne(
+        'SELECT is_admin FROM profiles WHERE id = ?',
+        [req.user.id]
+      );
+      if (!adminProfile || !adminProfile.is_admin) {
+        throw new AppError('Forbidden', 403);
+      }
+    }
+
+    res.json({
+      success: true,
+      order: {
+        ...order,
+        profiles: {
+          email: order.profile_email,
+          first_name: order.first_name,
+          last_name: order.last_name
+        }
+      }
+    });
+  })
+);
+
+/**
+ * Get hosting services
+ * GET /api/hosting-services
+ * - admin: all services
+ * - user: own services
+ */
+app.get('/api/hosting-services',
+  authenticateUser,
+  asyncHandler(async (req, res) => {
+    const isAdminRow = await db.queryOne(
+      'SELECT is_admin FROM profiles WHERE id = ?',
+      [req.user.id]
+    );
+    const isAdmin = !!(isAdminRow && isAdminRow.is_admin);
+
+    let services;
+    if (isAdmin) {
+      services = await db.query(
+        'SELECT * FROM user_hosting_services ORDER BY created_at DESC'
+      );
+    } else {
+      services = await db.query(
+        'SELECT * FROM user_hosting_services WHERE user_id = ? ORDER BY created_at DESC',
+        [req.user.id]
+      );
+    }
+
+    res.json({
+      success: true,
+      services: services || []
+    });
+  })
+);
+
+/**
+ * Get active hosting services for current user
+ * GET /api/hosting-services/active
+ */
+app.get('/api/hosting-services/active',
+  authenticateUser,
+  asyncHandler(async (req, res) => {
+    const services = await db.query(
+      `SELECT * FROM user_hosting_services 
+       WHERE user_id = ? AND status = 'active'
+       ORDER BY created_at DESC`,
+      [req.user.id]
+    );
+
+    res.json({
+      success: true,
+      services: services || []
+    });
+  })
+);
+
+/**
+ * Get hosting service by ID
+ * GET /api/hosting-services/:id
+ */
+app.get('/api/hosting-services/:id',
+  authenticateUser,
+  asyncHandler(async (req, res) => {
+    const serviceId = req.params.id;
+
+    const service = await db.queryOne(
+      'SELECT * FROM user_hosting_services WHERE id = ?',
+      [serviceId]
+    );
+
+    if (!service) {
+      throw new AppError('Service not found', 404);
+    }
+
+    if (service.user_id !== req.user.id) {
+      const adminProfile = await db.queryOne(
+        'SELECT is_admin FROM profiles WHERE id = ?',
+        [req.user.id]
+      );
+      if (!adminProfile || !adminProfile.is_admin) {
+        throw new AppError('Forbidden', 403);
+      }
+    }
+
+    res.json({
+      success: true,
+      service
+    });
+  })
+);
+
+/**
+ * Admin: update hosting service
+ * PUT /api/hosting-services/:id
+ */
+app.put('/api/hosting-services/:id',
+  authenticateUser,
+  requireAdmin,
+  asyncHandler(async (req, res) => {
+    const serviceId = req.params.id;
+    const updates = req.body || {};
+
+    const allowedFields = [
+      'status',
+      'price',
+      'billing_period',
+      'disk_space',
+      'bandwidth',
+      'databases',
+      'email_accounts',
+      'domains',
+      'ftp_host',
+      'ftp_username',
+      'db_host',
+      'db_name',
+      'notes',
+      'hestia_username',
+      'hestia_domain',
+      'hestia_package',
+      'hestia_created',
+      'hestia_created_at',
+      'hestia_error',
+      'cpanel_url'
+    ];
+
+    const setParts = [];
+    const values = [];
+
+    for (const key of allowedFields) {
+      if (Object.prototype.hasOwnProperty.call(updates, key)) {
+        setParts.push(`${key} = ?`);
+        values.push(updates[key]);
+      }
+    }
+
+    if (setParts.length === 0) {
+      throw new AppError('No valid fields to update', 400);
+    }
+
+    const updateQuery = `
+      UPDATE user_hosting_services
+      SET ${setParts.join(', ')}, updated_at = NOW()
+      WHERE id = ?
+    `;
+    values.push(serviceId);
+
+    await db.execute(updateQuery, values);
+
+    const service = await db.queryOne(
+      'SELECT * FROM user_hosting_services WHERE id = ?',
+      [serviceId]
+    );
+
+    res.json({
+      success: true,
+      service
+    });
+  })
+);
+
+/**
+ * Admin: vytvořit novou hosting službu + HestiaCP účet bez nákupu/platby
+ * POST /api/admin/create-hosting-service
+ * body: { userId, domain, planId?, planName?, price? }
+ */
+app.post('/api/admin/create-hosting-service',
+  authenticateUser,
+  requireAdmin,
+  asyncHandler(async (req, res) => {
+    const { userId, domain, planId, planName, price } = req.body || {};
+
+    if (!userId || typeof userId !== 'string') {
+      throw new AppError('userId is required', 400);
+    }
+    if (!domain || typeof domain !== 'string') {
+      throw new AppError('domain is required', 400);
+    }
+
+    const userProfile = await db.queryOne(
+      'SELECT email, first_name, last_name FROM profiles WHERE id = ?',
+      [userId]
+    );
+
+    if (!userProfile) {
+      throw new AppError('Target user not found', 404);
+    }
+
+    const effectivePlanId = planId || 'admin_custom';
+    const effectivePlanName = planName || 'Admin Webhosting';
+    const effectivePrice = typeof price === 'number' && !Number.isNaN(price) ? price : 0;
+
+    // 1) vytvoř objednávku v user_orders (okamžitě aktivní a zaplacená)
+    const orderResult = await db.execute(
+      `INSERT INTO user_orders (
+         user_id, plan_id, plan_name, price, currency,
+         billing_email, billing_name,
+         customer_email, customer_name,
+         status, payment_status,
+         domain_name
+       ) VALUES (?, ?, ?, ?, 'CZK', ?, ?, ?, ?, 'active', 'paid', ?)`,
+      [
+        userId,
+        effectivePlanId,
+        effectivePlanName,
+        effectivePrice,
+        userProfile.email,
+        `${userProfile.first_name || ''} ${userProfile.last_name || ''}`.trim() || userProfile.email,
+        userProfile.email,
+        `${userProfile.first_name || ''} ${userProfile.last_name || ''}`.trim() || userProfile.email,
+        domain
+      ]
+    );
+
+    const orderId = orderResult.insertId;
+
+    // 2) vytvoř hosting službu navázanou na tuto objednávku
+    const serviceResult = await db.execute(
+      `INSERT INTO user_hosting_services (
+         user_id, order_id,
+         plan_name, plan_id,
+         status, price, billing_period,
+         activated_at, expires_at, next_billing_date
+       ) VALUES (
+         ?, ?, ?, ?, 'pending', ?, 'monthly',
+         NOW(), DATE_ADD(NOW(), INTERVAL 30 DAY), DATE_ADD(NOW(), INTERVAL 30 DAY)
+       )`,
+      [
+        userId,
+        orderId,
+        effectivePlanName,
+        effectivePlanId,
+        effectivePrice
+      ]
+    );
+
+    const serviceId = serviceResult.insertId;
+
+    // 3) vytvoř HestiaCP účet přes backend service
+    const hestiaResult = await hestiacp.createHostingAccount({
+      email: userProfile.email,
+      domain,
+      package: effectivePlanId
+    });
+
+    if (!hestiaResult.success) {
+      // Ulož chybu k službě, ale vrať 200 s warningem
+      await db.execute(
+        `UPDATE user_hosting_services 
+         SET hestia_created = FALSE,
+             hestia_error = ?
+         WHERE id = ?`,
+        [hestiaResult.error || 'Unknown HestiaCP error', serviceId]
+      );
+
+      return res.status(200).json({
+        success: false,
+        warning: 'Služba byla vytvořena, ale HestiaCP účet se nepodařilo založit',
+        hestiaError: hestiaResult.error
+      });
+    }
+
+    // 4) aktualizuj službu s HestiaCP údaji
+    await db.execute(
+      `UPDATE user_hosting_services 
+       SET hestia_username = ?,
+           hestia_domain = ?,
+           hestia_package = ?,
+           hestia_created = TRUE,
+           hestia_created_at = NOW(),
+           cpanel_url = ?,
+           status = 'active'
+       WHERE id = ?`,
+      [
+        hestiaResult.username,
+        hestiaResult.domain || domain,
+        hestiaResult.package || effectivePlanId,
+        hestiaResult.cpanelUrl || null,
+        serviceId
+      ]
+    );
+
+    const service = await db.queryOne(
+      'SELECT * FROM user_hosting_services WHERE id = ?',
+      [serviceId]
+    );
+
+    res.status(201).json({
+      success: true,
+      service,
+      orderId,
+      hestia: {
+        username: hestiaResult.username,
+        domain: hestiaResult.domain || domain,
+        cpanelUrl: hestiaResult.cpanelUrl,
+        package: hestiaResult.package || effectivePlanId
+      }
+    });
+  })
+);
+
+/**
+ * Admin: get all tickets with user info
+ * GET /api/admin/tickets
+ */
+app.get('/api/admin/tickets',
+  authenticateUser,
+  requireAdmin,
+  asyncHandler(async (req, res) => {
+    const tickets = await db.query(
+      `SELECT 
+         t.*,
+         p.email AS user_email,
+         p.first_name,
+         p.last_name
+       FROM support_tickets t
+       LEFT JOIN profiles p ON p.id = t.user_id
+       ORDER BY t.created_at DESC`
+    );
+
+    const formatted = (tickets || []).map(t => ({
+      id: t.id,
+      user_id: t.user_id,
+      subject: t.subject,
+      message: t.message,
+      status: t.status,
+      priority: t.priority,
+      category: t.category,
+      assigned_to: t.assigned_to,
+      last_reply_at: t.last_reply_at,
+      created_at: t.created_at,
+      user_email: t.user_email,
+      user_name: `${t.first_name || ''} ${t.last_name || ''}`.trim(),
+      assigned_name: undefined
+    }));
+
+    res.json({
+      success: true,
+      tickets: formatted
     });
   })
 );

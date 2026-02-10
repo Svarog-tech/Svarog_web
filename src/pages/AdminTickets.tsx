@@ -96,9 +96,9 @@ const AdminTickets: React.FC = () => {
     try {
       setLoading(true);
 
-      // Fetch all tickets with user info
+      // Fetch all tickets with user info (admin endpoint)
       const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
-      const response = await fetch(`${API_URL}/tickets`, {
+      const response = await fetch(`${API_URL}/admin/tickets`, {
         method: 'GET',
         headers: {
           ...getAuthHeader()
@@ -204,7 +204,7 @@ const AdminTickets: React.FC = () => {
   return (
     <div className="admin-tickets-page">
       <div className="admin-tickets-container">
-        {/* Header */}
+        {/* Header + Back link */}
         <motion.div
           className="admin-tickets-header"
           initial={{ opacity: 0, y: 20 }}
@@ -221,6 +221,9 @@ const AdminTickets: React.FC = () => {
                 <p>Správa podpory a zákaznických požadavků</p>
               </div>
             </div>
+            <button className="back-to-admin-btn" onClick={() => navigate('/admin')}>
+              ← Zpět na administraci
+            </button>
           </div>
         </motion.div>
 
