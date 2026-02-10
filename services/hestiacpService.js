@@ -107,9 +107,13 @@ class HestiaCP {
         return { success: false, error: dataTrimmed || data || 'Unknown error' };
       }
 
-      // Bez returncode: body je výstup příkazu (např. JSON u v-list-user-packages json).
+      // Bez returncode: body je výstup příkazu (např. JSON). Některé instalace vrací "0\n" + JSON.
+      let toParse = (dataTrimmed || '').trim();
+      if (toParse.startsWith('0\n') || toParse.startsWith('0\r\n')) {
+        toParse = toParse.replace(/^0[\r\n]+/, '').trim();
+      }
       try {
-        const jsonData = JSON.parse(dataTrimmed || '{}');
+        const jsonData = JSON.parse(toParse || '{}');
         if (jsonData && typeof jsonData === 'object') {
           return { success: true, data: jsonData };
         }
@@ -170,16 +174,67 @@ class HestiaCP {
   }
 
   /**
-   * Vrátí seznam dostupných HestiaCP balíčků (pro výběr při vytváření účtu).
+   * Vrátí seznam dostupných HestiaCP balíčků z API (příkaz v-list-user-packages).
+   * Volá API bez returncode, aby body obsahovalo JSON výstup; případně parsuje i "0" + JSON.
    * @returns {Promise<{success: boolean, packages?: string[], error?: string}>}
    */
   async listPackages() {
+    // Bez returncode=yes: API vrací výstup příkazu (JSON) v body
     const result = await this.callAPI('v-list-user-packages', ['json'], { returnCode: false });
-    if (!result.success || !result.data || typeof result.data !== 'object') {
-      return { success: false, error: result.error || 'Failed to list packages' };
+    if (result.success && result.data && typeof result.data === 'object') {
+      const packageNames = Object.keys(result.data).filter(Boolean).sort();
+      return { success: true, packages: packageNames };
     }
-    const packageNames = Object.keys(result.data).filter(Boolean).sort();
-    return { success: true, packages: packageNames };
+    // Fallback: tělo může být "0\n" + JSON (některé instalace)
+    const raw = await this._callAPIRaw('v-list-user-packages', ['json'], false);
+    if (raw.ok && raw.body) {
+      const trimmed = String(raw.body).trim();
+      const jsonStr = trimmed.startsWith('0\n') ? trimmed.slice(2).trim() : (trimmed === '0' ? '' : trimmed);
+      if (jsonStr) {
+        try {
+          const data = JSON.parse(jsonStr);
+          if (data && typeof data === 'object') {
+            const packageNames = Object.keys(data).filter(Boolean).sort();
+            return { success: true, packages: packageNames };
+          }
+        } catch {
+          // ignore
+        }
+      }
+    }
+    return { success: false, error: result.error || raw.error || 'Failed to list HestiaCP packages' };
+  }
+
+  /**
+   * Interní: volá API a vrací surovou odpověď { ok, body, error } (pro listPackages fallback).
+   */
+  async _callAPIRaw(command, args = [], useReturnCode = true) {
+    try {
+      const formData = new URLSearchParams();
+      formData.append('access_key', this.accessKey);
+      formData.append('secret_key', this.secretKey);
+      if (useReturnCode) formData.append('returncode', 'yes');
+      formData.append('cmd', command);
+      args.forEach((arg, i) => {
+        if (arg != null) formData.append(`arg${i + 1}`, String(arg));
+      });
+      const https = require('https');
+      const agent = new https.Agent({ rejectUnauthorized: process.env.NODE_ENV === 'production' });
+      let apiUrl = this.url;
+      if (!apiUrl.endsWith('/api/') && !apiUrl.endsWith('/api')) {
+        apiUrl = apiUrl.endsWith('/') ? `${apiUrl}api/` : `${apiUrl}/api/`;
+      }
+      const response = await require('node-fetch')(apiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: formData.toString(),
+        agent
+      });
+      const body = await response.text();
+      return { ok: response.ok, body, error: response.ok ? null : (body || 'Request failed') };
+    } catch (e) {
+      return { ok: false, body: null, error: e.message };
+    }
   }
 
   /**

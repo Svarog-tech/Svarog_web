@@ -1269,6 +1269,49 @@ app.get('/api/auth/user',
 );
 
 /**
+ * Aktualizace profilu přihlášeného uživatele (first_name, last_name, avatar_url)
+ * PUT /api/auth/user
+ * body: { first_name?, last_name?, avatar_url? }
+ */
+app.put('/api/auth/user',
+  authenticateUser,
+  asyncHandler(async (req, res) => {
+    const { first_name, last_name, avatar_url } = req.body || {};
+    const userId = req.user.id;
+
+    const fields = [];
+    const values = [];
+
+    if (typeof first_name === 'string') {
+      fields.push('first_name = ?');
+      values.push(first_name.trim());
+    }
+    if (typeof last_name === 'string') {
+      fields.push('last_name = ?');
+      values.push(last_name.trim());
+    }
+    if (typeof avatar_url === 'string') {
+      fields.push('avatar_url = ?');
+      values.push(avatar_url.trim());
+    }
+
+    if (fields.length === 0) {
+      throw new AppError('No valid fields to update', 400);
+    }
+
+    fields.push('updated_at = NOW()');
+    values.push(userId);
+
+    await db.execute(
+      `UPDATE profiles SET ${fields.join(', ')} WHERE id = ?`,
+      values
+    );
+
+    res.json({ success: true });
+  })
+);
+
+/**
  * Resetování hesla - žádost
  */
 app.post('/api/auth/reset-password-request',
@@ -1473,9 +1516,8 @@ app.get('/api/tickets',
 );
 
 /**
- * Get a specific ticket by ID
+ * Get a specific ticket by ID (vlastník nebo admin)
  * GET /api/tickets/:id
- * Protected route - requires authentication
  */
 app.get('/api/tickets/:id',
   authenticateUser,
@@ -1483,38 +1525,128 @@ app.get('/api/tickets/:id',
     const ticketId = req.params.id;
     const userId = req.user.id;
 
-    const query = `
-      SELECT
-        id,
-        subject,
-        message,
-        status,
-        priority,
-        category,
-        created_at,
-        updated_at,
-        last_reply_at,
-        resolved_at
-      FROM support_tickets
-      WHERE id = ? AND user_id = ?
-    `;
+    const ticket = await db.queryOne(
+      'SELECT id, user_id, subject, message, status, priority, category, assigned_to, created_at, updated_at, last_reply_at, resolved_at FROM support_tickets WHERE id = ?',
+      [ticketId]
+    );
+    if (!ticket) throw new AppError('Ticket not found', 404);
 
-    const ticket = await db.queryOne(query, [ticketId, userId]);
-
-    if (!ticket) {
-      throw new AppError('Ticket not found', 404);
+    const isOwner = ticket.user_id === userId;
+    if (!isOwner) {
+      const adminProfile = await db.queryOne('SELECT is_admin FROM profiles WHERE id = ?', [userId]);
+      if (!adminProfile || !adminProfile.is_admin) throw new AppError('Forbidden', 403);
     }
 
-    logger.info(`Retrieved ticket #${ticketId} for user ${userId}`, {
-      requestId: req.id,
-      ticketId,
-      userId
-    });
+    res.json({ success: true, ticket });
+  })
+);
 
-    res.json({
-      success: true,
-      ticket
-    });
+/**
+ * Update ticket (status, priority, assigned_to)
+ * PUT /api/tickets/:id
+ * body: { status?, priority?, assigned_to? }
+ */
+app.put('/api/tickets/:id',
+  authenticateUser,
+  asyncHandler(async (req, res) => {
+    const ticketId = req.params.id;
+    const { status, priority, assigned_to } = req.body || {};
+
+    const ticket = await db.queryOne('SELECT id, user_id FROM support_tickets WHERE id = ?', [ticketId]);
+    if (!ticket) throw new AppError('Ticket not found', 404);
+
+    const isOwner = ticket.user_id === req.user.id;
+    const adminProfile = await db.queryOne('SELECT is_admin FROM profiles WHERE id = ?', [req.user.id]);
+    const isAdmin = !!(adminProfile && adminProfile.is_admin);
+    if (!isOwner && !isAdmin) throw new AppError('Forbidden', 403);
+
+    const updates = [];
+    const values = [];
+    const validStatus = ['open', 'in_progress', 'waiting', 'resolved', 'closed'];
+    const validPriority = ['low', 'medium', 'high', 'urgent'];
+    if (status && validStatus.includes(status)) {
+      updates.push('status = ?');
+      values.push(status);
+    }
+    if (priority && validPriority.includes(priority)) {
+      updates.push('priority = ?');
+      values.push(priority);
+    }
+    if (assigned_to !== undefined) {
+      updates.push('assigned_to = ?');
+      values.push(assigned_to === null || assigned_to === '' ? null : assigned_to);
+    }
+    if (updates.length === 0) throw new AppError('No valid fields to update', 400);
+    values.push(ticketId);
+    await db.execute(
+      `UPDATE support_tickets SET ${updates.join(', ')}, updated_at = NOW() WHERE id = ?`,
+      values
+    );
+    const updated = await db.queryOne('SELECT * FROM support_tickets WHERE id = ?', [ticketId]);
+    res.json({ success: true, ticket: updated });
+  })
+);
+
+/**
+ * Get messages for a ticket
+ * GET /api/tickets/:id/messages
+ */
+app.get('/api/tickets/:id/messages',
+  authenticateUser,
+  asyncHandler(async (req, res) => {
+    const ticketId = req.params.id;
+
+    const ticket = await db.queryOne('SELECT id, user_id FROM support_tickets WHERE id = ?', [ticketId]);
+    if (!ticket) throw new AppError('Ticket not found', 404);
+
+    const isOwner = ticket.user_id === req.user.id;
+    const adminProfile = await db.queryOne('SELECT is_admin FROM profiles WHERE id = ?', [req.user.id]);
+    if (!isOwner && (!adminProfile || !adminProfile.is_admin)) throw new AppError('Forbidden', 403);
+
+    const messages = await db.query(
+      `SELECT id, ticket_id, user_id, message, is_admin_reply, created_at
+       FROM ticket_messages WHERE ticket_id = ? ORDER BY created_at ASC`,
+      [ticketId]
+    );
+    res.json({ success: true, messages: messages || [] });
+  })
+);
+
+/**
+ * Add message to ticket
+ * POST /api/tickets/:id/messages
+ * body: { message, is_admin_reply?, mentions? }
+ */
+app.post('/api/tickets/:id/messages',
+  authenticateUser,
+  asyncHandler(async (req, res) => {
+    const ticketId = req.params.id;
+    const { message, is_admin_reply } = req.body || {};
+
+    if (typeof message !== 'string' || !message.trim()) throw new AppError('Message is required', 400);
+
+    const ticket = await db.queryOne('SELECT id, user_id FROM support_tickets WHERE id = ?', [ticketId]);
+    if (!ticket) throw new AppError('Ticket not found', 404);
+
+    const isOwner = ticket.user_id === req.user.id;
+    const adminProfile = await db.queryOne('SELECT is_admin FROM profiles WHERE id = ?', [req.user.id]);
+    const isAdmin = !!(adminProfile && adminProfile.is_admin);
+    if (!isOwner && !isAdmin) throw new AppError('Forbidden', 403);
+
+    await db.execute(
+      'INSERT INTO ticket_messages (ticket_id, user_id, message, is_admin_reply) VALUES (?, ?, ?, ?)',
+      [ticketId, req.user.id, message.trim(), !!is_admin_reply]
+    );
+    await db.execute(
+      'UPDATE support_tickets SET last_reply_at = NOW(), updated_at = NOW() WHERE id = ?',
+      [ticketId]
+    );
+
+    const messages = await db.query(
+      'SELECT id, ticket_id, user_id, message, is_admin_reply, created_at FROM ticket_messages WHERE ticket_id = ? ORDER BY created_at ASC',
+      [ticketId]
+    );
+    res.json({ success: true, messages: messages || [] });
   })
 );
 
@@ -1923,21 +2055,32 @@ app.post('/api/orders/hosting',
 );
 
 /**
- * Admin: get all orders
+ * Get orders (admin: všechny, user: vlastní). Query: ?payment_id= pro vyhledání podle payment_id.
  * GET /api/orders
  */
 app.get('/api/orders',
   authenticateUser,
-  requireAdmin,
   asyncHandler(async (req, res) => {
-    const orders = await db.query(
-      'SELECT * FROM user_orders ORDER BY created_at DESC'
-    );
+    const { payment_id: paymentId } = req.query || {};
+    const adminProfile = await db.queryOne('SELECT is_admin FROM profiles WHERE id = ?', [req.user.id]);
+    const isAdmin = !!(adminProfile && adminProfile.is_admin);
 
-    res.json({
-      success: true,
-      orders: orders || []
-    });
+    let orders;
+    if (isAdmin) {
+      if (paymentId && typeof paymentId === 'string') {
+        orders = await db.query('SELECT * FROM user_orders WHERE payment_id = ? ORDER BY created_at DESC', [paymentId.trim()]);
+      } else {
+        orders = await db.query('SELECT * FROM user_orders ORDER BY created_at DESC');
+      }
+    } else {
+      if (paymentId && typeof paymentId === 'string') {
+        orders = await db.query('SELECT * FROM user_orders WHERE user_id = ? AND payment_id = ? ORDER BY created_at DESC', [req.user.id, paymentId.trim()]);
+      } else {
+        orders = await db.query('SELECT * FROM user_orders WHERE user_id = ? ORDER BY created_at DESC', [req.user.id]);
+      }
+    }
+
+    res.json({ success: true, orders: orders || [] });
   })
 );
 
@@ -2024,6 +2167,53 @@ app.get('/api/orders/:id',
 );
 
 /**
+ * Update order (status, payment_status)
+ * PUT /api/orders/:id
+ * body: { status?, payment_status? }
+ */
+app.put('/api/orders/:id',
+  authenticateUser,
+  asyncHandler(async (req, res) => {
+    const orderId = req.params.id;
+    const { status, payment_status, gopay_status } = req.body || {};
+
+    const order = await db.queryOne('SELECT id, user_id FROM user_orders WHERE id = ?', [orderId]);
+    if (!order) throw new AppError('Order not found', 404);
+
+    if (order.user_id !== req.user.id) {
+      const adminProfile = await db.queryOne('SELECT is_admin FROM profiles WHERE id = ?', [req.user.id]);
+      if (!adminProfile || !adminProfile.is_admin) throw new AppError('Forbidden', 403);
+    }
+
+    const updates = [];
+    const values = [];
+    const validStatus = ['pending', 'processing', 'active', 'cancelled', 'expired'];
+    const validPaymentStatus = ['unpaid', 'paid', 'refunded', 'failed'];
+    if (status && validStatus.includes(status)) {
+      updates.push('status = ?');
+      values.push(status);
+    }
+    if (payment_status !== undefined && validPaymentStatus.includes(payment_status)) {
+      updates.push('payment_status = ?');
+      values.push(payment_status);
+    }
+    if (gopay_status !== undefined && typeof gopay_status === 'string') {
+      updates.push('gopay_status = ?');
+      values.push(gopay_status.trim());
+    }
+    if (updates.length === 0) throw new AppError('No valid fields to update', 400);
+    values.push(orderId);
+    await db.execute(
+      `UPDATE user_orders SET ${updates.join(', ')}, updated_at = NOW() WHERE id = ?`,
+      values
+    );
+
+    const updated = await db.queryOne('SELECT * FROM user_orders WHERE id = ?', [orderId]);
+    res.json({ success: true, order: updated });
+  })
+);
+
+/**
  * Get hosting services
  * GET /api/hosting-services
  * - admin: all services
@@ -2041,7 +2231,13 @@ app.get('/api/hosting-services',
     let services;
     if (isAdmin) {
       services = await db.query(
-        'SELECT * FROM user_hosting_services ORDER BY created_at DESC'
+        `SELECT h.*,
+                p.email AS user_email,
+                p.first_name AS user_first_name,
+                p.last_name AS user_last_name
+         FROM user_hosting_services h
+         LEFT JOIN profiles p ON p.id = h.user_id
+         ORDER BY h.created_at DESC`
       );
     } else {
       services = await db.query(
@@ -2220,13 +2416,15 @@ app.post('/api/admin/create-hosting-service',
     }
 
     const userProfile = await db.queryOne(
-      'SELECT email, first_name, last_name FROM profiles WHERE id = ?',
+      'SELECT email, first_name, last_name, hestia_username FROM profiles WHERE id = ?',
       [userId]
     );
 
     if (!userProfile) {
       throw new AppError('Target user not found', 404);
     }
+
+    // Web se vytváří pro VYBRANÉHO uživatele (userId), ne pro admina. Použij jeho email a případně existující HestiaCP účet.
 
     const effectivePlanId = planId || 'admin_custom';
     const effectivePlanName = planName || 'Admin Webhosting';
@@ -2279,11 +2477,12 @@ app.post('/api/admin/create-hosting-service',
 
     const serviceId = serviceResult.insertId;
 
-    // 3) vytvoř HestiaCP účet přes backend service (balíček z HestiaCP = hestiaPkg)
+    // 3) Vytvoř v HestiaCP web pro tohoto uživatele: pokud už má hestia_username (z přihlášení), přidej jen doménu; jinak vytvoř nový HestiaCP účet + doménu
     const hestiaResult = await hestiacp.createHostingAccount({
       email: userProfile.email,
       domain,
-      package: hestiaPkg
+      package: hestiaPkg,
+      username: userProfile.hestia_username || undefined
     });
 
     if (!hestiaResult.success) {
@@ -2317,10 +2516,16 @@ app.post('/api/admin/create-hosting-service',
       [
         hestiaResult.username,
         hestiaResult.domain || domain,
-        hestiaResult.package || effectivePlanId,
+        hestiaResult.package || hestiaPkg,
         hestiaResult.cpanelUrl || null,
         serviceId
       ]
+    );
+
+    // 5) propoj profil vybraného uživatele s HestiaCP účtem (aby měl hestia_username pro přihlášení / Moje služby)
+    await db.execute(
+      'UPDATE profiles SET hestia_username = ?, hestia_created = TRUE, hestia_error = NULL WHERE id = ?',
+      [hestiaResult.username, userId]
     );
 
     const service = await db.queryOne(

@@ -791,6 +791,25 @@
   font-weight: 500;
 }
 
+.services-table-container {
+  margin-top: 2rem;
+}
+
+.services-table-container .table-header h2 .section-icon {
+  color: var(--primary-color);
+}
+
+.email-small {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin-top: 0.15rem;
+}
+
+.hestia-error-small {
+  font-size: 0.85rem;
+  color: #ef4444;
+}
+
 .loading-container {
   display: flex;
   flex-direction: column;

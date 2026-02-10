@@ -219,10 +219,12 @@ const Admin: React.FC = () => {
     let filtered = orders;
 
     if (searchTerm) {
+      const term = searchTerm.toLowerCase();
       filtered = filtered.filter(order =>
-        (order.customer_name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (order.customer_email || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-        order.plan_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (order.customer_name || '').toLowerCase().includes(term) ||
+        (order.customer_email || '').toLowerCase().includes(term) ||
+        (order.plan_name || '').toLowerCase().includes(term) ||
+        (order.domain_name || '').toLowerCase().includes(term) ||
         order.id.toString().includes(searchTerm)
       );
     }
@@ -292,6 +294,23 @@ const Admin: React.FC = () => {
         className="status-badge"
         style={{ background: `${statusInfo.color}20`, color: statusInfo.color }}
       >
+        <FontAwesomeIcon icon={statusInfo.icon} />
+        {statusInfo.label}
+      </span>
+    );
+  };
+
+  const getServiceStatusBadge = (status?: string) => {
+    const statusMap: Record<string, { color: string; icon: any; label: string }> = {
+      pending: { color: '#f59e0b', icon: faClock, label: 'Čeká' },
+      active: { color: '#10b981', icon: faCheckCircle, label: 'Aktivní' },
+      suspended: { color: '#ef4444', icon: faBan, label: 'Pozastaveno' },
+      expired: { color: '#6b7280', icon: faTimesCircle, label: 'Expirováno' },
+      cancelled: { color: '#6b7280', icon: faTimesCircle, label: 'Zrušeno' }
+    };
+    const statusInfo = statusMap[status || 'pending'] || statusMap.pending;
+    return (
+      <span className="status-badge" style={{ background: `${statusInfo.color}20`, color: statusInfo.color }}>
         <FontAwesomeIcon icon={statusInfo.icon} />
         {statusInfo.label}
       </span>
@@ -490,7 +509,7 @@ const Admin: React.FC = () => {
             <FontAwesomeIcon icon={faSearch} />
             <input
               type="text"
-              placeholder="Hledat podle jména, emailu, plánu..."
+              placeholder="Hledat podle jména, emailu, domény, plánu..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -548,6 +567,7 @@ const Admin: React.FC = () => {
                     <th>ID</th>
                     <th>Zákazník</th>
                     <th>Email</th>
+                    <th>Doména</th>
                     <th>Plán</th>
                     <th>Cena</th>
                     <th>Status</th>
@@ -567,7 +587,8 @@ const Admin: React.FC = () => {
                       <td>#{order.id}</td>
                       <td className="customer-name">{order.customer_name || order.billing_name || '-'}</td>
                       <td>{order.customer_email || order.billing_email || '-'}</td>
-                      <td className="plan-name">{order.plan_name}</td>
+                      <td className="domain-name">{order.domain_name || '-'}</td>
+                      <td className="plan-name">{order.plan_name || '-'}</td>
                       <td className="price">{formatPrice(order.price)}</td>
                       <td>{getStatusBadge(order.status || 'pending')}</td>
                       <td>
@@ -651,6 +672,110 @@ const Admin: React.FC = () => {
                       </td>
                     </motion.tr>
                   ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </motion.div>
+
+        {/* Přehled všech hostingových služeb (pro admina) */}
+        <motion.div
+          className="services-table-container"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.35 }}
+        >
+          <div className="table-header">
+            <h2>
+              <FontAwesomeIcon icon={faServer} className="section-icon" />
+              Služby uživatelů ({hostingServices.length})
+            </h2>
+          </div>
+
+          {hostingServices.length === 0 ? (
+            <div className="no-orders">
+              <FontAwesomeIcon icon={faServer} />
+              <p>Žádné hostingové služby</p>
+            </div>
+          ) : (
+            <div className="table-wrapper">
+              <table className="orders-table services-table">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Uživatel</th>
+                    <th>Doména</th>
+                    <th>Plán</th>
+                    <th>Cena</th>
+                    <th>Status</th>
+                    <th>HestiaCP</th>
+                    <th>Platnost do</th>
+                    <th>Akce</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {hostingServices.map((service) => {
+                    const svc = service as HostingService & { user_email?: string; user_first_name?: string; user_last_name?: string };
+                    const userName = [svc.user_first_name, svc.user_last_name].filter(Boolean).join(' ').trim() || svc.user_email || '-';
+                    return (
+                      <motion.tr
+                        key={service.id}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ duration: 0.3 }}
+                      >
+                        <td>#{service.id}</td>
+                        <td>
+                          <div className="customer-name">{userName}</div>
+                          {svc.user_email && <div className="email-small">{svc.user_email}</div>}
+                        </td>
+                        <td className="domain-name">{service.hestia_domain || '-'}</td>
+                        <td className="plan-name">{service.plan_name || '-'}</td>
+                        <td className="price">{formatPrice(service.price)}</td>
+                        <td>{getServiceStatusBadge(service.status)}</td>
+                        <td>
+                          {service.hestia_created && service.hestia_username ? (
+                            <div className="hestiacp-info-cell">
+                              <div className="hestiacp-badge-small">
+                                <FontAwesomeIcon icon={faCheckCircle} />
+                                <span>{service.hestia_username}</span>
+                              </div>
+                              {service.cpanel_url && (
+                                <a href={service.cpanel_url} target="_blank" rel="noopener noreferrer" className="hestiacp-link" title="Otevřít Control Panel">
+                                  <FontAwesomeIcon icon={faLink} />
+                                </a>
+                              )}
+                            </div>
+                          ) : service.hestia_error ? (
+                            <span className="hestia-error-small" title={service.hestia_error}>Chyba</span>
+                          ) : (
+                            <span className="no-hestia">-</span>
+                          )}
+                        </td>
+                        <td className="date">{service.expires_at ? formatDate(service.expires_at) : '-'}</td>
+                        <td>
+                          <div className="action-buttons">
+                            {service.hestia_username && (
+                              <>
+                                {service.status === 'active' ? (
+                                  <button className="action-btn suspend" title="Suspendovat HestiaCP účet" onClick={() => handleSuspendAccount(service)} disabled={loadingHestia}>
+                                    <FontAwesomeIcon icon={faBan} />
+                                  </button>
+                                ) : (
+                                  <button className="action-btn unsuspend" title="Obnovit HestiaCP účet" onClick={() => handleUnsuspendAccount(service)} disabled={loadingHestia}>
+                                    <FontAwesomeIcon icon={faCheck} />
+                                  </button>
+                                )}
+                                <button className="action-btn delete" title="Smazat HestiaCP účet" onClick={() => handleDeleteAccount(service)} disabled={loadingHestia}>
+                                  <FontAwesomeIcon icon={faTrashAlt} />
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        </td>
+                      </motion.tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
