@@ -2183,15 +2183,34 @@ app.put('/api/hosting-services/:id',
 );
 
 /**
+ * Admin: seznam HestiaCP balíčků (pro výběr při vytváření webu)
+ * GET /api/admin/hestiacp-packages
+ */
+app.get('/api/admin/hestiacp-packages',
+  authenticateUser,
+  requireAdmin,
+  asyncHandler(async (req, res) => {
+    const result = await hestiacp.listPackages();
+    if (!result.success) {
+      return res.status(502).json({
+        success: false,
+        error: result.error || 'HestiaCP packages unavailable'
+      });
+    }
+    res.json({ success: true, packages: result.packages || [] });
+  })
+);
+
+/**
  * Admin: vytvořit novou hosting službu + HestiaCP účet bez nákupu/platby
  * POST /api/admin/create-hosting-service
- * body: { userId, domain, planId?, planName?, price? }
+ * body: { userId, domain, planId?, planName?, price?, hestiaPackage? }
  */
 app.post('/api/admin/create-hosting-service',
   authenticateUser,
   requireAdmin,
   asyncHandler(async (req, res) => {
-    const { userId, domain, planId, planName, price } = req.body || {};
+    const { userId, domain, planId, planName, price, hestiaPackage } = req.body || {};
 
     if (!userId || typeof userId !== 'string') {
       throw new AppError('userId is required', 400);
@@ -2212,6 +2231,7 @@ app.post('/api/admin/create-hosting-service',
     const effectivePlanId = planId || 'admin_custom';
     const effectivePlanName = planName || 'Admin Webhosting';
     const effectivePrice = typeof price === 'number' && !Number.isNaN(price) ? price : 0;
+    const hestiaPkg = (typeof hestiaPackage === 'string' && hestiaPackage.trim()) ? hestiaPackage.trim() : (process.env.HESTIACP_DEFAULT_PACKAGE || 'default');
 
     // 1) vytvoř objednávku v user_orders (okamžitě aktivní a zaplacená)
     const orderResult = await db.execute(
@@ -2259,11 +2279,11 @@ app.post('/api/admin/create-hosting-service',
 
     const serviceId = serviceResult.insertId;
 
-    // 3) vytvoř HestiaCP účet přes backend service
+    // 3) vytvoř HestiaCP účet přes backend service (balíček z HestiaCP = hestiaPkg)
     const hestiaResult = await hestiacp.createHostingAccount({
       email: userProfile.email,
       domain,
-      package: effectivePlanId
+      package: hestiaPkg
     });
 
     if (!hestiaResult.success) {
