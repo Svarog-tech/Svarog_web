@@ -123,27 +123,27 @@ async function register(email, password, firstName, lastName) {
       });
 
       if (hestiaResult.success) {
-        // Šifruj heslo před uložením do databáze
-        const encryptedPassword = await bcrypt.hash(hestiaResult.password, 10);
+        const pkg = hestiaResult.package || process.env.HESTIACP_DEFAULT_PACKAGE || 'default';
 
-        // Ulož HestiaCP údaje do profilu
-        await db.execute(
-          `UPDATE profiles 
-           SET hestia_username = ?, 
-               hestia_password_encrypted = ?,
-               hestia_package = ?,
-               hestia_created = TRUE,
-               hestia_created_at = NOW()
-           WHERE id = ?`,
-          [
-            hestiaResult.username,
-            encryptedPassword,
-            hestiaResult.package || process.env.HESTIACP_DEFAULT_PACKAGE || 'default',
-            userId
-          ]
-        );
-
-        console.log(`[Auth] ✅ HestiaCP account created: ${hestiaResult.username}`);
+        if (hestiaResult.alreadyExists) {
+          await db.execute(
+            `UPDATE profiles 
+             SET hestia_username = ?, hestia_package = ?, hestia_created = TRUE
+             WHERE id = ?`,
+            [hestiaResult.username, pkg, userId]
+          );
+          console.log(`[Auth] ✅ HestiaCP account linked (already existed): ${hestiaResult.username}`);
+        } else {
+          const encryptedPassword = await bcrypt.hash(hestiaResult.password, 10);
+          await db.execute(
+            `UPDATE profiles 
+             SET hestia_username = ?, hestia_password_encrypted = ?, hestia_package = ?,
+                 hestia_created = TRUE, hestia_created_at = NOW()
+             WHERE id = ?`,
+            [hestiaResult.username, encryptedPassword, pkg, userId]
+          );
+          console.log(`[Auth] ✅ HestiaCP account created: ${hestiaResult.username}`);
+        }
       } else {
         // Pokud se nepodařilo vytvořit HestiaCP účet, ulož chybu
         console.error(`[Auth] ❌ Failed to create HestiaCP account: ${hestiaResult.error}`);
@@ -269,7 +269,8 @@ async function login(email, password) {
       [user.id]
     );
 
-    if (!profile.hestia_created && !profile.hestia_username) {
+    // Pokud HestiaCP účet ještě nebyl úspěšně vytvořen, zkusíme to znovu (asynchronně)
+    if (!profile.hestia_created) {
       // Vytvoř HestiaCP účet asynchronně (neblokuje přihlášení)
       createHestiaCPAccountAsync(user.id, user.email).catch(error => {
         console.error(`[Auth] Failed to create HestiaCP account for user ${user.id}:`, error);
@@ -694,6 +695,15 @@ async function changePassword(userId, oldPassword, newPassword) {
  */
 async function createHestiaCPAccountAsync(userId, email) {
   try {
+    // Vyčisti případný starý neplatný username před novým pokusem
+    await db.execute(
+      `UPDATE profiles 
+       SET hestia_username = NULL, 
+           hestia_error = NULL 
+       WHERE id = ? AND hestia_created = FALSE`,
+      [userId]
+    );
+
     console.log(`[Auth] Creating HestiaCP account for user: ${email}`);
     
     const hestiaResult = await hestiacp.createUser({
@@ -702,28 +712,36 @@ async function createHestiaCPAccountAsync(userId, email) {
     });
 
     if (hestiaResult.success) {
-      // Šifruj heslo před uložením do databáze
-      const encryptedPassword = await bcrypt.hash(hestiaResult.password, 10);
+      const pkg = hestiaResult.package || process.env.HESTIACP_DEFAULT_PACKAGE || 'default';
 
-      // Ulož HestiaCP údaje do profilu
-      await db.execute(
-        `UPDATE profiles 
-         SET hestia_username = ?, 
-             hestia_password_encrypted = ?,
-             hestia_package = ?,
-             hestia_created = TRUE,
-             hestia_created_at = NOW(),
-             hestia_error = NULL
-         WHERE id = ?`,
-        [
-          hestiaResult.username,
-          encryptedPassword,
-          hestiaResult.package || process.env.HESTIACP_DEFAULT_PACKAGE || 'default',
-          userId
-        ]
-      );
-
-      console.log(`[Auth] ✅ HestiaCP account created: ${hestiaResult.username}`);
+      if (hestiaResult.alreadyExists) {
+        // Účet v HestiaCP už existoval – ulož jen username a package, heslo neměníme
+        await db.execute(
+          `UPDATE profiles 
+           SET hestia_username = ?, 
+               hestia_package = ?,
+               hestia_created = TRUE,
+               hestia_error = NULL
+           WHERE id = ?`,
+          [hestiaResult.username, pkg, userId]
+        );
+        console.log(`[Auth] ✅ HestiaCP account linked (already existed): ${hestiaResult.username}`);
+      } else {
+        // Nový účet – ulož včetně šifrovaného hesla
+        const encryptedPassword = await bcrypt.hash(hestiaResult.password, 10);
+        await db.execute(
+          `UPDATE profiles 
+           SET hestia_username = ?, 
+               hestia_password_encrypted = ?,
+               hestia_package = ?,
+               hestia_created = TRUE,
+               hestia_created_at = NOW(),
+               hestia_error = NULL
+           WHERE id = ?`,
+          [hestiaResult.username, encryptedPassword, pkg, userId]
+        );
+        console.log(`[Auth] ✅ HestiaCP account created: ${hestiaResult.username}`);
+      }
     } else {
       console.error(`[Auth] ❌ Failed to create HestiaCP account: ${hestiaResult.error}`);
       await db.execute(

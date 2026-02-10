@@ -24,25 +24,21 @@ class HestiaCP {
   }
 
   /**
-   * Volá HestiaCP API příkaz
-   * Podporuje 3 metody autentizace:
-   * 1. Hash parametr (stará metoda): hash=ACCESS_KEY:SECRET_KEY
-   * 2. POST parametry: access_key + secret_key  ✅ (doporučeno podle HestiaCP docs)
-   * 3. Headers (pouze pokud máte vlastní proxy)
-   * 
+   * Volá HestiaCP API příkaz.
+   * access_key a secret_key jsou vždy v POST body (application/x-www-form-urlencoded),
+   * jak vyžaduje HestiaCP REST API - ZMĚNA OPROTI MINULYM HLAVIČKAM DOPIČE
+   *
    * @param {string} command - HestiaCP příkaz (např. 'v-add-user')
    * @param {Array} args - Argumenty příkazu
-   * @param {string} authMethod - Metoda autentizace: 'hash', 'params', 'headers' (default: 'params')
    * @returns {Promise<{success: boolean, data?: any, error?: string}>}
    */
-  async callAPI(command, args = [], authMethod = 'params') {
+  async callAPI(command, args = []) {
     try {
-      // SECURITY: Nelogovat citlivé údaje (passwords, keys)
-      // Logovat pouze command a počet argumentů, ne jejich obsah
+      // HestiaCP REST API vyžaduje access_key a secret_key v POST body, ne v hlavičkách jo ne v hlavičkach.
       const logger = require('../utils/logger');
       logger.debug(`[HestiaCP] Calling command: ${command}`, {
         argsCount: args.length,
-        authMethod
+        authMethod: 'params'
       });
 
       const formData = new URLSearchParams();
@@ -50,21 +46,9 @@ class HestiaCP {
         'Content-Type': 'application/x-www-form-urlencoded'
       };
 
-      // Metoda 3: Headers – použijte jen pokud máte vlastní proxy před HestiaCP
-      if (authMethod === 'headers') {
-        headers['x-access-key-id'] = this.accessKey;
-        headers['x-secret-access-key'] = this.secretKey;
-      }
-      // Metoda 2: POST parametry – podle oficiální HestiaCP REST API dokumentace
-      else if (authMethod === 'params') {
-        // DŮLEŽITÉ: HestiaCP očekává konkrétně názvy "access_key" a "secret_key"
-        formData.append('access_key', this.accessKey);
-        formData.append('secret_key', this.secretKey);
-      }
-      // Metoda 1: Hash parametr (stará metoda, fallback)
-      else {
-        formData.append('hash', this.getAuthHash());
-      }
+      // VŽDY POST body
+      formData.append('access_key', this.accessKey);
+      formData.append('secret_key', this.secretKey);
 
       formData.append('returncode', 'yes');
       formData.append('cmd', command);
@@ -97,27 +81,31 @@ class HestiaCP {
       });
 
       const data = await response.text();
-      // SECURITY: Nelogovat celou response, může obsahovat citlivé údaje
+      const dataTrimmed = (data || '').trim();
+
+      // Při returncode=yes HestiaCP vrací v body číselný kód: 0 = OK, jinak chyba (např. 3 = user not found).
+      // HTTP status je vždy 200 i u chyb — rozhoduje obsah body, ne response.ok.
+      const isSuccess = dataTrimmed === '0';
+
       logger.debug(`[HestiaCP] Response received`, {
         command,
         status: response.status,
         responseLength: data.length,
-        isSuccess: data === '0' || data === '' || response.ok
+        returnCode: dataTrimmed,
+        isSuccess
       });
 
-      // HestiaCP vrací 0 pro success, jinak error code nebo error message
-      // JSON odpověď může být také validní
-      if (data === '0' || data === '' || response.ok) {
-        // Zkus parsovat jako JSON pokud to vypadá jako JSON
+      if (isSuccess) {
         try {
           const jsonData = JSON.parse(data);
           return { success: true, data: jsonData };
         } catch {
           return { success: true, data };
         }
-      } else {
-        return { success: false, error: data };
       }
+
+      // Ne-nulový return code nebo text chyby
+      return { success: false, error: dataTrimmed || data || 'Unknown error' };
     } catch (error) {
       const logger = require('../utils/logger');
       logger.error('[HestiaCP] API call failed', {
@@ -188,12 +176,14 @@ class HestiaCP {
 
       console.log(`[HestiaCP] Creating user: ${user}`);
 
-      // Zkontroluj jestli uživatel už neexistuje
+      // Zkontroluj jestli uživatel už neexistuje – pak jen potvrdíme účet (pro propojení s profilem)
       if (await this.userExists(user)) {
-        console.log(`[HestiaCP] User ${user} already exists`);
+        console.log(`[HestiaCP] User ${user} already exists – linking to profile`);
         return {
-          success: false,
-          error: `User ${user} already exists`
+          success: true,
+          username: user,
+          alreadyExists: true,
+          package: packageName
         };
       }
 
