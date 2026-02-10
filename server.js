@@ -236,7 +236,9 @@ const requireAdmin = asyncHandler(async (req, res, next) => {
       [req.user.id]
     );
 
-    if (!profile || !profile.is_admin) {
+    // MySQL může vracet is_admin jako 0/1 (number) nebo string; považuj za admin když je truthy
+    const isAdmin = profile && (profile.is_admin === 1 || profile.is_admin === true || profile.is_admin === '1');
+    if (!isAdmin) {
       throw new AppError('Admin access required', 403);
     }
 
