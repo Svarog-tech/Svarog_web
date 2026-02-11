@@ -11,7 +11,9 @@ import {
   faSignOutAlt,
   faServer,
   faTicket,
-  faUserShield
+  faUserShield,
+  faBars,
+  faTimes
 } from '@fortawesome/free-solid-svg-icons';
 import LanguageSwitcher from './LanguageSwitcher';
 import CurrencySwitcher from './CurrencySwitcher';
@@ -139,9 +141,7 @@ const Header: React.FC = () => {
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               aria-label="Toggle menu"
             >
-              <span className="hamburger-line"></span>
-              <span className="hamburger-line"></span>
-              <span className="hamburger-line"></span>
+              <FontAwesomeIcon icon={isMobileMenuOpen ? faTimes : faBars} />
             </button>
 
             {/* Desktop menu */}

@@ -117,14 +117,14 @@ body {
   left: 0;
   right: 0;
   z-index: var(--z-fixed);
-  background: rgba(255, 255, 255, 0.95);
+  background: transparent;
   backdrop-filter: blur(20px);
-  box-shadow: var(--shadow-sm);
+  box-shadow: none;
   transition: all 0.3s ease;
 }
 
 .main-nav {
-  background: var(--surface);
+  background: transparent;
   padding: 0.75rem 0;
 }
 
@@ -163,13 +163,14 @@ body {
 /* Hamburger button - ensure it's visible on mobile */
 .hamburger {
   display: flex !important;
-  min-width: 56px;
-  min-height: 56px;
+  flex-direction: column !important;
 }
 
-.hamburger-line {
-  min-width: 32px;
-  min-height: 4px;
+.hamburger span {
+  display: block !important;
+  width: 40px !important;
+  height: 4px !important;
+  background: var(--text-primary) !important;
 }
 
 .nav-links {
