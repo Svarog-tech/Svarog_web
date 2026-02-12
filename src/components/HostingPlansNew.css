@@ -119,8 +119,8 @@
   border-radius: 16px;
   box-shadow: 0 30px 30px -25px rgba(38, 81, 217, 0.25);
   padding: 6px;
-  background-color: #fff;
-  color: #697e91;
+  background-color: var(--surface);
+  color: var(--text-secondary);
   max-width: 100%;
   width: 100%;
   height: 100%;
@@ -132,7 +132,7 @@
 
 .plan strong {
   font-weight: 600;
-  color: #425275;
+  color: var(--text-primary);
 }
 
 .plan .inner {
@@ -759,7 +759,7 @@
 }
 
 [data-theme="dark"] .plan .inner {
-  background: linear-gradient(135deg, rgba(38, 81, 217, 0.1) 0%, rgba(38, 168, 217, 0.1) 100%);
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.08) 0%, rgba(6, 182, 212, 0.08) 100%);
 }
 
 [data-theme="dark"] .popular-stamp {

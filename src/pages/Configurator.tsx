@@ -300,259 +300,269 @@ const Configurator: React.FC = () => {
             <div className="config-main">
               {/* Selected Plan */}
               <section className="config-section">
-                <h2 className="section-heading">
-                  <FontAwesomeIcon icon={faServer} />
-                  Vybraný hosting plán
-                </h2>
-                <div className="plan-display-card">
-                  <div className="plan-header">
-                    <div>
-                      <h3>{selectedPlan.name}</h3>
-                      <p>{selectedPlan.description}</p>
-                    </div>
-                    <div className="plan-price-badge">
-                      <span className="price-value">
-                        {formatPrice(billingPeriod === 'yearly' ? selectedPlan.yearlyPrice : selectedPlan.price)}
-                      </span>
-                      <span className="price-unit">/měsíc</span>
-                    </div>
-                  </div>
-                  <div className="plan-features-grid">
-                    {selectedPlan.features.slice(0, 6).map((feature, index) => (
-                      <div key={index} className="feature-tag">
-                        <FontAwesomeIcon icon={faCheck} />
-                        {feature}
+                <div className="config-section-inner">
+                  <h2 className="section-heading">
+                    <FontAwesomeIcon icon={faServer} />
+                    Vybraný hosting plán
+                  </h2>
+                  <div className="plan-display-card">
+                    <div className="plan-header">
+                      <div>
+                        <h3>{selectedPlan.name}</h3>
+                        <p>{selectedPlan.description}</p>
                       </div>
-                    ))}
+                      <div className="plan-price-badge">
+                        <span className="price-value">
+                          {formatPrice(billingPeriod === 'yearly' ? selectedPlan.yearlyPrice : selectedPlan.price)}
+                        </span>
+                        <span className="price-unit">/měsíc</span>
+                      </div>
+                    </div>
+                    <div className="plan-features-grid">
+                      {selectedPlan.features.slice(0, 6).map((feature, index) => (
+                        <div key={index} className="feature-tag">
+                          <FontAwesomeIcon icon={faCheck} />
+                          {feature}
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </section>
 
               {/* Billing Period */}
               <section className="config-section">
-                <h2 className="section-heading">
-                  <FontAwesomeIcon icon={faCalendar} />
-                  Fakturační období
-                </h2>
-                <div className="billing-cards">
-                  <motion.div
-                    className={`billing-card ${billingPeriod === 'monthly' ? 'selected' : ''}`}
-                    onClick={() => setBillingPeriod('monthly')}
-                    whileHover={{ y: -4 }}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    <div className="billing-icon">
-                      <FontAwesomeIcon icon={faClock} />
-                    </div>
-                    <h3>Měsíční platba</h3>
-                    <p className="billing-price">{formatPrice(selectedPlan.price)}/měsíc</p>
-                    <p className="billing-desc">Platba každý měsíc, kdykoliv zrušitelné</p>
-                  </motion.div>
+                <div className="config-section-inner">
+                  <h2 className="section-heading">
+                    <FontAwesomeIcon icon={faCalendar} />
+                    Fakturační období
+                  </h2>
+                  <div className="billing-cards">
+                    <motion.div
+                      className={`billing-card ${billingPeriod === 'monthly' ? 'selected' : ''}`}
+                      onClick={() => setBillingPeriod('monthly')}
+                      whileHover={{ y: -4 }}
+                      whileTap={{ scale: 0.98 }}
+                    >
+                      <div className="billing-icon">
+                        <FontAwesomeIcon icon={faClock} />
+                      </div>
+                      <h3>Měsíční platba</h3>
+                      <p className="billing-price">{formatPrice(selectedPlan.price)}/měsíc</p>
+                      <p className="billing-desc">Platba každý měsíc, kdykoliv zrušitelné</p>
+                    </motion.div>
 
-                  <motion.div
-                    className={`billing-card ${billingPeriod === 'yearly' ? 'selected' : ''}`}
-                    onClick={() => setBillingPeriod('yearly')}
-                    whileHover={{ y: -4 }}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    <div className="billing-icon">
-                      <FontAwesomeIcon icon={faCalendar} />
-                    </div>
-                    <div className="save-badge">Ušetříte 10%</div>
-                    <h3>Roční platba</h3>
-                    <p className="billing-price">{formatPrice(selectedPlan.yearlyPrice)}/měsíc</p>
-                    <p className="billing-desc">Fakturováno jednou ročně - {formatPrice(selectedPlan.yearlyPrice * 12)}/rok</p>
-                  </motion.div>
+                    <motion.div
+                      className={`billing-card ${billingPeriod === 'yearly' ? 'selected' : ''}`}
+                      onClick={() => setBillingPeriod('yearly')}
+                      whileHover={{ y: -4 }}
+                      whileTap={{ scale: 0.98 }}
+                    >
+                      <div className="billing-icon">
+                        <FontAwesomeIcon icon={faCalendar} />
+                      </div>
+                      <div className="save-badge">Ušetříte 10%</div>
+                      <h3>Roční platba</h3>
+                      <p className="billing-price">{formatPrice(selectedPlan.yearlyPrice)}/měsíc</p>
+                      <p className="billing-desc">Fakturováno jednou ročně - {formatPrice(selectedPlan.yearlyPrice * 12)}/rok</p>
+                    </motion.div>
+                  </div>
                 </div>
               </section>
 
               {/* Domain Selection */}
               <section className="config-section">
-                <h2 className="section-heading">
-                  <FontAwesomeIcon icon={faGlobe} />
-                  Doména
-                </h2>
-                <p className="section-description">
-                  Registraci domén zatím nenabízíme. Doménu si musíte zajistit u registrátora (např. Wedos, Forpsi, GoDaddy).
-                </p>
-                <div className="domain-selection">
-                  <label className={`domain-radio-card ${domainOption === 'existing' ? 'selected' : ''}`}>
-                    <input
-                      type="radio"
-                      name="domain"
-                      value="existing"
-                      checked={domainOption === 'existing'}
-                      onChange={(e) => setDomainOption(e.target.value as any)}
-                    />
-                    <div className="radio-content">
-                      <div className="radio-icon">
-                        <FontAwesomeIcon icon={faGlobe} />
+                <div className="config-section-inner">
+                  <h2 className="section-heading">
+                    <FontAwesomeIcon icon={faGlobe} />
+                    Doména
+                  </h2>
+                  <p className="section-description">
+                    Registraci domén zatím nenabízíme. Doménu si musíte zajistit u registrátora (např. Wedos, Forpsi, GoDaddy).
+                  </p>
+                  <div className="domain-selection">
+                    <label className={`domain-radio-card ${domainOption === 'existing' ? 'selected' : ''}`}>
+                      <input
+                        type="radio"
+                        name="domain"
+                        value="existing"
+                        checked={domainOption === 'existing'}
+                        onChange={(e) => setDomainOption(e.target.value as any)}
+                      />
+                      <div className="radio-content">
+                        <div className="radio-icon">
+                          <FontAwesomeIcon icon={faGlobe} />
+                        </div>
+                        <div>
+                          <h4>Mám vlastní doménu</h4>
+                          <p>Mám již registrovanou doménu u registrátora a chci ji použít</p>
+                        </div>
                       </div>
-                      <div>
-                        <h4>Mám vlastní doménu</h4>
-                        <p>Mám již registrovanou doménu u registrátora a chci ji použít</p>
-                      </div>
-                    </div>
-                  </label>
+                    </label>
 
-                  <label className={`domain-radio-card ${domainOption === 'none' ? 'selected' : ''}`}>
-                    <input
-                      type="radio"
-                      name="domain"
-                      value="none"
-                      checked={domainOption === 'none'}
-                      onChange={(e) => setDomainOption(e.target.value as any)}
-                    />
-                    <div className="radio-content">
-                      <div className="radio-icon">
-                        <FontAwesomeIcon icon={faGlobe} />
+                    <label className={`domain-radio-card ${domainOption === 'none' ? 'selected' : ''}`}>
+                      <input
+                        type="radio"
+                        name="domain"
+                        value="none"
+                        checked={domainOption === 'none'}
+                        onChange={(e) => setDomainOption(e.target.value as any)}
+                      />
+                      <div className="radio-content">
+                        <div className="radio-icon">
+                          <FontAwesomeIcon icon={faGlobe} />
+                        </div>
+                        <div>
+                          <h4>Zatím bez domény</h4>
+                          <p>Doménu si zajistím později, nyní chci jen hosting</p>
+                        </div>
                       </div>
-                      <div>
-                        <h4>Zatím bez domény</h4>
-                        <p>Doménu si zajistím později, nyní chci jen hosting</p>
-                      </div>
-                    </div>
-                  </label>
+                    </label>
+                  </div>
+
+                  {domainOption === 'existing' && (
+                    <motion.div
+                      className="domain-input-section"
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                    >
+                      <input
+                        type="text"
+                        placeholder="např. mojeweb.cz"
+                        value={domainName}
+                        onChange={(e) => setDomainName(e.target.value)}
+                        className="domain-input-field"
+                      />
+                      <p className="domain-help-text">
+                        Po objednání vám pošleme instrukce, jak nasměrovat doménu na náš hosting.
+                      </p>
+                    </motion.div>
+                  )}
                 </div>
-
-                {domainOption === 'existing' && (
-                  <motion.div
-                    className="domain-input-section"
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto' }}
-                    exit={{ opacity: 0, height: 0 }}
-                  >
-                    <input
-                      type="text"
-                      placeholder="např. mojeweb.cz"
-                      value={domainName}
-                      onChange={(e) => setDomainName(e.target.value)}
-                      className="domain-input-field"
-                    />
-                    <p className="domain-help-text">
-                      Po objednání vám pošleme instrukce, jak nasměrovat doménu na náš hosting.
-                    </p>
-                  </motion.div>
-                )}
               </section>
 
               {/* Addons */}
               <section className="config-section">
-                <h2 className="section-heading">
-                  <FontAwesomeIcon icon={faPlus} />
-                  Doplňky a rozšíření
-                </h2>
-                <p className="section-description">Přizpůsobte si hosting přesně podle vašich potřeb</p>
-                <div className="addons-list">
-                  {addons.map((addon) => (
-                    <div key={addon.id} className="addon-item">
-                      <div className="addon-icon-wrapper">
-                        <FontAwesomeIcon icon={addon.icon} />
+                <div className="config-section-inner">
+                  <h2 className="section-heading">
+                    <FontAwesomeIcon icon={faPlus} />
+                    Doplňky a rozšíření
+                  </h2>
+                  <p className="section-description">Přizpůsobte si hosting přesně podle vašich potřeb</p>
+                  <div className="addons-list">
+                    {addons.map((addon) => (
+                      <div key={addon.id} className="addon-item">
+                        <div className="addon-icon-wrapper">
+                          <FontAwesomeIcon icon={addon.icon} />
+                        </div>
+                        <div className="addon-details">
+                          <h4>{addon.name}</h4>
+                          <p>{addon.description}</p>
+                          <span className="addon-price-tag">
+                            +{formatPrice(addon.price)}/{billingPeriod === 'yearly' ? 'měsíc' : 'měsíc'}
+                          </span>
+                        </div>
+                        <div className="addon-quantity-controls">
+                          <button
+                            className="qty-btn"
+                            onClick={() => updateAddonQuantity(addon.id, -1)}
+                            disabled={addon.quantity === 0}
+                          >
+                            <FontAwesomeIcon icon={faMinus} />
+                          </button>
+                          <span className="qty-display">{addon.quantity}</span>
+                          <button
+                            className="qty-btn"
+                            onClick={() => updateAddonQuantity(addon.id, 1)}
+                            disabled={addon.quantity >= (addon.max || Infinity)}
+                          >
+                            <FontAwesomeIcon icon={faPlus} />
+                          </button>
+                        </div>
                       </div>
-                      <div className="addon-details">
-                        <h4>{addon.name}</h4>
-                        <p>{addon.description}</p>
-                        <span className="addon-price-tag">
-                          +{formatPrice(addon.price)}/{billingPeriod === 'yearly' ? 'měsíc' : 'měsíc'}
-                        </span>
-                      </div>
-                      <div className="addon-quantity-controls">
-                        <button
-                          className="qty-btn"
-                          onClick={() => updateAddonQuantity(addon.id, -1)}
-                          disabled={addon.quantity === 0}
-                        >
-                          <FontAwesomeIcon icon={faMinus} />
-                        </button>
-                        <span className="qty-display">{addon.quantity}</span>
-                        <button
-                          className="qty-btn"
-                          onClick={() => updateAddonQuantity(addon.id, 1)}
-                          disabled={addon.quantity >= (addon.max || Infinity)}
-                        >
-                          <FontAwesomeIcon icon={faPlus} />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
               </section>
 
               {/* Contact Form */}
               <section className="config-section">
-                <h2 className="section-heading">
-                  <FontAwesomeIcon icon={faShoppingCart} />
-                  Kontaktní údaje
-                </h2>
+                <div className="config-section-inner">
+                  <h2 className="section-heading">
+                    <FontAwesomeIcon icon={faShoppingCart} />
+                    Kontaktní údaje
+                  </h2>
 
-                {!user ? (
-                  <div className="login-prompt">
-                    <div className="login-prompt-icon">
-                      <FontAwesomeIcon icon={faUser} />
+                  {!user ? (
+                    <div className="login-prompt">
+                      <div className="login-prompt-icon">
+                        <FontAwesomeIcon icon={faUser} />
+                      </div>
+                      <h3>Přihlaste se pro rychlejší objednávku</h3>
+                      <p>Po přihlášení se vaše údaje automaticky předvyplní.</p>
+                      <button
+                        className="login-prompt-btn"
+                        onClick={() => navigate('/login', { state: { returnUrl: '/configurator', plan: selectedPlan } })}
+                      >
+                        <FontAwesomeIcon icon={faSignInAlt} />
+                        Přihlásit se
+                      </button>
+                      <p className="login-prompt-divider">nebo vyplňte údaje ručně</p>
                     </div>
-                    <h3>Přihlaste se pro rychlejší objednávku</h3>
-                    <p>Po přihlášení se vaše údaje automaticky předvyplní.</p>
-                    <button
-                      className="login-prompt-btn"
-                      onClick={() => navigate('/login', { state: { returnUrl: '/configurator', plan: selectedPlan } })}
-                    >
-                      <FontAwesomeIcon icon={faSignInAlt} />
-                      Přihlásit se
-                    </button>
-                    <p className="login-prompt-divider">nebo vyplňte údaje ručně</p>
-                  </div>
-                ) : (
-                  <div className="logged-in-info">
-                    <div className="user-badge">
-                      <FontAwesomeIcon icon={faUser} />
-                      <span>Přihlášen jako: <strong>{user.email}</strong></span>
+                  ) : (
+                    <div className="logged-in-info">
+                      <div className="user-badge">
+                        <FontAwesomeIcon icon={faUser} />
+                        <span>Přihlášen jako: <strong>{user.email}</strong></span>
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
 
-                <form onSubmit={handleSubmit} className="config-form">
-                  <div className="form-grid">
-                    <div className="form-field">
-                      <label>Jméno a příjmení *</label>
-                      <input
-                        type="text"
-                        value={formData.customerName}
-                        onChange={(e) => setFormData({ ...formData, customerName: e.target.value })}
-                        required
-                        placeholder="Jan Novák"
-                      />
+                  <form onSubmit={handleSubmit} className="config-form">
+                    <div className="form-grid">
+                      <div className="form-field">
+                        <label>Jméno a příjmení *</label>
+                        <input
+                          type="text"
+                          value={formData.customerName}
+                          onChange={(e) => setFormData({ ...formData, customerName: e.target.value })}
+                          required
+                          placeholder="Jan Novák"
+                        />
+                      </div>
+                      <div className="form-field">
+                        <label>Email *</label>
+                        <input
+                          type="email"
+                          value={formData.customerEmail}
+                          onChange={(e) => setFormData({ ...formData, customerEmail: e.target.value })}
+                          required
+                          placeholder="jan@email.cz"
+                          disabled={!!user}
+                        />
+                      </div>
+                      <div className="form-field">
+                        <label>Telefon</label>
+                        <input
+                          type="tel"
+                          value={formData.customerPhone}
+                          onChange={(e) => setFormData({ ...formData, customerPhone: e.target.value })}
+                          placeholder="+420 123 456 789"
+                        />
+                      </div>
+                      <div className="form-field">
+                        <label>Adresa</label>
+                        <input
+                          type="text"
+                          value={formData.customerAddress}
+                          onChange={(e) => setFormData({ ...formData, customerAddress: e.target.value })}
+                          placeholder="Ulice 123, Praha"
+                        />
+                      </div>
                     </div>
-                    <div className="form-field">
-                      <label>Email *</label>
-                      <input
-                        type="email"
-                        value={formData.customerEmail}
-                        onChange={(e) => setFormData({ ...formData, customerEmail: e.target.value })}
-                        required
-                        placeholder="jan@email.cz"
-                        disabled={!!user}
-                      />
-                    </div>
-                    <div className="form-field">
-                      <label>Telefon</label>
-                      <input
-                        type="tel"
-                        value={formData.customerPhone}
-                        onChange={(e) => setFormData({ ...formData, customerPhone: e.target.value })}
-                        placeholder="+420 123 456 789"
-                      />
-                    </div>
-                    <div className="form-field">
-                      <label>Adresa</label>
-                      <input
-                        type="text"
-                        value={formData.customerAddress}
-                        onChange={(e) => setFormData({ ...formData, customerAddress: e.target.value })}
-                        placeholder="Ulice 123, Praha"
-                      />
-                    </div>
-                  </div>
-                </form>
+                  </form>
+                </div>
               </section>
             </div>
 
