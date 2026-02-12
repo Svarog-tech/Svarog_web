@@ -268,10 +268,10 @@ const Configurator: React.FC = () => {
             </p>
             <div className="success-actions">
               <button className="btn-primary" onClick={() => navigate('/')}>
-                Zpět na hlavní stránku
+                <span>Zpět na hlavní stránku</span>
               </button>
               <button className="btn-secondary" onClick={() => navigate('/dashboard')}>
-                Přejít do dashboardu
+                <span>Přejít do dashboardu</span>
               </button>
             </div>
           </motion.div>
@@ -321,7 +321,12 @@ const Configurator: React.FC = () => {
                     <div className="plan-features-grid">
                       {selectedPlan.features.slice(0, 6).map((feature, index) => (
                         <div key={index} className="feature-tag">
-                          <FontAwesomeIcon icon={faCheck} />
+                          <span className="icon">
+                            <svg height="24" width="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                              <path d="M0 0h24v24H0z" fill="none"></path>
+                              <path fill="currentColor" d="M10 15.172l9.192-9.193 1.415 1.414L10 18l-6.364-6.364 1.414-1.414z"></path>
+                            </svg>
+                          </span>
                           {feature}
                         </div>
                       ))}
@@ -338,34 +343,23 @@ const Configurator: React.FC = () => {
                     Fakturační období
                   </h2>
                   <div className="billing-cards">
-                    <motion.div
-                      className={`billing-card ${billingPeriod === 'monthly' ? 'selected' : ''}`}
-                      onClick={() => setBillingPeriod('monthly')}
-                      whileHover={{ y: -4 }}
-                      whileTap={{ scale: 0.98 }}
-                    >
-                      <div className="billing-icon">
+                    <div className="toggle-group">
+                      <button
+                        className={`toggle-btn ${billingPeriod === 'monthly' ? 'active' : ''}`}
+                        onClick={() => setBillingPeriod('monthly')}
+                      >
                         <FontAwesomeIcon icon={faClock} />
-                      </div>
-                      <h3>Měsíční platba</h3>
-                      <p className="billing-price">{formatPrice(selectedPlan.price)}/měsíc</p>
-                      <p className="billing-desc">Platba každý měsíc, kdykoliv zrušitelné</p>
-                    </motion.div>
-
-                    <motion.div
-                      className={`billing-card ${billingPeriod === 'yearly' ? 'selected' : ''}`}
-                      onClick={() => setBillingPeriod('yearly')}
-                      whileHover={{ y: -4 }}
-                      whileTap={{ scale: 0.98 }}
-                    >
-                      <div className="billing-icon">
+                        Měsíčně - {formatPrice(selectedPlan.price)}/měsíc
+                      </button>
+                      <button
+                        className={`toggle-btn ${billingPeriod === 'yearly' ? 'active' : ''}`}
+                        onClick={() => setBillingPeriod('yearly')}
+                      >
                         <FontAwesomeIcon icon={faCalendar} />
-                      </div>
-                      <div className="save-badge">Ušetříte 10%</div>
-                      <h3>Roční platba</h3>
-                      <p className="billing-price">{formatPrice(selectedPlan.yearlyPrice)}/měsíc</p>
-                      <p className="billing-desc">Fakturováno jednou ročně - {formatPrice(selectedPlan.yearlyPrice * 12)}/rok</p>
-                    </motion.div>
+                        Ročně - {formatPrice(selectedPlan.yearlyPrice)}/měsíc
+                        <span className="save-badge">Ušetříte 10%</span>
+                      </button>
+                    </div>
                   </div>
                 </div>
               </section>
@@ -505,8 +499,10 @@ const Configurator: React.FC = () => {
                         className="login-prompt-btn"
                         onClick={() => navigate('/login', { state: { returnUrl: '/configurator', plan: selectedPlan } })}
                       >
-                        <FontAwesomeIcon icon={faSignInAlt} />
-                        Přihlásit se
+                        <span>
+                          <FontAwesomeIcon icon={faSignInAlt} />
+                          Přihlásit se
+                        </span>
                       </button>
                       <p className="login-prompt-divider">nebo vyplňte údaje ručně</p>
                     </div>
@@ -614,15 +610,30 @@ const Configurator: React.FC = () => {
 
                 <div className="summary-guarantees">
                   <div className="guarantee-item">
-                    <FontAwesomeIcon icon={faCheck} />
+                    <span className="icon">
+                      <svg height="24" width="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M0 0h24v24H0z" fill="none"></path>
+                        <path fill="currentColor" d="M10 15.172l9.192-9.193 1.415 1.414L10 18l-6.364-6.364 1.414-1.414z"></path>
+                      </svg>
+                    </span>
                     <span>30denní záruka vrácení peněz</span>
                   </div>
                   <div className="guarantee-item">
-                    <FontAwesomeIcon icon={faCheck} />
+                    <span className="icon">
+                      <svg height="24" width="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M0 0h24v24H0z" fill="none"></path>
+                        <path fill="currentColor" d="M10 15.172l9.192-9.193 1.415 1.414L10 18l-6.364-6.364 1.414-1.414z"></path>
+                      </svg>
+                    </span>
                     <span>Bezplatná migrace</span>
                   </div>
                   <div className="guarantee-item">
-                    <FontAwesomeIcon icon={faCheck} />
+                    <span className="icon">
+                      <svg height="24" width="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M0 0h24v24H0z" fill="none"></path>
+                        <path fill="currentColor" d="M10 15.172l9.192-9.193 1.415 1.414L10 18l-6.364-6.364 1.414-1.414z"></path>
+                      </svg>
+                    </span>
                     <span>SSL certifikát zdarma</span>
                   </div>
                 </div>
