@@ -447,32 +447,34 @@ const Configurator: React.FC = () => {
                   <div className="addons-list">
                     {addons.map((addon) => (
                       <div key={addon.id} className="addon-item">
-                        <div className="addon-icon-wrapper">
-                          <FontAwesomeIcon icon={addon.icon} />
-                        </div>
-                        <div className="addon-details">
-                          <h4>{addon.name}</h4>
-                          <p>{addon.description}</p>
-                          <span className="addon-price-tag">
-                            +{formatPrice(addon.price)}/{billingPeriod === 'yearly' ? 'měsíc' : 'měsíc'}
-                          </span>
-                        </div>
-                        <div className="addon-quantity-controls">
-                          <button
-                            className="qty-btn"
-                            onClick={() => updateAddonQuantity(addon.id, -1)}
-                            disabled={addon.quantity === 0}
-                          >
-                            <FontAwesomeIcon icon={faMinus} />
-                          </button>
-                          <span className="qty-display">{addon.quantity}</span>
-                          <button
-                            className="qty-btn"
-                            onClick={() => updateAddonQuantity(addon.id, 1)}
-                            disabled={addon.quantity >= (addon.max || Infinity)}
-                          >
-                            <FontAwesomeIcon icon={faPlus} />
-                          </button>
+                        <div className="addon-inner">
+                          <div className="addon-icon-wrapper">
+                            <FontAwesomeIcon icon={addon.icon} />
+                          </div>
+                          <div className="addon-details">
+                            <h4>{addon.name}</h4>
+                            <p>{addon.description}</p>
+                            <span className="addon-price-tag">
+                              +{formatPrice(addon.price)}/{billingPeriod === 'yearly' ? 'měsíc' : 'měsíc'}
+                            </span>
+                          </div>
+                          <div className="addon-quantity-controls">
+                            <button
+                              className="qty-btn"
+                              onClick={() => updateAddonQuantity(addon.id, -1)}
+                              disabled={addon.quantity === 0}
+                            >
+                              <FontAwesomeIcon icon={faMinus} />
+                            </button>
+                            <span className="qty-display">{addon.quantity}</span>
+                            <button
+                              className="qty-btn"
+                              onClick={() => updateAddonQuantity(addon.id, 1)}
+                              disabled={addon.quantity >= (addon.max || Infinity)}
+                            >
+                              <FontAwesomeIcon icon={faPlus} />
+                            </button>
+                          </div>
                         </div>
                       </div>
                     ))}
