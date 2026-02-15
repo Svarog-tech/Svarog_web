@@ -193,25 +193,14 @@ const Header: React.FC = () => {
                     </motion.div>
                   </div>
                 ) : (
-                  <>
-                    <motion.button
-                      className="login-button"
-                      onClick={handleLogin}
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                    >
-                      {t('nav.login')}
-                    </motion.button>
-                    <Link to="/register">
-                      <motion.button
-                        className="cta-button"
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                      >
-                        {t('header.register')}
-                      </motion.button>
-                    </Link>
-                  </>
+                  <motion.button
+                    className="primary-btn"
+                    onClick={handleLogin}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <span>{t('nav.login')}</span>
+                  </motion.button>
                 )}
                 <ThemeToggle />
                 <CurrencySwitcher />
@@ -345,23 +334,13 @@ const Header: React.FC = () => {
                     {t('header.logout')}
                   </motion.button>
                 ) : (
-                  <>
-                    <motion.button
-                      className="mobile-login-button"
-                      onClick={handleLogin}
-                      whileTap={{ scale: 0.98 }}
-                    >
-                      {t('nav.login')}
-                    </motion.button>
-                    <Link to="/register">
-                      <motion.button
-                        className="mobile-cta-button"
-                        whileTap={{ scale: 0.98 }}
-                      >
-                        {t('header.register')}
-                      </motion.button>
-                    </Link>
-                  </>
+                  <motion.button
+                    className="primary-btn"
+                    onClick={handleLogin}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <span>{t('nav.login')}</span>
+                  </motion.button>
                 )}
               </div>
             </div>

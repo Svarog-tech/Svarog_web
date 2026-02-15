@@ -13,6 +13,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { createSupportTicket } from '../lib/supabase';
 import { getAuthHeader } from '../lib/auth';
+import TriangularBackground from '../components/TriangularBackground';
 import './Tickets.css';
 
 interface Ticket {
@@ -167,29 +168,55 @@ const Tickets: React.FC = () => {
   };
 
   return (
-    <div className="tickets-page">
-      <div className="tickets-container">
-        {/* Header */}
-        <motion.div
-          className="tickets-header"
-          initial={{ opacity: 0, y: 20 }}
+    <>
+      <TriangularBackground opacity={0.12} />
+      <main className="tickets-page">
+        {/* Hero Section */}
+        <motion.section
+          className="tickets-hero"
+          initial={{ opacity: 0, y: 50 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
+          transition={{ duration: 0.8 }}
         >
-          <div>
-            <h1 className="tickets-title">Support tikety</h1>
-            <p className="tickets-subtitle">
-              Spravuj své support požadavky a komunikuj s naším týmem
-            </p>
+          <div className="container">
+            <div className="tickets-hero-content">
+              <motion.h1
+                className="tickets-title"
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.2 }}
+              >
+                Support <span className="gradient-text">tikety</span>
+              </motion.h1>
+              <motion.p
+                className="tickets-description"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.4 }}
+              >
+                Spravuj své support požadavky a komunikuj s naším týmem
+              </motion.p>
+            </div>
           </div>
-          <button
-            className="new-ticket-btn"
-            onClick={() => setShowNewTicketForm(true)}
-          >
-            <FontAwesomeIcon icon={faPlus} />
-            Nový tiket
-          </button>
-        </motion.div>
+        </motion.section>
+
+        {/* Tickets Content Section */}
+        <section className="tickets-content-section">
+          <div className="container">
+            <div className="tickets-header">
+              <motion.button
+                className="new-ticket-btn"
+                onClick={() => setShowNewTicketForm(true)}
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.4, delay: 0.6 }}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <FontAwesomeIcon icon={faPlus} />
+                Nový tiket
+              </motion.button>
+            </div>
 
         {/* Tickets List */}
         {tickets.length === 0 ? (
@@ -362,8 +389,10 @@ const Tickets: React.FC = () => {
             </motion.div>
           )}
         </AnimatePresence>
-      </div>
-    </div>
+          </div>
+        </section>
+      </main>
+    </>
   );
 };
 

@@ -196,13 +196,13 @@
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+  background: var(--surface);
   padding: 1rem 1.5rem;
   border-radius: 16px;
-  color: white;
+  color: var(--text-primary);
   align-self: flex-start;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25),
-              0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+  border: 2px solid var(--border-light);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
   position: relative;
   overflow: hidden;
   transition: all 0.3s ease;
@@ -221,8 +221,8 @@
 
 .plan-price-badge:hover {
   transform: translateY(-2px);
-  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3),
-              0 0 0 1px rgba(255, 255, 255, 0.15) inset;
+  border-color: var(--border-medium);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
 .price-value {
@@ -320,14 +320,14 @@
 }
 
 .toggle-btn:hover:not(.active) {
-  color: #6b7280;
-  background: rgba(107, 114, 128, 0.05);
+  color: #2563eb;
+  background: rgba(37, 99, 235, 0.05);
 }
 
 .toggle-btn.active {
-  background: #6b7280;
+  background: #2563eb;
   color: white;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
 }
 
 .save-badge {
@@ -1614,14 +1614,14 @@
 }
 
 [data-theme="dark"] .plan-price-badge {
-  background: linear-gradient(135deg, #9ca3af 0%, #6b7280 100%);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4),
-              0 0 0 1px rgba(255, 255, 255, 0.15) inset;
+  background: var(--surface);
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 [data-theme="dark"] .plan-price-badge:hover {
-  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.5),
-              0 0 0 1px rgba(255, 255, 255, 0.2) inset;
+  border-color: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
 }
 
 [data-theme="dark"] .toggle-group {
@@ -1630,8 +1630,9 @@
 }
 
 [data-theme="dark"] .toggle-btn.active {
-  background: #6b7280;
+  background: #3b82f6;
   color: white;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
 }
 
 [data-theme="dark"] .btn-primary {

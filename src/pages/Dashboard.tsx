@@ -38,17 +38,33 @@ interface DashboardStats {
   totalSpent: number;
 }
 
+// DEV MODE: Set to true to bypass auth and use mock data for styling
+const DEV_MODE = true;
+
+const mockProfile = {
+  first_name: 'Jan',
+  created_at: '2023-01-15'
+};
+
+const mockOrders: Order[] = [
+  { id: 1, plan_name: 'Starter Hosting', price: 99, currency: 'CZK', status: 'active', payment_status: 'paid', domain_name: 'example.cz', created_at: '2024-01-15' },
+  { id: 2, plan_name: 'Business Hosting', price: 299, currency: 'CZK', status: 'pending', payment_status: 'pending', domain_name: 'test-site.cz', created_at: '2024-02-10' },
+  { id: 3, plan_name: 'Premium Hosting', price: 599, currency: 'CZK', status: 'active', payment_status: 'paid', domain_name: 'mywebsite.cz', created_at: '2024-03-01' },
+];
+
 const Dashboard: React.FC = () => {
-  const { user, profile } = useAuth();
+  const { user, profile: authProfile } = useAuth();
   const { t } = useLanguage();
   const { formatPrice } = useCurrency();
   const navigate = useNavigate();
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [stats, setStats] = useState<DashboardStats>({ totalOrders: 0, activeServices: 0, totalSpent: 0 });
-  const [loading, setLoading] = useState(true);
+  const [orders, setOrders] = useState<Order[]>(DEV_MODE ? mockOrders : []);
+  const [stats, setStats] = useState<DashboardStats>(DEV_MODE ? { totalOrders: 3, activeServices: 2, totalSpent: 997 } : { totalOrders: 0, activeServices: 0, totalSpent: 0 });
+  const [loading, setLoading] = useState(DEV_MODE ? false : true);
+
+  const profile = DEV_MODE ? mockProfile : authProfile;
 
   useEffect(() => {
-    if (user) {
+    if (user && !DEV_MODE) {
       fetchData();
     }
   }, [user]);
