@@ -4,13 +4,22 @@
 const mysql = require('mysql2/promise');
 require('dotenv').config();
 
-// Databázové připojení z environment proměnných
+// SECURITY: Validace povinných DB credentials v produkci
+if (process.env.NODE_ENV === 'production') {
+  const required = ['MYSQL_HOST', 'MYSQL_USER', 'MYSQL_PASSWORD', 'MYSQL_DATABASE'];
+  const missing = required.filter(key => !process.env[key]);
+  if (missing.length > 0) {
+    throw new Error(`Missing required database environment variables in production: ${missing.join(', ')}`);
+  }
+}
+
+// Databázové připojení z environment proměnných (pouze serverové MYSQL_* proměnné)
 const dbConfig = {
-  host: process.env.MYSQL_HOST || process.env.REACT_APP_MYSQL_HOST || 'localhost',
-  port: parseInt(process.env.MYSQL_PORT || process.env.REACT_APP_MYSQL_PORT || '3306'),
-  user: process.env.MYSQL_USER || process.env.REACT_APP_MYSQL_USER || 'root',
-  password: process.env.MYSQL_PASSWORD || process.env.REACT_APP_MYSQL_PASSWORD || '',
-  database: process.env.MYSQL_DATABASE || process.env.REACT_APP_MYSQL_DATABASE || 'alatyr_hosting',
+  host: process.env.MYSQL_HOST || 'localhost',
+  port: parseInt(process.env.MYSQL_PORT || '3306'),
+  user: process.env.MYSQL_USER || 'root',
+  password: process.env.MYSQL_PASSWORD || '',
+  database: process.env.MYSQL_DATABASE || 'alatyr_hosting',
   waitForConnections: true,
   connectionLimit: parseInt(process.env.MYSQL_POOL_SIZE || '10'),
   queueLimit: 0,
@@ -80,6 +89,18 @@ async function transaction(callback) {
   }
 }
 
+// Health check - test DB připojení
+async function testConnection() {
+  try {
+    const pool = getPool();
+    const [rows] = await pool.execute('SELECT 1');
+    return true;
+  } catch (error) {
+    console.error('Database connection test failed:', error.message);
+    return false;
+  }
+}
+
 // Zavření pool při ukončení aplikace
 process.on('SIGINT', async () => {
   if (pool) {
@@ -102,4 +123,5 @@ module.exports = {
   queryOne,
   execute,
   transaction,
+  testConnection,
 };

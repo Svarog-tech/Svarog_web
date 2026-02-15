@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
@@ -31,6 +32,7 @@ interface Service extends HostingService {
 }
 
 const Services: React.FC = () => {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { formatPrice } = useCurrency();
   const [services, setServices] = useState<Service[]>([]);
@@ -287,7 +289,10 @@ const Services: React.FC = () => {
                 </div>
 
                 <div className="service-card-footer">
-                  <button className="service-action-btn secondary">
+                  <button
+                    className="service-action-btn secondary"
+                    onClick={() => navigate(`/services/${service.id}`)}
+                  >
                     <FontAwesomeIcon icon={faCog} />
                     Spravovat
                   </button>

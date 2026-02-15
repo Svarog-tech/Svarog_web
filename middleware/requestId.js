@@ -3,30 +3,29 @@
  * Přidá unikátní ID ke každému requestu pro lepší debugging
  */
 
-let uuidv4;
-try {
-  uuidv4 = require('uuid').v4;
-} catch (e) {
-  // Fallback pokud uuid není nainstalováno
-  uuidv4 = () => {
-    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-      const r = Math.random() * 16 | 0;
-      const v = c === 'x' ? r : (r & 0x3 | 0x8);
-      return v.toString(16);
-    });
-  };
+const crypto = require('crypto');
+
+// SECURITY: Kryptograficky bezpečná generace UUID
+function generateSecureUUID() {
+  return crypto.randomUUID();
 }
+
+// UUID formát validace
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 /**
  * Middleware pro generování request ID
+ * SECURITY: Klientský X-Request-ID se validuje proti UUID formátu
+ * aby se zabránilo log injection útokům
  */
 const requestIdMiddleware = (req, res, next) => {
-  // Zkus získat request ID z headeru (pokud přichází z proxy)
-  req.id = req.headers['x-request-id'] || uuidv4();
-  
-  // Přidat do response headeru
+  const clientId = req.headers['x-request-id'];
+
+  // Přijmi klientské ID pouze pokud je validní UUID (ochrana proti log injection)
+  req.id = (clientId && UUID_REGEX.test(clientId)) ? clientId : generateSecureUUID();
+
   res.setHeader('X-Request-ID', req.id);
-  
+
   next();
 };
 

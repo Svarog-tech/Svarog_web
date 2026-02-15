@@ -27,6 +27,9 @@ import Admin from './pages/Admin';
 import AdminTickets from './pages/AdminTickets';
 import AdminUsers from './pages/AdminUsers';
 import PaymentSuccess from './pages/PaymentSuccess';
+import ServiceDetail from './pages/ServiceDetail';
+import FileManager from './pages/FileManager';
+import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
   return (
@@ -48,14 +51,16 @@ function App() {
               <Route path="/register" element={<Register />} />
               <Route path="/login" element={<Login />} />
               <Route path="/auth/callback" element={<AuthCallback />} />
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/services" element={<Services />} />
-              <Route path="/tickets" element={<Tickets />} />
-              <Route path="/profile" element={<Profile />} />
-              <Route path="/configurator" element={<Configurator />} />
-              <Route path="/admin" element={<Admin />} />
-              <Route path="/admin/tickets" element={<AdminTickets />} />
-              <Route path="/admin/users" element={<AdminUsers />} />
+              <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+              <Route path="/services" element={<ProtectedRoute><Services /></ProtectedRoute>} />
+              <Route path="/services/:id" element={<ProtectedRoute><ServiceDetail /></ProtectedRoute>} />
+              <Route path="/services/:id/files" element={<ProtectedRoute><FileManager /></ProtectedRoute>} />
+              <Route path="/tickets" element={<ProtectedRoute><Tickets /></ProtectedRoute>} />
+              <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+              <Route path="/configurator" element={<ProtectedRoute><Configurator /></ProtectedRoute>} />
+              <Route path="/admin" element={<ProtectedRoute requireAdmin><Admin /></ProtectedRoute>} />
+              <Route path="/admin/tickets" element={<ProtectedRoute requireAdmin><AdminTickets /></ProtectedRoute>} />
+              <Route path="/admin/users" element={<ProtectedRoute requireAdmin><AdminUsers /></ProtectedRoute>} />
               <Route path="/payment/success" element={<PaymentSuccess />} />
             </Routes>
             <Footer />

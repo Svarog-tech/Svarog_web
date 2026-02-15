@@ -33,36 +33,19 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
  */
 const createHestiaCPAccount = async (user: AppUser, profile: UserProfile) => {
   try {
-    console.log('[AuthContext] Creating HestiaCP account for new user:', user.email);
-
-    // Vytvoř dočasnou doménu pro inicializaci účtu
-    // Poznámka: Tato doména se později může změnit při objednávce na skutečnou doménu
     const tempDomain = `temp-${user.id.substring(0, 8)}.hostingforge.eu`;
 
-    // Vytvoř hosting účet s default balíčkem
-    // Účet bude mít přístup jen na web hosting (FTP, web), ne do HestiaCP panelu
-    // To je zajištěno tím, že vytváříme běžného uživatele, ne admina
     const result = await createHostingAccount({
       email: user.email || profile.email,
       domain: tempDomain,
-      package: 'default' // Default balíček, později se může změnit při objednávce podle vybraného plánu
+      package: 'default'
     });
 
-    if (result.success) {
-      console.log('[AuthContext] ✅ HestiaCP account created successfully');
-      console.log('[AuthContext] Username:', result.username);
-      console.log('[AuthContext] Domain:', result.domain);
-      console.log('[AuthContext] Package:', result.package);
-      
-      // Poznámka: Účet má přístup jen na web hosting (FTP, web files)
-      // Nemá přístup do HestiaCP panelu - to je správně, protože je to běžný uživatel
-    } else {
-      console.error('[AuthContext] ❌ Failed to create HestiaCP account:', result.error);
-      // Nevyhazuj chybu - registrace byla úspěšná, hosting účet se může vytvořit později
+    if (!result.success) {
+      console.warn('[AuthContext] HestiaCP account creation deferred');
     }
   } catch (error) {
-    console.error('[AuthContext] ❌ Error creating HestiaCP account:', error);
-    // Nevyhazuj chybu - registrace byla úspěšná
+    console.warn('[AuthContext] HestiaCP account creation deferred');
   }
 };
 
@@ -96,35 +79,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Load user profile
   const loadUserProfile = useCallback(async (user: AppUser): Promise<UserProfile | null> => {
     try {
-      console.log('🚀 Starting profile load for user:', user.id);
       let profile = await getUserProfile(user.id);
 
-      // If profile doesn't exist, create it from user metadata
       if (!profile) {
-        console.log('⚠️ Profile not found in database, attempting to create...');
         profile = await createUserProfile(user);
-      }
-
-      if (profile) {
-        console.log('✅ Profile loaded successfully!');
-        console.log('📋 Profile data:', {
-          id: profile.id,
-          email: profile.email,
-          first_name: profile.first_name,
-          last_name: profile.last_name,
-          is_admin: profile.is_admin,
-          avatar_url: profile.avatar_url
-        });
-        console.log('🔐 Is admin?', profile.is_admin);
-        console.log('🔐 Is admin type?', typeof profile.is_admin);
-      } else {
-        console.error('❌ Profile is null after load attempt!');
       }
 
       return profile;
     } catch (error) {
-      console.error('❌ Profile loading failed with error:', error);
-      console.warn('⚠️ Creating fallback profile from user metadata');
+      console.error('Profile loading failed:', error);
 
       // Create a fallback profile from user metadata if database is not ready
       const fallbackProfile: UserProfile = {
@@ -138,8 +101,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       };
-
-      console.log('⚠️ Using fallback profile (is_admin will be FALSE)');
 
       return fallbackProfile;
     }

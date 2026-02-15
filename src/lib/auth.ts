@@ -28,48 +28,29 @@ const resolveDefaultApiBaseUrl = (): string => {
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || resolveDefaultApiBaseUrl();
 
-// Token storage keys
-const ACCESS_TOKEN_KEY = 'auth_access_token';
-const REFRESH_TOKEN_KEY = 'auth_refresh_token';
-
 // ==============================================
 // TOKEN MANAGEMENT
+// SECURITY: Access token v paměti (ne localStorage), refresh token v httpOnly cookie
 // ==============================================
 
-/**
- * Uloží access token do localStorage
- */
+// Access token uložený pouze v JS paměti (bezpečnější než localStorage)
+let accessTokenInMemory: string | null = null;
+
 function setAccessToken(token: string): void {
-  localStorage.setItem(ACCESS_TOKEN_KEY, token);
+  accessTokenInMemory = token;
 }
 
-/**
- * Získá access token z localStorage
- */
 function getAccessToken(): string | null {
-  return localStorage.getItem(ACCESS_TOKEN_KEY);
+  return accessTokenInMemory;
 }
 
 /**
- * Uloží refresh token do localStorage
- */
-function setRefreshToken(token: string): void {
-  localStorage.setItem(REFRESH_TOKEN_KEY, token);
-}
-
-/**
- * Získá refresh token z localStorage
- */
-function getRefreshToken(): string | null {
-  return localStorage.getItem(REFRESH_TOKEN_KEY);
-}
-
-/**
- * Smaže všechny tokeny
+ * Refresh token je uložený v httpOnly cookie na backendu.
+ * Frontend ho nepotřebuje číst - cookie se posílá automaticky s credentials: 'include'.
  */
 function clearTokens(): void {
-  localStorage.removeItem(ACCESS_TOKEN_KEY);
-  localStorage.removeItem(REFRESH_TOKEN_KEY);
+  accessTokenInMemory = null;
+  // Refresh token cookie se smaže přes /api/auth/logout endpoint
 }
 
 /**
@@ -84,19 +65,14 @@ function getAuthHeader(): Record<string, string> {
  * Refresh access token pomocí refresh tokenu
  */
 async function refreshAccessToken(): Promise<boolean> {
-  const refreshToken = getRefreshToken();
-
-  if (!refreshToken) {
-    return false;
-  }
-
   try {
+    // Refresh token je v httpOnly cookie - posílá se automaticky přes credentials: 'include'
     const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ refreshToken }),
+      credentials: 'include',
     });
 
     const data = await response.json();
@@ -106,7 +82,6 @@ async function refreshAccessToken(): Promise<boolean> {
       return true;
     }
 
-    // Refresh token je neplatný, smaž tokeny
     clearTokens();
     return false;
   } catch (error) {
@@ -197,12 +172,13 @@ export const signUp = async (data: RegistrationData) => {
       return { success: false, error: 'Musíte souhlasit s obchodními podmínkami' };
     }
 
-    // Registrace přes API
+    // Registrace přes API (credentials: 'include' pro httpOnly cookie s refresh tokenem)
     const response = await fetch(`${API_BASE_URL}/auth/register`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
+      credentials: 'include',
       body: JSON.stringify({
         email: data.email,
         password: data.password,
@@ -213,10 +189,9 @@ export const signUp = async (data: RegistrationData) => {
 
     const result = await response.json();
 
-    if (result.success && result.accessToken && result.refreshToken) {
-      // Ulož tokeny
+    if (result.success && result.accessToken) {
+      // Access token do paměti, refresh token přijde jako httpOnly cookie
       setAccessToken(result.accessToken);
-      setRefreshToken(result.refreshToken);
 
       // Převeď user na AppUser formát
       const appUser: AppUser = {
@@ -268,6 +243,7 @@ export const signIn = async (data: LoginData) => {
       headers: {
         'Content-Type': 'application/json',
       },
+      credentials: 'include',
       body: JSON.stringify({
         email: data.email,
         password: data.password,
@@ -281,14 +257,12 @@ export const signIn = async (data: LoginData) => {
       result = await response.json();
     } else {
       const text = await response.text();
-      // Zkusíme text zabalit do objektu, aby volající dostal aspoň zprávu
       result = { success: false, error: text || 'Neplatná odpověď serveru (neočekávaný obsah)' };
     }
 
-    if (result.success && result.accessToken && result.refreshToken) {
-      // Ulož tokeny
+    if (result.success && result.accessToken) {
+      // Access token do paměti, refresh token přijde jako httpOnly cookie
       setAccessToken(result.accessToken);
-      setRefreshToken(result.refreshToken);
 
       // Převeď user na AppUser formát
       const appUser: AppUser = {
@@ -309,7 +283,6 @@ export const signIn = async (data: LoginData) => {
         user: appUser,
         session: {
           access_token: result.accessToken,
-          refresh_token: result.refreshToken,
         },
       };
     }
@@ -339,30 +312,26 @@ export const signInWithOAuth = async (provider: OAuthProvider) => {
 
 export const signOut = async () => {
   try {
-    const refreshToken = getRefreshToken();
-
-    if (refreshToken) {
-      // Zavolej API pro logout
-      try {
-        await fetch(`${API_BASE_URL}/auth/logout`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ refreshToken }),
-        });
-      } catch (error) {
-        console.warn('Logout API call failed:', error);
-      }
+    // Refresh token je v httpOnly cookie - posílá se automaticky
+    try {
+      await fetch(`${API_BASE_URL}/auth/logout`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+      });
+    } catch (error) {
+      console.warn('Logout API call failed:', error);
     }
 
-    // Smaž tokeny lokálně
+    // Smaž access token z paměti
     clearTokens();
 
     return { success: true };
   } catch (error: any) {
     console.error('Sign out error:', error);
-    clearTokens(); // Smaž tokeny i při chybě
+    clearTokens();
     return { success: false, error: 'Nastala chyba při odhlašování' };
   }
 };
@@ -509,7 +478,6 @@ export const getCurrentUser = async (): Promise<AppUser | null> => {
 
 export const getCurrentSession = async () => {
   const token = getAccessToken();
-  const refreshToken = getRefreshToken();
 
   if (!token) {
     return null;
@@ -517,7 +485,6 @@ export const getCurrentSession = async () => {
 
   return {
     access_token: token,
-    refresh_token: refreshToken,
   };
 };
 

@@ -7,7 +7,7 @@ import { getCurrentUser, getAuthHeader, refreshAccessToken } from './auth';
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
 
 // Helper pro API volání s automatickým refresh tokenu
-async function apiCall<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+export async function apiCall<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   let headers = {
     'Content-Type': 'application/json',
     ...getAuthHeader(),
@@ -333,6 +333,36 @@ export const getHostingService = async (serviceId: number): Promise<HostingServi
   } catch (error) {
     console.error('Error fetching hosting service:', error);
     throw error;
+  }
+};
+
+/**
+ * Statistiky využití z HestiaCP
+ */
+export interface HostingServiceStats {
+  disk_used_mb: number;
+  disk_limit_mb: number | 'unlimited';
+  bandwidth_used_mb: number;
+  bandwidth_limit_mb: number | 'unlimited';
+  email_accounts_used: number;
+  email_accounts_limit: number | 'unlimited';
+  databases_used: number;
+  databases_limit: number | 'unlimited';
+  web_domains_used: number;
+  web_domains_limit: number | 'unlimited';
+  suspended: boolean;
+}
+
+/**
+ * Získá real-time statistiky z HestiaCP pro konkrétní službu
+ */
+export const getHostingServiceStats = async (serviceId: number): Promise<HostingServiceStats | null> => {
+  try {
+    const result = await apiCall<{ stats: HostingServiceStats | null; hestia_available: boolean }>(`/hosting-services/${serviceId}/stats`);
+    return result.stats;
+  } catch (error) {
+    console.error('Error fetching hosting service stats:', error);
+    return null;
   }
 };
 

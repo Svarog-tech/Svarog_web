@@ -467,10 +467,12 @@ async function requestPasswordReset(email) {
     // const resetUrl = `${process.env.APP_URL}/reset-password?token=${resetToken}`;
     // await sendPasswordResetEmail(email, resetUrl);
 
+    // SECURITY: Reset token se NIKDY neposílá v API odpovědi - pouze emailem
+    // TODO: Implementovat odeslání emailu s reset tokenem
+
     return {
       success: true,
       message: 'Pokud email existuje, byl odeslán odkaz pro resetování hesla',
-      resetToken, // V development módu pro testování
     };
   } catch (error) {
     console.error('Password reset request error:', error);
@@ -764,6 +766,28 @@ async function createHestiaCPAccountAsync(userId, email) {
   }
 }
 
+/**
+ * SECURITY: Periodické čištění expirovaných refresh tokenů
+ * Zabraňuje hromadění neplatných tokenů v databázi
+ */
+async function cleanupExpiredTokens() {
+  try {
+    const result = await db.execute(
+      'DELETE FROM refresh_tokens WHERE expires_at < NOW()'
+    );
+    if (result.affectedRows > 0) {
+      console.log(`[Auth] Cleaned up ${result.affectedRows} expired refresh tokens`);
+    }
+  } catch (error) {
+    console.error('[Auth] Failed to cleanup expired tokens:', error.message);
+  }
+}
+
+// Spouštěj cleanup každou hodinu
+setInterval(cleanupExpiredTokens, 60 * 60 * 1000);
+// A jednou při startu (po 10 sekundách, aby DB pool byl ready)
+setTimeout(cleanupExpiredTokens, 10000);
+
 module.exports = {
   generateAccessToken,
   generateRefreshToken,
@@ -778,4 +802,5 @@ module.exports = {
   resetPasswordByUserId,
   changePassword,
   createHestiaCPAccountAsync,
+  cleanupExpiredTokens,
 };

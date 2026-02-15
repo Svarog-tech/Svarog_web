@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
+const cookieParser = require('cookie-parser');
 const path = require('path');
 const net = require('net');
 const fetch = require('node-fetch');
@@ -162,6 +163,27 @@ app.use(cors({
 // ============================================
 app.use(express.json({ limit: '10mb' })); // Omezení na 10MB
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(cookieParser());
+
+// SECURITY: Helper pro nastavení httpOnly refresh token cookie
+const REFRESH_COOKIE_NAME = 'refresh_token';
+function setRefreshTokenCookie(res, token, maxAgeMs) {
+  res.cookie(REFRESH_COOKIE_NAME, token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict',
+    path: '/api/auth',
+    maxAge: maxAgeMs || 7 * 24 * 60 * 60 * 1000, // 7 dní default
+  });
+}
+function clearRefreshTokenCookie(res) {
+  res.clearCookie(REFRESH_COOKIE_NAME, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict',
+    path: '/api/auth',
+  });
+}
 
 // ============================================
 // SECURITY: Autentizace middleware
@@ -263,12 +285,31 @@ const GOPAY_CLIENT_SECRET = process.env.REACT_APP_GOPAY_CLIENT_SECRET;
 const GOPAY_GO_ID = process.env.REACT_APP_GOPAY_GO_ID;
 
 /**
+ * SECURITY: Fetch s timeoutem - zabraňuje visícím requestům při nedostupnosti externích API
+ */
+async function fetchWithTimeout(url, options = {}, timeoutMs = 30000) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const response = await fetch(url, { ...options, signal: controller.signal });
+    return response;
+  } catch (error) {
+    if (error.name === 'AbortError') {
+      throw new AppError(`Request timeout po ${timeoutMs / 1000}s: ${url}`, 504);
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+/**
  * Získání OAuth access tokenu
  */
 async function getAccessToken() {
   const credentials = Buffer.from(`${GOPAY_CLIENT_ID}:${GOPAY_CLIENT_SECRET}`).toString('base64');
 
-  const res = await fetch(`${GOPAY_API_URL}/oauth2/token`, {
+  const res = await fetchWithTimeout(`${GOPAY_API_URL}/oauth2/token`, {
     method: 'POST',
     headers: {
       'Authorization': `Basic ${credentials}`,
@@ -391,7 +432,7 @@ app.post('/api/gopay/create-payment',
       amount: payment.amount 
     });
 
-    const response = await fetch(`${GOPAY_API_URL}/payments/payment`, {
+    const response = await fetchWithTimeout(`${GOPAY_API_URL}/payments/payment`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${accessToken}`,
@@ -649,75 +690,72 @@ app.post('/api/gopay/webhook',
     const paymentStatus = stateMapping[paymentState] || 'unpaid';
     const isPaid = paymentState === 'PAID';
 
-    // Aktualizuj objednávku v MySQL (HestiaCP databáze)
+    // SECURITY: Aktualizace objednávky a vytvoření služby v jedné DB transakci
+    let shouldCreateHestiaAccount = false;
     try {
-      const updateFields = [
-        'payment_status = ?',
-        'gopay_status = ?',
-        'payment_id = ?'
-      ];
-      const updateValues = [paymentStatus, paymentState, paymentId];
+      await db.transaction(async (connection) => {
+        const updateFields = [
+          'payment_status = ?',
+          'gopay_status = ?',
+          'payment_id = ?'
+        ];
+        const updateValues = [paymentStatus, paymentState, paymentId];
 
-      if (isPaid) {
-        updateFields.push('payment_date = NOW()');
-        // Pokud je platba zaplacená, aktualizuj také status na 'active'
-        updateFields.push('status = ?');
-        updateValues.push('active');
-      }
+        if (isPaid) {
+          updateFields.push('payment_date = NOW()');
+          updateFields.push('status = ?');
+          updateValues.push('active');
+        }
 
-      updateValues.push(order.id); // WHERE id = ?
+        updateValues.push(order.id);
 
-      const updateQuery = `
-        UPDATE user_orders 
-        SET ${updateFields.join(', ')} 
-        WHERE id = ?
-      `;
+        const updateQuery = `
+          UPDATE user_orders
+          SET ${updateFields.join(', ')}
+          WHERE id = ?
+        `;
 
-      await db.execute(updateQuery, updateValues);
+        await connection.execute(updateQuery, updateValues);
 
-      logger.request(req, 'GoPay webhook - order updated', {
-        orderId: order.id,
-        paymentStatus,
-        gopayStatus: paymentState
-      });
-    } catch (updateError) {
-      logger.errorRequest(req, updateError, { context: 'webhook_order_update' });
-      // BUG FIX: Nevyhazuj chybu - vždy vraťme 200, aby GoPay neopakoval webhook
-      // Chyba je zalogována, ale webhook musí vrátit 200
-      // return res.status(200).json({ success: false, error: 'Failed to update order' });
-      // Pokračujeme dál - webhook vrátí 200 na konci
-    }
+        logger.request(req, 'GoPay webhook - order updated', {
+          orderId: order.id,
+          paymentStatus,
+          gopayStatus: paymentState
+        });
 
-    // Pokud je platba zaplacená, můžeme aktivovat službu
-    if (isPaid && order.payment_status !== 'paid') {
-      logger.request(req, 'Payment confirmed, activating service', { orderId: order.id });
-      
-      try {
-        // Zkontroluj, jestli už není hosting služba vytvořena
-        const existingService = await db.queryOne(
-          'SELECT * FROM user_hosting_services WHERE order_id = ?',
-          [order.id]
-        );
+        // Pokud je platba zaplacená, vytvoř hosting službu v rámci stejné transakce
+        if (isPaid && order.payment_status !== 'paid') {
+          logger.request(req, 'Payment confirmed, activating service', { orderId: order.id });
 
-        if (!existingService) {
-          // Vytvoř hosting službu v databázi
-          const serviceResult = await db.execute(
-            `INSERT INTO user_hosting_services 
-             (user_id, order_id, plan_name, plan_id, status, price, billing_period, activated_at, expires_at, next_billing_date)
-             VALUES (?, ?, ?, ?, 'pending', ?, 'monthly', NOW(), DATE_ADD(NOW(), INTERVAL 30 DAY), DATE_ADD(NOW(), INTERVAL 30 DAY))`,
-            [order.user_id, order.id, order.plan_name, order.plan_id, order.price]
+          const [existingRows] = await connection.execute(
+            'SELECT * FROM user_hosting_services WHERE order_id = ?',
+            [order.id]
           );
+          const existingService = existingRows.length > 0 ? existingRows[0] : null;
 
-          logger.info('Hosting service created', {
-            requestId: req.id,
-            serviceId: serviceResult.insertId,
-            orderId: order.id
-          });
+          if (!existingService) {
+            const [serviceResult] = await connection.execute(
+              `INSERT INTO user_hosting_services
+               (user_id, order_id, plan_name, plan_id, status, price, billing_period, activated_at, expires_at, next_billing_date)
+               VALUES (?, ?, ?, ?, 'pending', ?, 'monthly', NOW(), DATE_ADD(NOW(), INTERVAL 30 DAY), DATE_ADD(NOW(), INTERVAL 30 DAY))`,
+              [order.user_id, order.id, order.plan_name, order.plan_id, order.price]
+            );
 
-          // Vytvoř HestiaCP účet (asynchronně, aby webhook odpověděl rychle).
-          // TODO: setImmediate nemá garanci dokončení při restartu – v produkci použít queue (Bull, RabbitMQ)
-          // a po 200 odpovědi job zpracovat; jinak může být účet nevytvořen a webhook už neopakuje.
-          setImmediate(async () => {
+            logger.info('Hosting service created', {
+              requestId: req.id,
+              serviceId: serviceResult.insertId,
+              orderId: order.id
+            });
+
+            shouldCreateHestiaAccount = true;
+          }
+        }
+      }); // konec transakce
+
+      // HestiaCP účet se vytváří MIMO transakci (asynchronně po commitu)
+      // TODO: V produkci použít queue (Bull, RabbitMQ) místo setImmediate
+      if (shouldCreateHestiaAccount) {
+        setImmediate(async () => {
             try {
               const userProfile = await db.queryOne(
                 'SELECT email, first_name, last_name FROM profiles WHERE id = ?',
@@ -803,10 +841,8 @@ app.post('/api/gopay/webhook',
             }
           });
         }
-      } catch (error) {
-        logger.errorRequest(req, error, { context: 'webhook_service_activation' });
-        // Necháme webhook projít, i když aktivace selhala
-      }
+    } catch (webhookError) {
+      logger.errorRequest(req, webhookError, { context: 'webhook_transaction' });
     }
 
     // SECURITY: Idempotency - vždy vraťme 200, aby GoPay neopakoval webhook
@@ -847,7 +883,7 @@ app.post('/api/gopay/check-payment',
 
     const accessToken = await getAccessToken();
 
-    const response = await fetch(`${GOPAY_API_URL}/payments/payment/${paymentId}`, {
+    const response = await fetchWithTimeout(`${GOPAY_API_URL}/payments/payment/${paymentId}`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${accessToken}`,
@@ -918,13 +954,14 @@ app.post('/api/hestiacp/create-account',
       domain: result.domain
     });
 
+    // SECURITY: Heslo se NEposílá v API odpovědi - je uloženo v DB a mělo by se posílat emailem
     res.json({
       success: true,
       username: result.username,
-      password: result.password,
       domain: result.domain,
       cpanelUrl: result.cpanelUrl,
-      package: result.package
+      package: result.package,
+      message: 'Účet vytvořen. Přihlašovací údaje byly uloženy do profilu uživatele.'
     });
   })
 );
@@ -1132,15 +1169,32 @@ app.post('/api/auth/register',
       throw new AppError('Všechna pole jsou povinná', 400);
     }
 
+    // SECURITY: Validace email formátu
+    if (typeof email !== 'string' || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      throw new AppError('Neplatný formát emailu', 400);
+    }
+
+    // SECURITY: Validace minimální délky hesla
+    if (typeof password !== 'string' || password.length < 8) {
+      throw new AppError('Heslo musí mít alespoň 8 znaků', 400);
+    }
+
+    // SECURITY: Validace délky jmen (prevence long input attacks)
+    if (typeof firstName !== 'string' || firstName.length > 100 ||
+        typeof lastName !== 'string' || lastName.length > 100) {
+      throw new AppError('Jméno a příjmení nesmí být delší než 100 znaků', 400);
+    }
+
     const result = await authService.register(email, password, firstName, lastName);
 
     if (result.success) {
       logger.request(req, 'User registered successfully', { userId: result.user.id });
+      // SECURITY: Refresh token do httpOnly cookie, ne do response body
+      setRefreshTokenCookie(res, result.refreshToken);
       res.status(201).json({
         success: true,
         user: result.user,
         accessToken: result.accessToken,
-        refreshToken: result.refreshToken,
         message: result.message
       });
     } else {
@@ -1164,15 +1218,21 @@ app.post('/api/auth/login',
       throw new AppError('Email a heslo jsou povinné', 400);
     }
 
+    // SECURITY: Validate types to prevent NoSQL-style injection
+    if (typeof email !== 'string' || typeof password !== 'string') {
+      throw new AppError('Email a heslo musí být textové řetězce', 400);
+    }
+
     const result = await authService.login(email, password);
 
     if (result.success) {
       logger.request(req, 'User logged in successfully', { userId: result.user.id });
+      // SECURITY: Refresh token do httpOnly cookie
+      setRefreshTokenCookie(res, result.refreshToken);
       res.json({
         success: true,
         user: result.user,
         accessToken: result.accessToken,
-        refreshToken: result.refreshToken
       });
     } else {
       logger.warn('Login failed', { requestId: req.id, email });
@@ -1186,7 +1246,8 @@ app.post('/api/auth/login',
  */
 app.post('/api/auth/refresh',
   asyncHandler(async (req, res) => {
-    const { refreshToken } = req.body;
+    // SECURITY: Čti refresh token z httpOnly cookie (fallback na body pro zpětnou kompatibilitu)
+    const refreshToken = req.cookies?.[REFRESH_COOKIE_NAME] || req.body?.refreshToken;
 
     if (!refreshToken) {
       throw new AppError('Refresh token je povinný', 400);
@@ -1201,6 +1262,7 @@ app.post('/api/auth/refresh',
         user: result.user
       });
     } else {
+      clearRefreshTokenCookie(res);
       throw new AppError(result.error || 'Neplatný refresh token', 401);
     }
   })
@@ -1211,12 +1273,15 @@ app.post('/api/auth/refresh',
  */
 app.post('/api/auth/logout',
   asyncHandler(async (req, res) => {
-    const { refreshToken } = req.body;
+    // SECURITY: Čti refresh token z httpOnly cookie (fallback na body)
+    const refreshToken = req.cookies?.[REFRESH_COOKIE_NAME] || req.body?.refreshToken;
 
     if (refreshToken) {
       await authService.logout(refreshToken);
     }
 
+    // Smaž cookie
+    clearRefreshTokenCookie(res);
     res.json({ success: true, message: 'Odhlášení úspěšné' });
   })
 );
@@ -2016,6 +2081,7 @@ app.post('/api/orders/hosting',
       throw new AppError('planId, planName and price are required', 400);
     }
 
+    // BUG FIX: Column count mismatch — 15 columns ale 16 values. status a payment_status jsou literals.
     const insertResult = await db.execute(
       `INSERT INTO user_orders (
          user_id, plan_id, plan_name, price, currency,
@@ -2023,7 +2089,7 @@ app.post('/api/orders/hosting',
          customer_email, customer_name,
          status, payment_status,
          domain_name
-       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', 'unpaid', ?)`,
+       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', 'unpaid', ?)`,
       [
         userId,
         planId,
@@ -2310,6 +2376,72 @@ app.get('/api/hosting-services/:id',
 );
 
 /**
+ * Get hosting service real-time stats from HestiaCP
+ * GET /api/hosting-services/:id/stats
+ */
+app.get('/api/hosting-services/:id/stats',
+  authenticateUser,
+  asyncHandler(async (req, res) => {
+    const serviceId = req.params.id;
+
+    const service = await db.queryOne(
+      'SELECT * FROM user_hosting_services WHERE id = ?',
+      [serviceId]
+    );
+
+    if (!service) {
+      throw new AppError('Service not found', 404);
+    }
+
+    // Ownership check
+    if (service.user_id !== req.user.id) {
+      const adminProfile = await db.queryOne(
+        'SELECT is_admin FROM profiles WHERE id = ?',
+        [req.user.id]
+      );
+      if (!adminProfile || !adminProfile.is_admin) {
+        throw new AppError('Forbidden', 403);
+      }
+    }
+
+    // Pokud HestiaCP účet ještě nebyl vytvořen
+    if (!service.hestia_username || !service.hestia_created) {
+      return res.json({
+        success: true,
+        stats: null,
+        message: 'HestiaCP account not yet created'
+      });
+    }
+
+    // Zavolej HestiaCP API paralelně pro statistiky i info o uživateli
+    const [statsResult, userResult] = await Promise.all([
+      hestiacp.getUserStats(service.hestia_username),
+      hestiacp.getUserInfo(service.hestia_username)
+    ]);
+
+    const stats = {
+      disk_used_mb: statsResult.success ? statsResult.stats.disk_used_mb : 0,
+      disk_limit_mb: userResult.success ? userResult.user.disk_quota_mb : (service.disk_space ? service.disk_space * 1024 : 0),
+      bandwidth_used_mb: statsResult.success ? statsResult.stats.bandwidth_used_mb : 0,
+      bandwidth_limit_mb: userResult.success ? userResult.user.bandwidth_limit_mb : (service.bandwidth ? service.bandwidth * 1024 : 0),
+      email_accounts_used: statsResult.success ? statsResult.stats.mail_accounts : 0,
+      email_accounts_limit: userResult.success ? userResult.user.mail_accounts_limit : (service.email_accounts || 0),
+      databases_used: statsResult.success ? statsResult.stats.databases : 0,
+      databases_limit: userResult.success ? userResult.user.databases_limit : (service.databases || 0),
+      web_domains_used: statsResult.success ? statsResult.stats.web_domains : 0,
+      web_domains_limit: userResult.success ? userResult.user.web_domains_limit : (service.domains || 0),
+      suspended: userResult.success ? userResult.user.suspended : false,
+    };
+
+    res.json({
+      success: true,
+      stats,
+      hestia_available: statsResult.success && userResult.success
+    });
+  })
+);
+
+/**
  * Admin: update hosting service
  * PUT /api/hosting-services/:id
  */
@@ -2375,6 +2507,499 @@ app.put('/api/hosting-services/:id',
       success: true,
       service
     });
+  })
+);
+
+// ============================================
+// FILE MANAGER API
+// ============================================
+
+/**
+ * Sanitizace cesty — ochrana proti path traversal
+ */
+function sanitizeFilePath(requestedPath, hestiaUsername) {
+  if (!requestedPath || typeof requestedPath !== 'string') {
+    throw new AppError('Path is required', 400);
+  }
+  // SECURITY: Null bytes
+  if (requestedPath.includes('\0')) {
+    throw new AppError('Invalid path', 400);
+  }
+  // SECURITY: Max length check
+  if (requestedPath.length > 4096) {
+    throw new AppError('Path too long', 400);
+  }
+  // SECURITY: Reject encoded traversal attempts (%2e%2e, %2f)
+  if (/%2e|%2f|%5c/i.test(requestedPath)) {
+    throw new AppError('Invalid path encoding', 400);
+  }
+  const homeDir = `/home/${hestiaUsername}`;
+  // Normalizuj cestu (POSIX style)
+  const normalized = path.posix.normalize(requestedPath);
+  // SECURITY: Po normalizaci znovu zkontroluj .. (double-encoding bypass)
+  if (normalized.includes('..')) {
+    throw new AppError('Access denied: path traversal detected', 403);
+  }
+  // Kontrola že cesta je uvnitř home adresáře
+  if (!normalized.startsWith(homeDir + '/') && normalized !== homeDir) {
+    throw new AppError('Access denied: path outside home directory', 403);
+  }
+  return normalized;
+}
+
+/**
+ * Middleware: Najde službu, ověří vlastnictví, vrátí hestia_username
+ */
+async function resolveServiceForFiles(req) {
+  const serviceId = req.params.serviceId;
+  const service = await db.queryOne(
+    'SELECT * FROM user_hosting_services WHERE id = ?',
+    [serviceId]
+  );
+  if (!service) {
+    throw new AppError('Service not found', 404);
+  }
+  if (service.user_id !== req.user.id) {
+    const adminProfile = await db.queryOne(
+      'SELECT is_admin FROM profiles WHERE id = ?',
+      [req.user.id]
+    );
+    if (!adminProfile || !adminProfile.is_admin) {
+      throw new AppError('Forbidden', 403);
+    }
+  }
+  if (!service.hestia_created || !service.hestia_username) {
+    throw new AppError('HestiaCP account not yet created', 400);
+  }
+  // SECURITY: Validate hestia_username format to prevent command injection
+  // HestiaCP usernames are alphanumeric with underscores/hyphens only
+  if (!/^[a-zA-Z0-9_-]+$/.test(service.hestia_username)) {
+    logger.error('Invalid hestia_username format detected', {
+      serviceId: service.id,
+      hestia_username: service.hestia_username
+    });
+    throw new AppError('Invalid hosting account configuration', 500);
+  }
+  return service;
+}
+
+// Rate limiter pro file operace (60 req/min)
+const fileOpsLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 60,
+  message: { success: false, error: 'Too many file operations, please try again later.' }
+});
+
+/**
+ * List directory contents
+ * GET /api/hosting-services/:serviceId/files/list
+ */
+app.get('/api/hosting-services/:serviceId/files/list',
+  authenticateUser,
+  fileOpsLimiter,
+  asyncHandler(async (req, res) => {
+    const service = await resolveServiceForFiles(req);
+    const dirPath = sanitizeFilePath(
+      req.query.path || `/home/${service.hestia_username}`,
+      service.hestia_username
+    );
+
+    const result = await hestiacp.listDirectory(service.hestia_username, dirPath);
+    if (!result.success) {
+      throw new AppError(result.error || 'Failed to list directory', 502);
+    }
+
+    res.json({
+      success: true,
+      path: dirPath,
+      entries: result.entries || []
+    });
+  })
+);
+
+/**
+ * Read file content (text)
+ * GET /api/hosting-services/:serviceId/files/read
+ */
+app.get('/api/hosting-services/:serviceId/files/read',
+  authenticateUser,
+  fileOpsLimiter,
+  asyncHandler(async (req, res) => {
+    const service = await resolveServiceForFiles(req);
+    const filePath = sanitizeFilePath(req.query.path, service.hestia_username);
+
+    const result = await hestiacp.readFile(service.hestia_username, filePath);
+    if (!result.success) {
+      throw new AppError(result.error || 'Failed to read file', 502);
+    }
+
+    // Kontrola velikosti pro editor (5 MB limit)
+    const contentSize = Buffer.byteLength(result.content || '', 'utf-8');
+    if (contentSize > 5 * 1024 * 1024) {
+      return res.json({
+        success: true,
+        too_large: true,
+        size: contentSize,
+        path: filePath
+      });
+    }
+
+    res.json({
+      success: true,
+      content: result.content,
+      path: filePath,
+      size: contentSize
+    });
+  })
+);
+
+/**
+ * Download file
+ * GET /api/hosting-services/:serviceId/files/download
+ * SECURITY: Podporuje auth token z query parametru (pro direct download linky v <a href>)
+ */
+app.get('/api/hosting-services/:serviceId/files/download',
+  // SECURITY: Vlastní auth middleware - podpora tokenu z query param pro download
+  asyncHandler(async (req, res, next) => {
+    // Pokud není auth header, zkus token z query (pro přímé stažení)
+    if (!req.headers.authorization && req.query.token) {
+      req.headers.authorization = `Bearer ${req.query.token}`;
+    }
+    next();
+  }),
+  authenticateUser,
+  fileOpsLimiter,
+  asyncHandler(async (req, res) => {
+    const service = await resolveServiceForFiles(req);
+    const filePath = sanitizeFilePath(req.query.path, service.hestia_username);
+
+    const result = await hestiacp.readFile(service.hestia_username, filePath);
+    if (!result.success) {
+      throw new AppError(result.error || 'Failed to download file', 502);
+    }
+
+    // SECURITY: Sanitize filename pro Content-Disposition header (prevence header injection)
+    const rawFileName = path.posix.basename(filePath);
+    const safeFileName = rawFileName.replace(/[^\w.\-]/g, '_');
+    res.setHeader('Content-Disposition', `attachment; filename="${safeFileName}"`);
+    res.setHeader('Content-Type', 'application/octet-stream');
+    res.send(result.content);
+  })
+);
+
+/**
+ * Save file content (create or overwrite)
+ * POST /api/hosting-services/:serviceId/files/save
+ */
+app.post('/api/hosting-services/:serviceId/files/save',
+  authenticateUser,
+  fileOpsLimiter,
+  asyncHandler(async (req, res) => {
+    const service = await resolveServiceForFiles(req);
+    const { path: filePath, content } = req.body;
+
+    if (!filePath || content === undefined) {
+      throw new AppError('Path and content are required', 400);
+    }
+
+    // SECURITY: Validate types
+    if (typeof filePath !== 'string' || typeof content !== 'string') {
+      throw new AppError('Path and content must be strings', 400);
+    }
+
+    const safePath = sanitizeFilePath(filePath, service.hestia_username);
+
+    // Kontrola velikosti
+    const contentSize = Buffer.byteLength(content, 'utf-8');
+    if (contentSize > 5 * 1024 * 1024) {
+      throw new AppError('File content exceeds 5 MB limit', 413);
+    }
+
+    // Nejdřív vytvoř soubor (nebo přepiš)
+    // HestiaCP v-add-fs-file vytvoří prázdný soubor
+    // Pak zapíšeme obsah přes v-open-fs-file endpoint s content
+    // POZNÁMKA: HestiaCP nemá přímý write příkaz, takže použijeme
+    // kombinaci: vytvořit soubor + zapsat obsah přes API arg
+    const createResult = await hestiacp.createFile(service.hestia_username, safePath);
+    if (!createResult.success && !createResult.error?.includes('exists')) {
+      throw new AppError(createResult.error || 'Failed to create file', 502);
+    }
+
+    // SECURITY: Zápis obsahu souboru přes base64 - zabraňuje command injection
+    // HestiaCP nemá přímý write příkaz, použijeme v-run-cmd s base64 dekódováním
+    // Base64 je bezpečný pro shell - neobsahuje speciální znaky
+    const base64Content = Buffer.from(content, 'utf-8').toString('base64');
+
+    // SECURITY: Validace že safePath neobsahuje shell-dangerous znaky
+    // sanitizeFilePath již zajistil že cesta je v home dir, ale pro shell ji ještě ověříme
+    if (/[`$\\!;|&><()"'\n\r]/.test(safePath)) {
+      throw new AppError('Invalid characters in file path', 400);
+    }
+
+    const writeResult = await hestiacp.callAPI('v-run-cmd', [
+      service.hestia_username,
+      `echo ${base64Content} | base64 -d > ${safePath}`
+    ]);
+
+    if (!writeResult.success) {
+      throw new AppError('Failed to write file content', 502);
+    }
+
+    res.json({ success: true, path: safePath });
+  })
+);
+
+/**
+ * Upload file (base64 encoded)
+ * POST /api/hosting-services/:serviceId/files/upload
+ */
+app.post('/api/hosting-services/:serviceId/files/upload',
+  authenticateUser,
+  fileOpsLimiter,
+  asyncHandler(async (req, res) => {
+    const service = await resolveServiceForFiles(req);
+    const { path: dirPath, filename, content: base64Content } = req.body;
+
+    if (!dirPath || !filename || !base64Content) {
+      throw new AppError('Path, filename and content are required', 400);
+    }
+
+    // SECURITY: Validate filename - prevent path traversal and shell injection
+    if (typeof filename !== 'string' || filename.length > 255 || filename.length === 0) {
+      throw new AppError('Invalid filename (must be 1-255 characters)', 400);
+    }
+    if (/[/\\\0]/.test(filename) || filename.includes('..') || filename.startsWith('.')) {
+      throw new AppError('Invalid filename', 400);
+    }
+    // Only allow safe filename characters
+    if (!/^[\w.\- ]+$/.test(filename)) {
+      throw new AppError('Filename contains invalid characters', 400);
+    }
+
+    const fullPath = sanitizeFilePath(
+      path.posix.join(dirPath, filename),
+      service.hestia_username
+    );
+
+    // SECURITY: Validate base64Content is actually a string
+    if (typeof base64Content !== 'string') {
+      throw new AppError('Content must be a base64 encoded string', 400);
+    }
+
+    // SECURITY: Reject suspiciously large base64 payloads before decoding (35MB base64 ≈ 25MB binary)
+    if (base64Content.length > 35 * 1024 * 1024) {
+      throw new AppError('File exceeds 25 MB upload limit', 413);
+    }
+
+    // Decode base64 a kontrola velikosti (25 MB limit)
+    const fileBuffer = Buffer.from(base64Content, 'base64');
+    if (fileBuffer.length > 25 * 1024 * 1024) {
+      throw new AppError('File exceeds 25 MB upload limit', 413);
+    }
+
+    // Vytvoř soubor
+    await hestiacp.createFile(service.hestia_username, fullPath);
+
+    // SECURITY: Zapiš obsah přes base64
+    // Re-encode the raw binary as base64 (requestBody base64Content is user input from FileReader)
+    const uploadBase64 = fileBuffer.toString('base64');
+
+    // Validace cesty pro shell
+    if (/[`$\\!;|&><()"'\n\r]/.test(fullPath)) {
+      throw new AppError('Invalid characters in file path', 400);
+    }
+
+    const writeResult = await hestiacp.callAPI('v-run-cmd', [
+      service.hestia_username,
+      `echo ${uploadBase64} | base64 -d > ${fullPath}`
+    ]);
+
+    if (!writeResult.success) {
+      throw new AppError('Failed to write uploaded file', 502);
+    }
+
+    res.json({ success: true, path: fullPath });
+  })
+);
+
+/**
+ * Create directory
+ * POST /api/hosting-services/:serviceId/files/create-directory
+ */
+app.post('/api/hosting-services/:serviceId/files/create-directory',
+  authenticateUser,
+  fileOpsLimiter,
+  asyncHandler(async (req, res) => {
+    const service = await resolveServiceForFiles(req);
+    const { path: dirPath } = req.body;
+
+    if (!dirPath) {
+      throw new AppError('Path is required', 400);
+    }
+
+    const safePath = sanitizeFilePath(dirPath, service.hestia_username);
+    const result = await hestiacp.createDirectory(service.hestia_username, safePath);
+    if (!result.success) {
+      throw new AppError(result.error || 'Failed to create directory', 502);
+    }
+
+    res.json({ success: true, path: safePath });
+  })
+);
+
+/**
+ * Create empty file
+ * POST /api/hosting-services/:serviceId/files/create-file
+ */
+app.post('/api/hosting-services/:serviceId/files/create-file',
+  authenticateUser,
+  fileOpsLimiter,
+  asyncHandler(async (req, res) => {
+    const service = await resolveServiceForFiles(req);
+    const { path: filePath } = req.body;
+
+    if (!filePath) {
+      throw new AppError('Path is required', 400);
+    }
+
+    const safePath = sanitizeFilePath(filePath, service.hestia_username);
+    const result = await hestiacp.createFile(service.hestia_username, safePath);
+    if (!result.success) {
+      throw new AppError(result.error || 'Failed to create file', 502);
+    }
+
+    res.json({ success: true, path: safePath });
+  })
+);
+
+/**
+ * Delete file or directory
+ * DELETE /api/hosting-services/:serviceId/files/delete
+ */
+app.delete('/api/hosting-services/:serviceId/files/delete',
+  authenticateUser,
+  fileOpsLimiter,
+  asyncHandler(async (req, res) => {
+    const service = await resolveServiceForFiles(req);
+    const { path: filePath, type } = req.body;
+
+    if (!filePath || !type) {
+      throw new AppError('Path and type are required', 400);
+    }
+    // SECURITY: Validate type to prevent unexpected values
+    if (type !== 'file' && type !== 'directory') {
+      throw new AppError('Type must be "file" or "directory"', 400);
+    }
+
+    const safePath = sanitizeFilePath(filePath, service.hestia_username);
+
+    // SECURITY: Prevent deletion of home directory itself
+    const homeDir = `/home/${service.hestia_username}`;
+    if (safePath === homeDir) {
+      throw new AppError('Cannot delete home directory', 403);
+    }
+
+    let result;
+    if (type === 'directory') {
+      result = await hestiacp.deleteDirectory(service.hestia_username, safePath);
+    } else {
+      result = await hestiacp.deleteFile(service.hestia_username, safePath);
+    }
+
+    if (!result.success) {
+      throw new AppError(result.error || 'Failed to delete', 502);
+    }
+
+    res.json({ success: true });
+  })
+);
+
+/**
+ * Rename/move file or directory
+ * POST /api/hosting-services/:serviceId/files/rename
+ */
+app.post('/api/hosting-services/:serviceId/files/rename',
+  authenticateUser,
+  fileOpsLimiter,
+  asyncHandler(async (req, res) => {
+    const service = await resolveServiceForFiles(req);
+    const { fromPath, toPath } = req.body;
+
+    if (!fromPath || !toPath) {
+      throw new AppError('fromPath and toPath are required', 400);
+    }
+    if (typeof fromPath !== 'string' || typeof toPath !== 'string') {
+      throw new AppError('fromPath and toPath must be strings', 400);
+    }
+
+    const safeFrom = sanitizeFilePath(fromPath, service.hestia_username);
+    const safeTo = sanitizeFilePath(toPath, service.hestia_username);
+
+    const result = await hestiacp.moveFile(service.hestia_username, safeFrom, safeTo);
+    if (!result.success) {
+      throw new AppError(result.error || 'Failed to rename', 502);
+    }
+
+    res.json({ success: true, path: safeTo });
+  })
+);
+
+/**
+ * Copy file
+ * POST /api/hosting-services/:serviceId/files/copy
+ */
+app.post('/api/hosting-services/:serviceId/files/copy',
+  authenticateUser,
+  fileOpsLimiter,
+  asyncHandler(async (req, res) => {
+    const service = await resolveServiceForFiles(req);
+    const { fromPath, toPath } = req.body;
+
+    if (!fromPath || !toPath) {
+      throw new AppError('fromPath and toPath are required', 400);
+    }
+    if (typeof fromPath !== 'string' || typeof toPath !== 'string') {
+      throw new AppError('fromPath and toPath must be strings', 400);
+    }
+
+    const safeFrom = sanitizeFilePath(fromPath, service.hestia_username);
+    const safeTo = sanitizeFilePath(toPath, service.hestia_username);
+
+    const result = await hestiacp.copyFile(service.hestia_username, safeFrom, safeTo);
+    if (!result.success) {
+      throw new AppError(result.error || 'Failed to copy', 502);
+    }
+
+    res.json({ success: true, path: safeTo });
+  })
+);
+
+/**
+ * Change file permissions
+ * POST /api/hosting-services/:serviceId/files/chmod
+ */
+app.post('/api/hosting-services/:serviceId/files/chmod',
+  authenticateUser,
+  fileOpsLimiter,
+  asyncHandler(async (req, res) => {
+    const service = await resolveServiceForFiles(req);
+    const { path: filePath, permissions } = req.body;
+
+    if (!filePath || !permissions) {
+      throw new AppError('Path and permissions are required', 400);
+    }
+
+    if (!/^[0-7]{3,4}$/.test(permissions)) {
+      throw new AppError('Invalid permissions format (use octal, e.g. 0755)', 400);
+    }
+
+    const safePath = sanitizeFilePath(filePath, service.hestia_username);
+    const result = await hestiacp.changePermissions(service.hestia_username, safePath, permissions);
+    if (!result.success) {
+      throw new AppError(result.error || 'Failed to change permissions', 502);
+    }
+
+    res.json({ success: true });
   })
 );
 
@@ -2682,6 +3307,20 @@ app.listen(PORT, async () => {
     await db.query('SELECT 1 as test');
     mysqlStatus = '✅ Connected';
     logger.info('MySQL connection successful');
+
+    // Cleanup expired refresh tokenů při startu a pak každou hodinu
+    const cleanupExpiredTokens = async () => {
+      try {
+        const result = await db.execute('DELETE FROM refresh_tokens WHERE expires_at < NOW()');
+        if (result.affectedRows > 0) {
+          logger.info(`Cleaned up ${result.affectedRows} expired refresh tokens`);
+        }
+      } catch (err) {
+        logger.error('Failed to cleanup expired tokens', { error: err.message });
+      }
+    };
+    await cleanupExpiredTokens();
+    setInterval(cleanupExpiredTokens, 60 * 60 * 1000); // Každou hodinu
   } catch (error) {
     logger.error('MySQL connection failed', { error: error.message });
     console.error('❌ MySQL connection failed:', error.message);

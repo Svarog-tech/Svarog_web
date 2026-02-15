@@ -34,8 +34,7 @@ const PROXY_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
  */
 export const createGoPayPayment = async (data: PaymentData): Promise<PaymentResult> => {
   try {
-    console.log('Creating GoPay payment via proxy server...');
-    console.log('Payment data:', data);
+    // Payment data se neloguje - obsahuje citlivé informace
 
     // SECURITY: Získej JWT token pro autentizaci
     const session = await getCurrentSession();
@@ -62,7 +61,7 @@ export const createGoPayPayment = async (data: PaymentData): Promise<PaymentResu
       throw new Error(result.error);
     }
 
-    console.log('Payment created successfully:', result);
+    // Payment created successfully
 
     // Uložení payment_id a payment_url do databáze
     try {
@@ -106,7 +105,7 @@ export const createGoPayPayment = async (data: PaymentData): Promise<PaymentResu
  */
 export const checkPaymentStatus = async (paymentId: string): Promise<PaymentStatusResult> => {
   try {
-    console.log('Checking payment status via proxy server:', paymentId);
+    // Check payment status
 
     // SECURITY: Získej JWT token pro autentizaci
     const session = await getCurrentSession();
@@ -133,7 +132,7 @@ export const checkPaymentStatus = async (paymentId: string): Promise<PaymentStat
       throw new Error(result.error);
     }
 
-    console.log('Payment status:', result.status);
+    // Payment status checked
 
     // Aktualizace statusu v databázi
     const paymentStatus = result.status === 'PAID' ? 'paid' :
@@ -186,7 +185,7 @@ export const checkPaymentStatus = async (paymentId: string): Promise<PaymentStat
 
     // Pokud je platba zaplacená a máme doménu, automaticky vytvoř hosting účet
     if (result.status === 'PAID' && updatedOrder?.domain_name) {
-      console.log('[PaymentService] Payment confirmed, creating hosting account...');
+      // Payment confirmed, creating hosting account
 
       try {
         const hostingResult = await createHostingAccountForOrder(
@@ -195,7 +194,7 @@ export const checkPaymentStatus = async (paymentId: string): Promise<PaymentStat
         );
 
         if (hostingResult.success) {
-          console.log('[PaymentService] Hosting account created successfully:', hostingResult);
+          // Hosting account created
         } else {
           console.error('[PaymentService] Failed to create hosting account:', hostingResult.error);
           // Poznámka: Hosting účet lze vytvořit později manuálně,
@@ -225,7 +224,7 @@ export const checkPaymentStatus = async (paymentId: string): Promise<PaymentStat
  */
 export const cancelPayment = async (paymentId: string): Promise<{ success: boolean; error?: string }> => {
   try {
-    console.log('Cancelling payment:', paymentId);
+    // Cancel payment
 
     // Aktualizace v databázi - najdi objednávku a aktualizuj
     try {
@@ -276,7 +275,7 @@ export const refundPayment = async (
   amount: number
 ): Promise<{ success: boolean; error?: string }> => {
   try {
-    console.log('Refunding payment:', paymentId, amount);
+    // Refund payment
 
     // Aktualizace v databázi - najdi objednávku a aktualizuj
     try {

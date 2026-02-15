@@ -15,10 +15,12 @@ const validate = (req, res, next) => {
   const errors = validationResult(req);
   
   if (!errors.isEmpty()) {
+    // SECURITY: Neposílat hodnoty citlivých polí v chybových zprávách
+    const sensitiveFields = ['password', 'token', 'secret', 'refreshToken', 'accessToken', 'oldPassword', 'newPassword'];
     const errorMessages = errors.array().map(err => ({
       field: err.path || err.param,
       message: err.msg,
-      value: err.value
+      value: sensitiveFields.includes(err.path || err.param) ? '[REDACTED]' : err.value
     }));
 
     const error = new AppError('Validation failed', 400);

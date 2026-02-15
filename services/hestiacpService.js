@@ -75,12 +75,26 @@ class HestiaCP {
         apiUrl = apiUrl.endsWith('/') ? `${apiUrl}api/` : `${apiUrl}/api/`;
       }
 
-      const response = await fetch(apiUrl, {
-        method: 'POST',
-        headers: headers,
-        body: formData.toString(),
-        agent: agent
-      });
+      // SECURITY: Timeout zabraňuje visícím requestům při nedostupnosti HestiaCP
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 30000);
+      let response;
+      try {
+        response = await fetch(apiUrl, {
+          method: 'POST',
+          headers: headers,
+          body: formData.toString(),
+          agent: agent,
+          signal: controller.signal
+        });
+      } catch (err) {
+        if (err.name === 'AbortError') {
+          throw new Error(`HestiaCP API timeout po 30s: ${command}`);
+        }
+        throw err;
+      } finally {
+        clearTimeout(timeout);
+      }
 
       const data = await response.text();
       const dataTrimmed = (data || '').trim();
@@ -140,7 +154,8 @@ class HestiaCP {
    */
   generateUsername(email) {
     const prefix = email.split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, '');
-    const random = crypto.randomBytes(3).toString('hex');
+    // 6 bajtů = 12 hex znaků = 281 bilionů kombinací (snížení rizika kolize)
+    const random = crypto.randomBytes(6).toString('hex');
     return `${prefix.substring(0, 5)}${random}`;
   }
 
@@ -206,6 +221,262 @@ class HestiaCP {
   }
 
   /**
+   * Získá statistiky využití pro HestiaCP uživatele (disk, bandwidth, emaily, databáze atd.)
+   * @param {string} username - HestiaCP username
+   * @returns {Promise<{success: boolean, stats?: Object, error?: string}>}
+   */
+  async getUserStats(username) {
+    const result = await this.callAPI('v-list-user-stats', [username, 'json'], { returnCode: false });
+    if (result.success && result.data && typeof result.data === 'object') {
+      const userData = result.data[username] || Object.values(result.data)[0];
+      if (userData) {
+        return {
+          success: true,
+          stats: {
+            disk_used_mb: parseInt(userData.U_DISK || '0', 10),
+            bandwidth_used_mb: parseInt(userData.U_BANDWIDTH || '0', 10),
+            web_domains: parseInt(userData.U_WEB_DOMAINS || '0', 10),
+            mail_accounts: parseInt(userData.U_MAIL_ACCOUNTS || '0', 10),
+            databases: parseInt(userData.U_DATABASES || '0', 10),
+          }
+        };
+      }
+    }
+    // Fallback: "0\n" + JSON
+    const raw = await this._callAPIRaw('v-list-user-stats', [username, 'json'], false);
+    if (raw.ok && raw.body) {
+      const trimmed = String(raw.body).trim();
+      const jsonStr = trimmed.startsWith('0\n') ? trimmed.slice(2).trim() : (trimmed === '0' ? '' : trimmed);
+      if (jsonStr) {
+        try {
+          const data = JSON.parse(jsonStr);
+          const userData = data[username] || Object.values(data)[0];
+          if (userData) {
+            return {
+              success: true,
+              stats: {
+                disk_used_mb: parseInt(userData.U_DISK || '0', 10),
+                bandwidth_used_mb: parseInt(userData.U_BANDWIDTH || '0', 10),
+                web_domains: parseInt(userData.U_WEB_DOMAINS || '0', 10),
+                mail_accounts: parseInt(userData.U_MAIL_ACCOUNTS || '0', 10),
+                databases: parseInt(userData.U_DATABASES || '0', 10),
+              }
+            };
+          }
+        } catch { /* ignore */ }
+      }
+    }
+    return { success: false, error: 'Failed to get user stats' };
+  }
+
+  /**
+   * Získá informace o HestiaCP uživateli (limity balíčku, stav suspendace atd.)
+   * @param {string} username - HestiaCP username
+   * @returns {Promise<{success: boolean, user?: Object, error?: string}>}
+   */
+  async getUserInfo(username) {
+    const result = await this.callAPI('v-list-user', [username, 'json'], { returnCode: false });
+    if (result.success && result.data && typeof result.data === 'object') {
+      const userData = result.data[username] || Object.values(result.data)[0];
+      if (userData) {
+        return {
+          success: true,
+          user: this._parseUserInfo(userData)
+        };
+      }
+    }
+    // Fallback
+    const raw = await this._callAPIRaw('v-list-user', [username, 'json'], false);
+    if (raw.ok && raw.body) {
+      const trimmed = String(raw.body).trim();
+      const jsonStr = trimmed.startsWith('0\n') ? trimmed.slice(2).trim() : (trimmed === '0' ? '' : trimmed);
+      if (jsonStr) {
+        try {
+          const data = JSON.parse(jsonStr);
+          const userData = data[username] || Object.values(data)[0];
+          if (userData) {
+            return {
+              success: true,
+              user: this._parseUserInfo(userData)
+            };
+          }
+        } catch { /* ignore */ }
+      }
+    }
+    return { success: false, error: 'Failed to get user info' };
+  }
+
+  /**
+   * Parsuje surová data z v-list-user do normalizovaného formátu
+   */
+  _parseUserInfo(userData) {
+    const parseLimit = (val) => {
+      if (!val || val === 'unlimited') return 'unlimited';
+      const num = parseInt(val, 10);
+      return isNaN(num) ? 'unlimited' : num;
+    };
+    return {
+      package: userData.PACKAGE || 'default',
+      disk_quota_mb: parseLimit(userData.DISK_QUOTA),
+      bandwidth_limit_mb: parseLimit(userData.BANDWIDTH),
+      databases_limit: parseLimit(userData.DATABASES),
+      mail_accounts_limit: parseLimit(userData.MAIL_ACCOUNTS),
+      web_domains_limit: parseLimit(userData.WEB_DOMAINS),
+      suspended: userData.SUSPENDED === 'yes',
+      ip_addresses: userData.IP_OWNED || '',
+    };
+  }
+
+  // ============================================
+  // FILE SYSTEM OPERATIONS
+  // ============================================
+
+  /**
+   * Vypíše obsah adresáře
+   * @param {string} username - HestiaCP username
+   * @param {string} dirPath - Cesta k adresáři
+   * @returns {Promise<{success: boolean, entries?: Array, error?: string}>}
+   */
+  async listDirectory(username, dirPath) {
+    const result = await this.callAPI('v-list-fs-directory', [username, dirPath, 'json'], { returnCode: false });
+    if (result.success && result.data && typeof result.data === 'object') {
+      const entries = Object.entries(result.data).map(([name, info]) => ({
+        name,
+        type: info.TYPE === 'd' ? 'directory' : 'file',
+        size: parseInt(info.SIZE || '0', 10),
+        permissions: info.PERMISSIONS || '0644',
+        owner: info.OWNER || username,
+        group: info.GROUP || username,
+        modified: `${info.DATE || ''} ${info.TIME || ''}`.trim(),
+      }));
+      return { success: true, entries };
+    }
+    // Fallback
+    const raw = await this._callAPIRaw('v-list-fs-directory', [username, dirPath, 'json'], false);
+    if (raw.ok && raw.body) {
+      const trimmed = String(raw.body).trim();
+      const jsonStr = trimmed.startsWith('0\n') ? trimmed.slice(2).trim() : (trimmed === '0' ? '' : trimmed);
+      if (jsonStr) {
+        try {
+          const data = JSON.parse(jsonStr);
+          const entries = Object.entries(data).map(([name, info]) => ({
+            name,
+            type: info.TYPE === 'd' ? 'directory' : 'file',
+            size: parseInt(info.SIZE || '0', 10),
+            permissions: info.PERMISSIONS || '0644',
+            owner: info.OWNER || username,
+            group: info.GROUP || username,
+            modified: `${info.DATE || ''} ${info.TIME || ''}`.trim(),
+          }));
+          return { success: true, entries };
+        } catch { /* ignore */ }
+      }
+    }
+    return { success: false, error: result.error || 'Failed to list directory' };
+  }
+
+  /**
+   * Přečte obsah souboru
+   * @param {string} username - HestiaCP username
+   * @param {string} filePath - Cesta k souboru
+   * @returns {Promise<{success: boolean, content?: string, error?: string}>}
+   */
+  async readFile(username, filePath) {
+    const raw = await this._callAPIRaw('v-open-fs-file', [username, filePath], false);
+    if (raw.ok && raw.body !== null) {
+      let content = String(raw.body);
+      // Odstraň prefix "0\n" pokud existuje
+      if (content.startsWith('0\n')) {
+        content = content.slice(2);
+      } else if (content.startsWith('0\r\n')) {
+        content = content.slice(3);
+      }
+      return { success: true, content };
+    }
+    return { success: false, error: raw.error || 'Failed to read file' };
+  }
+
+  /**
+   * Vytvoří prázdný soubor
+   * @param {string} username
+   * @param {string} filePath
+   * @returns {Promise<{success: boolean, error?: string}>}
+   */
+  async createFile(username, filePath) {
+    const result = await this.callAPI('v-add-fs-file', [username, filePath]);
+    return result;
+  }
+
+  /**
+   * Vytvoří adresář
+   * @param {string} username
+   * @param {string} dirPath
+   * @returns {Promise<{success: boolean, error?: string}>}
+   */
+  async createDirectory(username, dirPath) {
+    const result = await this.callAPI('v-add-fs-directory', [username, dirPath]);
+    return result;
+  }
+
+  /**
+   * Smaže soubor
+   * @param {string} username
+   * @param {string} filePath
+   * @returns {Promise<{success: boolean, error?: string}>}
+   */
+  async deleteFile(username, filePath) {
+    const result = await this.callAPI('v-delete-fs-file', [username, filePath]);
+    return result;
+  }
+
+  /**
+   * Smaže adresář
+   * @param {string} username
+   * @param {string} dirPath
+   * @returns {Promise<{success: boolean, error?: string}>}
+   */
+  async deleteDirectory(username, dirPath) {
+    const result = await this.callAPI('v-delete-fs-directory', [username, dirPath]);
+    return result;
+  }
+
+  /**
+   * Přesune/přejmenuje soubor nebo adresář
+   * @param {string} username
+   * @param {string} fromPath
+   * @param {string} toPath
+   * @returns {Promise<{success: boolean, error?: string}>}
+   */
+  async moveFile(username, fromPath, toPath) {
+    const result = await this.callAPI('v-move-fs-file', [username, fromPath, toPath]);
+    return result;
+  }
+
+  /**
+   * Zkopíruje soubor
+   * @param {string} username
+   * @param {string} fromPath
+   * @param {string} toPath
+   * @returns {Promise<{success: boolean, error?: string}>}
+   */
+  async copyFile(username, fromPath, toPath) {
+    const result = await this.callAPI('v-copy-fs-file', [username, fromPath, toPath]);
+    return result;
+  }
+
+  /**
+   * Změní oprávnění souboru/adresáře
+   * @param {string} username
+   * @param {string} filePath
+   * @param {string} permissions - Octal string, např. '0755'
+   * @returns {Promise<{success: boolean, error?: string}>}
+   */
+  async changePermissions(username, filePath, permissions) {
+    const result = await this.callAPI('v-change-fs-file-permission', [username, filePath, permissions]);
+    return result;
+  }
+
+  /**
    * Interní: volá API a vrací surovou odpověď { ok, body, error } (pro listPackages fallback).
    */
   async _callAPIRaw(command, args = [], useReturnCode = true) {
@@ -224,12 +495,21 @@ class HestiaCP {
       if (!apiUrl.endsWith('/api/') && !apiUrl.endsWith('/api')) {
         apiUrl = apiUrl.endsWith('/') ? `${apiUrl}api/` : `${apiUrl}/api/`;
       }
-      const response = await require('node-fetch')(apiUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: formData.toString(),
-        agent
-      });
+      // SECURITY: Timeout zabraňuje visícím requestům
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 30000);
+      let response;
+      try {
+        response = await require('node-fetch')(apiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: formData.toString(),
+          agent,
+          signal: controller.signal
+        });
+      } finally {
+        clearTimeout(timeout);
+      }
       const body = await response.text();
       return { ok: response.ok, body, error: response.ok ? null : (body || 'Request failed') };
     } catch (e) {
