@@ -27,7 +27,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import { useAuth } from '../contexts/AuthContext';
 import { useCurrency } from '../contexts/CurrencyContext';
-import { getHostingService, getHostingServiceStats, HostingService, HostingServiceStats } from '../lib/supabase';
+import { getHostingService, getHostingServiceStats, HostingService, HostingServiceStats } from '../lib/api';
 import './ServiceDetail.css';
 
 const ServiceDetail: React.FC = () => {

@@ -11,7 +11,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import Editor from '@monaco-editor/react';
 import { useAuth } from '../contexts/AuthContext';
-import { getHostingService, HostingService } from '../lib/supabase';
+import { getHostingService, HostingService } from '../lib/api';
 import { useFileManager, OpenFile } from '../hooks/useFileManager';
 import { FileEntry, getLanguageFromPath, isBinaryFile, isImageFile, getDownloadUrl } from '../services/fileManagerService';
 import './FileManager.css';

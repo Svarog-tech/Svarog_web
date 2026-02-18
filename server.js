@@ -922,10 +922,12 @@ app.post('/api/gopay/check-payment',
 
 /**
  * HestiaCP - Vytvoření hosting účtu
- * SECURITY: Vyžaduje autentizaci
+ * SECURITY: Vyžaduje admin práva (běžný uživatel nemůže vytvářet HestiaCP účty přímo)
+ * HestiaCP účty se vytvářejí automaticky při registraci (authService) a po platbě (webhook)
  */
-app.post('/api/hestiacp/create-account', 
-  authenticateUser, 
+app.post('/api/hestiacp/create-account',
+  authenticateUser,
+  requireAdmin,
   validateCreateAccount,
   asyncHandler(async (req, res) => {
     logger.request(req, 'Creating HestiaCP hosting account');
@@ -1356,8 +1358,13 @@ app.put('/api/auth/user',
       values.push(last_name.trim());
     }
     if (typeof avatar_url === 'string') {
+      // SECURITY: Validace avatar URL - povoleny jen http(s) protokoly (prevence javascript: XSS)
+      const trimmedUrl = avatar_url.trim();
+      if (trimmedUrl && !/^https?:\/\//i.test(trimmedUrl)) {
+        throw new AppError('Avatar URL must start with http:// or https://', 400);
+      }
       fields.push('avatar_url = ?');
-      values.push(avatar_url.trim());
+      values.push(trimmedUrl);
     }
 
     if (fields.length === 0) {
@@ -1587,7 +1594,7 @@ app.get('/api/tickets',
 app.get('/api/tickets/:id',
   authenticateUser,
   asyncHandler(async (req, res) => {
-    const ticketId = req.params.id;
+    const ticketId = validateNumericId(req.params.id);
     const userId = req.user.id;
 
     const ticket = await db.queryOne(
@@ -1614,7 +1621,7 @@ app.get('/api/tickets/:id',
 app.put('/api/tickets/:id',
   authenticateUser,
   asyncHandler(async (req, res) => {
-    const ticketId = req.params.id;
+    const ticketId = validateNumericId(req.params.id);
     const { status, priority, assigned_to } = req.body || {};
 
     const ticket = await db.queryOne('SELECT id, user_id FROM support_tickets WHERE id = ?', [ticketId]);
@@ -1659,7 +1666,7 @@ app.put('/api/tickets/:id',
 app.get('/api/tickets/:id/messages',
   authenticateUser,
   asyncHandler(async (req, res) => {
-    const ticketId = req.params.id;
+    const ticketId = validateNumericId(req.params.id);
 
     const ticket = await db.queryOne('SELECT id, user_id FROM support_tickets WHERE id = ?', [ticketId]);
     if (!ticket) throw new AppError('Ticket not found', 404);
@@ -1685,7 +1692,7 @@ app.get('/api/tickets/:id/messages',
 app.post('/api/tickets/:id/messages',
   authenticateUser,
   asyncHandler(async (req, res) => {
-    const ticketId = req.params.id;
+    const ticketId = validateNumericId(req.params.id);
     const { message, is_admin_reply } = req.body || {};
 
     if (typeof message !== 'string' || !message.trim()) throw new AppError('Message is required', 400);
@@ -1921,8 +1928,13 @@ app.put('/api/profile',
       values.push(company);
     }
     if (typeof avatarUrl === 'string') {
+      // SECURITY: Validace avatar URL - povoleny jen http(s) protokoly
+      const trimmedAvatarUrl = avatarUrl.trim();
+      if (trimmedAvatarUrl && !/^https?:\/\//i.test(trimmedAvatarUrl)) {
+        throw new AppError('Avatar URL must start with http:// or https://', 400);
+      }
       fields.push('avatar_url = ?');
-      values.push(avatarUrl);
+      values.push(trimmedAvatarUrl);
     }
     if (typeof newsletter === 'boolean') {
       fields.push('newsletter_subscription = ?');
@@ -2189,7 +2201,7 @@ app.get('/api/orders/user/:userId',
 app.get('/api/orders/:id',
   authenticateUser,
   asyncHandler(async (req, res) => {
-    const orderId = req.params.id;
+    const orderId = validateNumericId(req.params.id);
 
     const order = await db.queryOne(
       `SELECT 
@@ -2240,32 +2252,55 @@ app.get('/api/orders/:id',
 app.put('/api/orders/:id',
   authenticateUser,
   asyncHandler(async (req, res) => {
-    const orderId = req.params.id;
+    const orderId = validateNumericId(req.params.id);
     const { status, payment_status, gopay_status } = req.body || {};
 
     const order = await db.queryOne('SELECT id, user_id FROM user_orders WHERE id = ?', [orderId]);
     if (!order) throw new AppError('Order not found', 404);
 
-    if (order.user_id !== req.user.id) {
-      const adminProfile = await db.queryOne('SELECT is_admin FROM profiles WHERE id = ?', [req.user.id]);
-      if (!adminProfile || !adminProfile.is_admin) throw new AppError('Forbidden', 403);
+    // SECURITY: Zjisti, jestli je volající admin
+    const adminProfile = await db.queryOne('SELECT is_admin FROM profiles WHERE id = ?', [req.user.id]);
+    const isAdmin = !!(adminProfile && adminProfile.is_admin);
+
+    if (order.user_id !== req.user.id && !isAdmin) {
+      throw new AppError('Forbidden', 403);
     }
 
     const updates = [];
     const values = [];
     const validStatus = ['pending', 'processing', 'active', 'cancelled', 'expired'];
     const validPaymentStatus = ['unpaid', 'paid', 'refunded', 'failed'];
+
+    // SECURITY: status, payment_status a gopay_status může měnit POUZE admin
+    // Běžný uživatel by si jinak mohl nastavit objednávku jako 'paid'/'active' a získat službu zadarmo
     if (status && validStatus.includes(status)) {
+      if (!isAdmin) throw new AppError('Only admins can update order status', 403);
       updates.push('status = ?');
       values.push(status);
     }
     if (payment_status !== undefined && validPaymentStatus.includes(payment_status)) {
+      if (!isAdmin) throw new AppError('Only admins can update payment status', 403);
       updates.push('payment_status = ?');
       values.push(payment_status);
     }
     if (gopay_status !== undefined && typeof gopay_status === 'string') {
+      if (!isAdmin) throw new AppError('Only admins can update GoPay status', 403);
       updates.push('gopay_status = ?');
       values.push(gopay_status.trim());
+    }
+    // Allow non-admin users to update payment_id and payment_url (set by frontend after creating GoPay payment)
+    const { payment_id, payment_url } = req.body || {};
+    if (payment_id !== undefined && typeof payment_id === 'string') {
+      updates.push('payment_id = ?');
+      values.push(payment_id.trim());
+    }
+    if (payment_url !== undefined && typeof payment_url === 'string') {
+      // SECURITY: Validate payment_url is http(s)
+      if (payment_url.trim() && !/^https?:\/\//i.test(payment_url.trim())) {
+        throw new AppError('Invalid payment URL', 400);
+      }
+      updates.push('payment_url = ?');
+      values.push(payment_url.trim());
     }
     if (updates.length === 0) throw new AppError('No valid fields to update', 400);
     values.push(orderId);
@@ -2347,7 +2382,7 @@ app.get('/api/hosting-services/active',
 app.get('/api/hosting-services/:id',
   authenticateUser,
   asyncHandler(async (req, res) => {
-    const serviceId = req.params.id;
+    const serviceId = validateNumericId(req.params.id);
 
     const service = await db.queryOne(
       'SELECT * FROM user_hosting_services WHERE id = ?',
@@ -2382,7 +2417,7 @@ app.get('/api/hosting-services/:id',
 app.get('/api/hosting-services/:id/stats',
   authenticateUser,
   asyncHandler(async (req, res) => {
-    const serviceId = req.params.id;
+    const serviceId = validateNumericId(req.params.id);
 
     const service = await db.queryOne(
       'SELECT * FROM user_hosting_services WHERE id = ?',
@@ -2449,7 +2484,7 @@ app.put('/api/hosting-services/:id',
   authenticateUser,
   requireAdmin,
   asyncHandler(async (req, res) => {
-    const serviceId = req.params.id;
+    const serviceId = validateNumericId(req.params.id);
     const updates = req.body || {};
 
     const allowedFields = [
@@ -2515,6 +2550,18 @@ app.put('/api/hosting-services/:id',
 // ============================================
 
 /**
+ * SECURITY: Validace že ID parametr je kladné celé číslo
+ * Zabraňuje SQL injection přes nevalidní ID (i přes prepared statements je to dobrá praxe)
+ */
+function validateNumericId(id, paramName = 'id') {
+  const num = parseInt(id, 10);
+  if (isNaN(num) || num <= 0 || String(num) !== String(id)) {
+    throw new AppError(`Invalid ${paramName}: must be a positive integer`, 400);
+  }
+  return num;
+}
+
+/**
  * Sanitizace cesty — ochrana proti path traversal
  */
 function sanitizeFilePath(requestedPath, hestiaUsername) {
@@ -2551,7 +2598,7 @@ function sanitizeFilePath(requestedPath, hestiaUsername) {
  * Middleware: Najde službu, ověří vlastnictví, vrátí hestia_username
  */
 async function resolveServiceForFiles(req) {
-  const serviceId = req.params.serviceId;
+  const serviceId = validateNumericId(req.params.serviceId, 'serviceId');
   const service = await db.queryOne(
     'SELECT * FROM user_hosting_services WHERE id = ?',
     [serviceId]
@@ -3308,19 +3355,8 @@ app.listen(PORT, async () => {
     mysqlStatus = '✅ Connected';
     logger.info('MySQL connection successful');
 
-    // Cleanup expired refresh tokenů při startu a pak každou hodinu
-    const cleanupExpiredTokens = async () => {
-      try {
-        const result = await db.execute('DELETE FROM refresh_tokens WHERE expires_at < NOW()');
-        if (result.affectedRows > 0) {
-          logger.info(`Cleaned up ${result.affectedRows} expired refresh tokens`);
-        }
-      } catch (err) {
-        logger.error('Failed to cleanup expired tokens', { error: err.message });
-      }
-    };
-    await cleanupExpiredTokens();
-    setInterval(cleanupExpiredTokens, 60 * 60 * 1000); // Každou hodinu
+    // NOTE: Cleanup expired refresh tokenů probíhá v authService.js (setInterval + setTimeout)
+    // Nepřidávat duplicitní cleanup zde
   } catch (error) {
     logger.error('MySQL connection failed', { error: error.message });
     console.error('❌ MySQL connection failed:', error.message);

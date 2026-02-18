@@ -11,7 +11,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
-import { createSupportTicket } from '../lib/supabase';
+import { createSupportTicket } from '../lib/api';
 import { getAuthHeader } from '../lib/auth';
 import TriangularBackground from '../components/TriangularBackground';
 import './Tickets.css';

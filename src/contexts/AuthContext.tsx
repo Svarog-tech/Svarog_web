@@ -21,33 +21,13 @@ import {
   createUserProfile,
   onAuthStateChange,
 } from '../lib/auth';
-import { createHostingAccount } from '../services/hestiacpService';
 
 // Create Context
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-/**
- * Vytvoří hosting účet v HestiaCP po registraci
- * Vytvoří jen uživatele v HestiaCP (bez domény), doména se přidá při objednávce
- * Účet bude mít přístup jen na web hosting, ne do HestiaCP panelu (běžný uživatel)
- */
-const createHestiaCPAccount = async (user: AppUser, profile: UserProfile) => {
-  try {
-    const tempDomain = `temp-${user.id.substring(0, 8)}.hostingforge.eu`;
-
-    const result = await createHostingAccount({
-      email: user.email || profile.email,
-      domain: tempDomain,
-      package: 'default'
-    });
-
-    if (!result.success) {
-      console.warn('[AuthContext] HestiaCP account creation deferred');
-    }
-  } catch (error) {
-    console.warn('[AuthContext] HestiaCP account creation deferred');
-  }
-};
+// NOTE: HestiaCP účet se vytváří na backendu v authService.js během registrace
+// Frontend NESMÍ volat createHostingAccount — duplikoval by API call a navíc
+// /api/hestiacp/create-account nyní vyžaduje admin práva
 
 // Hook to use auth context
 export const useAuth = (): AuthContextType => {
@@ -182,13 +162,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         // Load profile for the new user
         const profile = await loadUserProfile(result.user);
 
-        // Vytvoř hosting účet v HestiaCP (asynchronně, neblokuje registraci)
-        if (profile && result.user.email) {
-          createHestiaCPAccount(result.user, profile).catch(error => {
-            console.error('[AuthContext] Failed to create HestiaCP account:', error);
-            // Nezobrazuj chybu uživateli, protože registrace byla úspěšná
-          });
-        }
+        // HestiaCP účet se vytváří automaticky na backendu (authService.register)
 
         updateState({
           user: result.user,

@@ -19,7 +19,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import { useAuth } from '../contexts/AuthContext';
 import { useCurrency } from '../contexts/CurrencyContext';
-import { getUserOrders, getAllUserHostingServices, HostingService } from '../lib/supabase';
+import { getUserOrders, getAllUserHostingServices, HostingService } from '../lib/api';
 import './Services.css';
 
 interface Service extends HostingService {

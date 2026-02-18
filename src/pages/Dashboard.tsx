@@ -17,7 +17,7 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useCurrency } from '../contexts/CurrencyContext';
-import { getUserOrders, getAllUserHostingServices, HostingService } from '../lib/supabase';
+import { getUserOrders, getAllUserHostingServices, HostingService, Order as ApiOrder } from '../lib/api';
 import './Dashboard.css';
 
 interface Order {
@@ -30,6 +30,10 @@ interface Order {
   domain_name?: string;
   created_at: string;
   service_end_date?: string;
+  hestia_username?: string;
+  hestia_domain?: string;
+  hestia_created?: boolean;
+  cpanel_url?: string;
 }
 
 interface DashboardStats {
@@ -38,8 +42,8 @@ interface DashboardStats {
   totalSpent: number;
 }
 
-// DEV MODE: Set to true to bypass auth and use mock data for styling
-const DEV_MODE = true;
+// DEV MODE: mock data jen v development, v produkci vždy skutečná data
+const DEV_MODE = process.env.NODE_ENV === 'development';
 
 const mockProfile = {
   first_name: 'Jan',
@@ -79,7 +83,7 @@ const Dashboard: React.FC = () => {
       const hostingServices = await getAllUserHostingServices();
       
       // Merge data
-      const mergedOrders = ordersData?.map((order: any) => {
+      const mergedOrders = ordersData?.map((order: ApiOrder): Order => {
         const service = hostingServices?.find((s: HostingService) => s.order_id === order.id);
         return {
           ...order,
@@ -254,11 +258,11 @@ const Dashboard: React.FC = () => {
                   <div className="order-info">
                     <h4 className="order-title">{order.plan_name}</h4>
                     <p className="order-domain">
-                      {(order as any).hestia_domain || order.domain_name || 'Bez domény'}
+                      {order.hestia_domain || order.domain_name || 'Bez domény'}
                     </p>
-                    {(order as any).hestia_created && (order as any).hestia_username && (
+                    {order.hestia_created && order.hestia_username && (
                       <p className="order-hestia">
-                        HestiaCP: {(order as any).hestia_username}
+                        HestiaCP: {order.hestia_username}
                       </p>
                     )}
                   </div>

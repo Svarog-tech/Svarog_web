@@ -21,9 +21,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import { useCurrency } from '../contexts/CurrencyContext';
 import { useAuth } from '../contexts/AuthContext';
-import { createOrder, Order } from '../lib/supabase';
-// MFA není momentálně implementováno v MySQL verzi
-// import { supabase } from '../lib/auth';
+import { createOrder, Order } from '../lib/api';
 import { createGoPayPayment } from '../services/paymentService';
 import MultiStateButton from '../components/MultiStateButton';
 import TwoFactorModal from '../components/TwoFactorModal';

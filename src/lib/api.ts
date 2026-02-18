@@ -1,5 +1,4 @@
-// Database API Service
-// Nahrazuje Supabase databázové dotazy s vlastním API
+// Backend API client – volání vlastního Node API (objednávky, hosting, tikety, profil)
 
 import { getCurrentUser, getAuthHeader, refreshAccessToken } from './auth';
 
@@ -14,9 +13,12 @@ export async function apiCall<T>(endpoint: string, options: RequestInit = {}): P
     ...options.headers,
   };
 
+  // BUG FIX: credentials: 'include' je nutné pro odesílání httpOnly refresh token cookie
+  // Bez toho se cookie nepošle a refresh token nebude fungovat
   let response = await fetch(`${API_BASE_URL}${endpoint}`, {
     ...options,
     headers,
+    credentials: 'include',
   });
 
   // Pokud je token neplatný, zkus refresh
@@ -31,6 +33,7 @@ export async function apiCall<T>(endpoint: string, options: RequestInit = {}): P
       response = await fetch(`${API_BASE_URL}${endpoint}`, {
         ...options,
         headers,
+        credentials: 'include',
       });
     }
   }

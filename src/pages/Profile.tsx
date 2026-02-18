@@ -18,8 +18,6 @@ import {
 import { QRCodeSVG } from 'qrcode.react';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
-// MFA není momentálně implementováno v MySQL verzi
-// import { supabase } from '../lib/auth';
 import './Profile.css';
 
 const Profile: React.FC = () => {

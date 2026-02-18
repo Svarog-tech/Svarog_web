@@ -27,7 +27,7 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { getAuthHeader } from '../lib/auth';
-import { getAllUserHostingServices, HostingService } from '../lib/supabase';
+import { getAllUserHostingServices, HostingService } from '../lib/api';
 import { suspendHostingAccount, unsuspendHostingAccount, deleteHostingAccount } from '../services/hestiacpService';
 import OrderDetailModal from '../components/OrderDetailModal';
 import './Admin.css';

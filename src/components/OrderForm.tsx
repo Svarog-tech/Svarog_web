@@ -15,7 +15,7 @@ import {
   faArrowRight,
   faArrowLeft
 } from '@fortawesome/free-solid-svg-icons';
-import { createOrder, Order } from '../lib/supabase';
+import { createOrder, Order } from '../lib/api';
 import { useCurrency } from '../contexts/CurrencyContext';
 
 interface HostingPlan {
