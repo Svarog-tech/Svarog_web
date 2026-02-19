@@ -13,12 +13,16 @@ import {
   faTimes,
   faKey,
   faCopy,
-  faMapMarkerAlt
+  faMapMarkerAlt,
+  faLock
 } from '@fortawesome/free-solid-svg-icons';
 import { QRCodeSVG } from 'qrcode.react';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import './Profile.css';
+import { API_BASE_URL } from '../lib/api';
+import { getAuthHeader } from '../lib/auth';
+import { useToast } from '../components/Toast';
 
 const Profile: React.FC = () => {
   const { user, profile, updateProfile } = useAuth();
@@ -29,7 +33,9 @@ const Profile: React.FC = () => {
     email: '',
     phone: '',
     company: '',
-    address: ''
+    address: '',
+    ico: '',
+    dic: ''
   });
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -45,6 +51,11 @@ const Profile: React.FC = () => {
   const [recoveryCodes, setRecoveryCodes] = useState<string[]>([]);
   const [showRecoveryCodes, setShowRecoveryCodes] = useState(false);
   const [enrolling, setEnrolling] = useState(false);
+  const { showSuccess, showError } = useToast();
+
+  // Password change state
+  const [passwordData, setPasswordData] = useState({ oldPassword: '', newPassword: '', confirmPassword: '' });
+  const [changingPassword, setChangingPassword] = useState(false);
 
   useEffect(() => {
     if (profile || user) {
@@ -54,22 +65,21 @@ const Profile: React.FC = () => {
         email: profile?.email || user?.email || '',
         phone: profile?.phone || user?.user_metadata?.phone || '',
         company: profile?.company || user?.user_metadata?.company || '',
-        address: profile?.address || user?.user_metadata?.address || ''
+        address: profile?.address || user?.user_metadata?.address || '',
+        ico: profile?.ico || '',
+        dic: profile?.dic || ''
       });
     }
   }, [profile, user]);
 
-  // Check 2FA status - MFA není momentálně implementováno
+  // Check 2FA status podle profilu
   useEffect(() => {
-    // checkMFAStatus(); // MFA není implementováno
-    setMfaEnabled(false);
-  }, [user]);
-
-  const checkMFAStatus = async () => {
-    // MFA není momentálně implementováno v MySQL verzi
-    // TODO: Implementovat MFA
-    setMfaEnabled(false);
-  };
+    if (profile && typeof profile.two_factor_enabled === 'boolean') {
+      setMfaEnabled(profile.two_factor_enabled);
+    } else {
+      setMfaEnabled(false);
+    }
+  }, [profile]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -79,50 +89,195 @@ const Profile: React.FC = () => {
 
     try {
       const result = await updateProfile({
-        first_name: formData.firstName,
-        last_name: formData.lastName,
+        firstName: formData.firstName,
+        lastName: formData.lastName,
         phone: formData.phone,
         company: formData.company,
-        address: formData.address
+        address: formData.address,
+        ico: formData.ico,
+        dic: formData.dic
       });
 
       if (result.success) {
         setSuccess(true);
+        showSuccess('Profil byl úspěšně aktualizován.');
         setTimeout(() => setSuccess(false), 3000);
       } else {
-        setError(result.error || t('profile.error.saving'));
+        const msg = result.error || t('profile.error.saving');
+        setError(msg);
+        showError(msg);
       }
     } catch (err) {
-      setError(t('profile.error.unexpected'));
+      const msg = t('profile.error.unexpected');
+      setError(msg);
+      showError(msg);
     } finally {
       setSaving(false);
     }
   };
 
-  // Enable 2FA - MFA není momentálně implementováno
   const enable2FA = async () => {
-    setError(t('profile.2fa.notAvailable'));
-    // MFA není momentálně implementováno v MySQL verzi
-    // TODO: Implementovat MFA
+    setError('');
+    setEnrolling(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/mfa/setup`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthHeader(),
+        },
+      });
+      const result = await response.json();
+      if (response.ok && result.success) {
+        setShow2FAModal(true);
+        setQrCode(result.otpauthUrl || '');
+        setTotpSecret(result.secret || '');
+        setRecoveryCodes(result.recoveryCodes || []);
+      } else {
+        const msg = result.error || 'Nepodařilo se připravit 2FA.';
+        setError(msg);
+        showError(msg);
+      }
+    } catch (err) {
+      const msg = 'Nepodařilo se připravit 2FA.';
+      setError(msg);
+      showError(msg);
+    } finally {
+      setEnrolling(false);
+    }
   };
 
-  // Verify 2FA code - MFA není momentálně implementováno
   const verify2FA = async () => {
-    setError(t('profile.2fa.comingSoon'));
-    // MFA není momentálně implementováno v MySQL verzi
-    // TODO: Implementovat MFA
+    if (!verificationCode || verificationCode.length < 6) {
+      setError('Zadej ověřovací kód z aplikace.');
+      return;
+    }
+    setEnrolling(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/mfa/verify`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthHeader(),
+        },
+        body: JSON.stringify({ code: verificationCode }),
+      });
+      const result = await response.json();
+      if (response.ok && result.success) {
+        setMfaEnabled(true);
+        setShow2FAModal(false);
+        setVerificationCode('');
+        showSuccess(result.message || 'Dvoufaktorové ověření bylo zapnuto.');
+      } else {
+        const msg = result.error || 'Ověření kódu se nezdařilo.';
+        setError(msg);
+        showError(msg);
+      }
+    } catch (err) {
+      const msg = 'Ověření kódu se nezdařilo.';
+      setError(msg);
+      showError(msg);
+    } finally {
+      setEnrolling(false);
+    }
   };
 
-  // Disable 2FA - MFA není momentálně implementováno
   const disable2FA = async () => {
-    setError(t('profile.2fa.comingSoon'));
-    // MFA není momentálně implementováno v MySQL verzi
-    // TODO: Implementovat MFA
+    const password = prompt('Pro vypnutí 2FA zadej své heslo:');
+    if (!password) {
+      return;
+    }
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/mfa/disable`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthHeader(),
+        },
+        body: JSON.stringify({ password }),
+      });
+      const result = await response.json();
+      if (response.ok && result.success) {
+        setMfaEnabled(false);
+        setQrCode('');
+        setTotpSecret('');
+        setRecoveryCodes([]);
+        setVerificationCode('');
+        showSuccess(result.message || 'Dvoufaktorové ověření bylo vypnuto.');
+      } else {
+        const msg = result.error || 'Vypnutí 2FA se nezdařilo.';
+        showError(msg);
+      }
+    } catch (err) {
+      showError('Vypnutí 2FA se nezdařilo.');
+    }
   };
 
   // Copy to clipboard
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
+  };
+
+  const handleResendVerification = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/resend-verification`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthHeader(),
+        },
+      });
+
+      const result = await response.json();
+
+      if (response.ok && result.success) {
+        showSuccess(result.message || 'Ověřovací email byl odeslán, pokud ještě nebyl ověřen.');
+      } else {
+        const msg = result.error || 'Odeslání ověřovacího emailu se nezdařilo.';
+        showError(msg);
+      }
+    } catch (err) {
+      showError('Odeslání ověřovacího emailu se nezdařilo.');
+    }
+  };
+
+  const handleChangePassword = async () => {
+    if (!passwordData.oldPassword || !passwordData.newPassword) {
+      showError('Vyplň staré i nové heslo.');
+      return;
+    }
+    if (passwordData.newPassword.length < 8) {
+      showError('Nové heslo musí mít alespoň 8 znaků.');
+      return;
+    }
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      showError('Nová hesla se neshodují.');
+      return;
+    }
+
+    setChangingPassword(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/change-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+        credentials: 'include',
+        body: JSON.stringify({
+          oldPassword: passwordData.oldPassword,
+          newPassword: passwordData.newPassword,
+        }),
+      });
+      const result = await response.json();
+      if (response.ok && result.success) {
+        showSuccess(result.message || 'Heslo bylo úspěšně změněno.');
+        setPasswordData({ oldPassword: '', newPassword: '', confirmPassword: '' });
+      } else {
+        showError(result.error || 'Změna hesla se nezdařila.');
+      }
+    } catch {
+      showError('Změna hesla se nezdařila.');
+    } finally {
+      setChangingPassword(false);
+    }
   };
 
   // Get user initials for avatar
@@ -303,6 +458,40 @@ const Profile: React.FC = () => {
               </div>
 
               <div className="form-section-title">
+                <h2>Fakturační údaje</h2>
+              </div>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label>
+                    <FontAwesomeIcon icon={faBuilding} />
+                    IČO (volitelné)
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.ico}
+                    onChange={(e) => setFormData({ ...formData, ico: e.target.value })}
+                    placeholder="12345678"
+                    maxLength={20}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>
+                    <FontAwesomeIcon icon={faBuilding} />
+                    DIČ (volitelné)
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.dic}
+                    onChange={(e) => setFormData({ ...formData, dic: e.target.value })}
+                    placeholder="CZ12345678"
+                    maxLength={20}
+                  />
+                </div>
+              </div>
+
+              <div className="form-section-title">
                 <h2>Zabezpečení</h2>
               </div>
 
@@ -385,6 +574,66 @@ const Profile: React.FC = () => {
                 )}
               </div>
 
+              {/* Password Change */}
+              {profile?.provider !== 'google' && profile?.provider !== 'github' && (
+                <div className="password-change-section">
+                  <div className="mfa-header">
+                    <div className="mfa-info">
+                      <div className="mfa-icon">
+                        <FontAwesomeIcon icon={faLock} />
+                      </div>
+                      <div>
+                        <h3>Změna hesla</h3>
+                        <p>Pravidelná změna hesla zvyšuje zabezpečení účtu</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="password-fields">
+                    <div className="form-group">
+                      <label>Staré heslo</label>
+                      <input
+                        type="password"
+                        value={passwordData.oldPassword}
+                        onChange={(e) => setPasswordData({ ...passwordData, oldPassword: e.target.value })}
+                        placeholder="Zadej současné heslo"
+                        autoComplete="current-password"
+                      />
+                    </div>
+                    <div className="form-row">
+                      <div className="form-group">
+                        <label>Nové heslo</label>
+                        <input
+                          type="password"
+                          value={passwordData.newPassword}
+                          onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
+                          placeholder="Min. 8 znaků"
+                          autoComplete="new-password"
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label>Potvrzení nového hesla</label>
+                        <input
+                          type="password"
+                          value={passwordData.confirmPassword}
+                          onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
+                          placeholder="Zopakuj nové heslo"
+                          autoComplete="new-password"
+                        />
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      className="mfa-btn primary"
+                      onClick={handleChangePassword}
+                      disabled={changingPassword || !passwordData.oldPassword || !passwordData.newPassword}
+                    >
+                      <FontAwesomeIcon icon={faLock} />
+                      {changingPassword ? 'Měním heslo...' : 'Změnit heslo'}
+                    </button>
+                  </div>
+                </div>
+              )}
+
               <div className="form-actions">
                 <button
                   type="submit"
@@ -425,6 +674,15 @@ const Profile: React.FC = () => {
               <span className="info-value">
                 {profile?.email_verified ? '✓ Ano' : '✗ Ne'}
               </span>
+              {!profile?.email_verified && (
+                <button
+                  type="button"
+                  className="resend-verification-btn"
+                  onClick={handleResendVerification}
+                >
+                  Odeslat ověřovací email znovu
+                </button>
+              )}
             </div>
             <div className="info-item">
               <span className="info-label">Poskytovatel:</span>

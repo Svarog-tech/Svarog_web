@@ -36,12 +36,14 @@ interface HostingPlan {
   description: string;
 }
 
+import type { IconDefinition } from '@fortawesome/free-solid-svg-icons';
+
 interface Addon {
   id: string;
   name: string;
   description: string;
   price: number;
-  icon: any;
+  icon: IconDefinition;
   quantity: number;
   max?: number;
 }
@@ -379,7 +381,9 @@ const Configurator: React.FC = () => {
                         name="domain"
                         value="existing"
                         checked={domainOption === 'existing'}
-                        onChange={(e) => setDomainOption(e.target.value as any)}
+                        onChange={(e) =>
+                          setDomainOption(e.target.value as typeof domainOption)
+                        }
                       />
                       <div className="radio-content">
                         <div className="radio-icon">
@@ -398,7 +402,9 @@ const Configurator: React.FC = () => {
                         name="domain"
                         value="none"
                         checked={domainOption === 'none'}
-                        onChange={(e) => setDomainOption(e.target.value as any)}
+                        onChange={(e) =>
+                          setDomainOption(e.target.value as typeof domainOption)
+                        }
                       />
                       <div className="radio-content">
                         <div className="radio-icon">

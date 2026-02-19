@@ -345,6 +345,26 @@
   }
 }
 
+/* Password Change */
+.password-change-section {
+  padding: 1.5rem;
+  background: var(--bg-tertiary);
+  border-radius: 8px;
+  margin-top: 1rem;
+}
+
+.password-fields {
+  margin-top: 1rem;
+}
+
+.password-fields .form-group {
+  margin-bottom: 0.75rem;
+}
+
+.password-fields .mfa-btn {
+  margin-top: 0.5rem;
+}
+
 /* 2FA Styles */
 .mfa-section {
   padding: 1.5rem;

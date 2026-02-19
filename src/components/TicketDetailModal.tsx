@@ -45,6 +45,14 @@ interface TicketMessage {
   attachments?: string[];
 }
 
+interface AdminUser {
+  id: string;
+  email: string;
+  first_name?: string;
+  last_name?: string;
+  is_admin: boolean;
+}
+
 interface TicketDetailModalProps {
   ticket: Ticket | null;
   isOpen: boolean;
@@ -61,7 +69,7 @@ const TicketDetailModal: React.FC<TicketDetailModalProps> = ({ ticket, isOpen, o
   const [newMessage, setNewMessage] = useState('');
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [admins, setAdmins] = useState<any[]>([]);
+  const [admins, setAdmins] = useState<AdminUser[]>([]);
   const [showMentions, setShowMentions] = useState(false);
   const [mentionSearch, setMentionSearch] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -117,9 +125,17 @@ const TicketDetailModal: React.FC<TicketDetailModalProps> = ({ ticket, isOpen, o
       }
 
       const result = await response.json();
-      if (result.success && result.users) {
-        // Filtruj pouze adminy
-        const adminUsers = result.users.filter((u: any) => u.is_admin);
+      if (result.success && Array.isArray(result.users)) {
+        // Filtruj pouze adminy a namapuj na typ AdminUser
+        const adminUsers: AdminUser[] = (result.users as AdminUser[])
+          .filter((u) => u && u.is_admin)
+          .map((u) => ({
+            id: String(u.id),
+            email: u.email,
+            first_name: u.first_name,
+            last_name: u.last_name,
+            is_admin: !!u.is_admin
+          }));
         setAdmins(adminUsers);
       }
     } catch (error) {
@@ -236,7 +252,7 @@ const TicketDetailModal: React.FC<TicketDetailModalProps> = ({ ticket, isOpen, o
     }
   };
 
-  const handleMention = (admin: any) => {
+  const handleMention = (admin: AdminUser) => {
     const mention = `@[${admin.first_name} ${admin.last_name}](${admin.id})`;
     const cursorPos = newMessage.lastIndexOf('@');
     const beforeMention = newMessage.substring(0, cursorPos);
@@ -342,7 +358,10 @@ const TicketDetailModal: React.FC<TicketDetailModalProps> = ({ ticket, isOpen, o
                 <div className="info-row">
                   <div className="info-item">
                     <label>Status</label>
-                    <select value={status} onChange={(e) => setStatus(e.target.value as any)}>
+                    <select
+                      value={status}
+                      onChange={(e) => setStatus(e.target.value as Ticket['status'])}
+                    >
                       <option value="open">Otevřen</option>
                       <option value="in_progress">V řešení</option>
                       <option value="resolved">Vyřešen</option>
@@ -351,7 +370,10 @@ const TicketDetailModal: React.FC<TicketDetailModalProps> = ({ ticket, isOpen, o
                   </div>
                   <div className="info-item">
                     <label>Priorita</label>
-                    <select value={priority} onChange={(e) => setPriority(e.target.value as any)}>
+                    <select
+                      value={priority}
+                      onChange={(e) => setPriority(e.target.value as Ticket['priority'])}
+                    >
                       <option value="low">Nízká</option>
                       <option value="medium">Střední</option>
                       <option value="high">Vysoká</option>
@@ -378,7 +400,7 @@ const TicketDetailModal: React.FC<TicketDetailModalProps> = ({ ticket, isOpen, o
                         {new Date(ticket.created_at).toLocaleString('cs-CZ')}
                       </span>
                     </div>
-                    <div className="message-content">{ticket.message}</div>
+                    <div className="message-content">{renderMessage(ticket.message)}</div>
                   </div>
 
                   {/* Replies */}

@@ -112,7 +112,11 @@ const AdminTickets: React.FC = () => {
       const result = await response.json();
       if (result.success && result.tickets) {
         // TODO: API by mělo vracet user info s tickety
-        const ticketsWithUserInfo = result.tickets.map((ticket: any) => ({
+        const ticketsWithUserInfo = result.tickets.map((ticket: Ticket & {
+          user_email?: string;
+          profiles?: { first_name?: string; last_name?: string };
+          assigned?: { first_name?: string; last_name?: string };
+        }) => ({
           ...ticket,
           user_email: ticket.user_email,
           user_name: `${ticket.profiles?.first_name || ''} ${ticket.profiles?.last_name || ''}`.trim(),

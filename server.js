@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
+const compression = require('compression');
 const rateLimit = require('express-rate-limit');
 const cookieParser = require('cookie-parser');
 const path = require('path');
@@ -81,6 +82,10 @@ const db = require('./services/databaseService');
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+// SECURITY: Trust proxy – nutné za Nginx reverse proxy
+// Bez toho req.ip vrací 127.0.0.1 a rate limiting/IP logging nefunguje
+app.set('trust proxy', 1);
+
 // ============================================
 // SECURITY: Helmet.js - Security Headers
 // ============================================
@@ -88,6 +93,7 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
+      connectSrc: ["'self'"],
       styleSrc: ["'self'", "'unsafe-inline'"],
       scriptSrc: ["'self'"],
       imgSrc: ["'self'", "data:", "https:"],
@@ -101,12 +107,23 @@ app.use(helmet({
 }));
 
 // ============================================
+// PERFORMANCE: Gzip/Brotli Compression
+// ============================================
+app.use(compression({
+  threshold: 1024, // Only compress responses > 1KB
+  filter: (req, res) => {
+    if (req.headers['x-no-compression']) return false;
+    return compression.filter(req, res);
+  },
+}));
+
+// ============================================
 // SECURITY: Rate Limiting
 // ============================================
 // Obecný rate limiter pro všechny requesty
 const generalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minut
-  max: 100, // max 100 requestů za 15 minut
+  max: 300, // max 300 requestů za 15 minut (SPA potřebuje více – listing, detail, stats...)
   message: 'Příliš mnoho requestů z této IP, zkuste to později.',
   standardHeaders: true,
   legacyHeaders: false,
@@ -118,6 +135,15 @@ const authLimiter = rateLimit({
   max: 5, // max 5 pokusů o přihlášení/registraci
   message: 'Příliš mnoho pokusů o přihlášení, zkuste to za 15 minut.',
   skipSuccessfulRequests: true, // Nezapočítá úspěšné pokusy
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Limiter pro citlivé operace (MFA, změna hesla)
+const sensitiveOpLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  message: 'Příliš mnoho pokusů, zkuste to za 15 minut.',
   standardHeaders: true,
   legacyHeaders: false,
 });
@@ -185,6 +211,31 @@ function clearRefreshTokenCookie(res) {
   });
 }
 
+// SECURITY: Globální CSRF guard pro všechny state-changing requesty
+// Prohlížeč neumí přidat custom header přes cross-site form submit ani <img>/<form> tag
+// Výjimky: webhooky (mají vlastní validaci přes IP whitelist) a health check
+function requireCsrfGuard(req, res, next) {
+  const method = req.method.toUpperCase();
+  if (!['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) {
+    return next();
+  }
+
+  // Webhook endpointy mají vlastní validaci (IP whitelist)
+  if (req.path.includes('/webhook')) {
+    return next();
+  }
+
+  const csrfHeader = req.get('X-CSRF-Guard');
+  if (!csrfHeader) {
+    return next(new AppError('Missing CSRF protection header', 403));
+  }
+
+  next();
+}
+
+// SECURITY: Aplikuj CSRF guard globálně na /api/ endpointy
+app.use('/api/', requireCsrfGuard);
+
 // ============================================
 // SECURITY: Autentizace middleware
 // ============================================
@@ -222,6 +273,7 @@ const authenticateUser = asyncHandler(async (req, res, next) => {
     req.user = {
       id: user.id,
       email: user.email,
+      is_admin: !!(user.is_admin),
       user_metadata: {
         first_name: user.first_name,
         last_name: user.last_name
@@ -252,15 +304,9 @@ const requireAdmin = asyncHandler(async (req, res, next) => {
   }
 
   try {
-    // Zkontroluj admin práva v MySQL databázi (HestiaCP)
-    const profile = await db.queryOne(
-      'SELECT is_admin FROM profiles WHERE id = ?',
-      [req.user.id]
-    );
-
-    // MySQL může vracet is_admin jako 0/1 (number) nebo string; považuj za admin když je truthy
-    const isAdmin = profile && (profile.is_admin === 1 || profile.is_admin === true || profile.is_admin === '1');
-    if (!isAdmin) {
+    // PERFORMANCE: Použij is_admin z req.user (nastavený v authenticateUser z DB)
+    // Tím se eliminuje duplicitní DB dotaz
+    if (!req.user.is_admin) {
       throw new AppError('Admin access required', 403);
     }
 
@@ -276,13 +322,13 @@ const requireAdmin = asyncHandler(async (req, res, next) => {
 });
 
 // GoPay konfigurace z .env
-const GOPAY_API_URL = process.env.REACT_APP_GOPAY_ENVIRONMENT === 'PRODUCTION'
+const GOPAY_API_URL = process.env.GOPAY_ENVIRONMENT === 'PRODUCTION'
   ? 'https://gate.gopay.cz/api'
   : 'https://gw.sandbox.gopay.com/api';
 
-const GOPAY_CLIENT_ID = process.env.REACT_APP_GOPAY_CLIENT_ID;
-const GOPAY_CLIENT_SECRET = process.env.REACT_APP_GOPAY_CLIENT_SECRET;
-const GOPAY_GO_ID = process.env.REACT_APP_GOPAY_GO_ID;
+const GOPAY_CLIENT_ID = process.env.GOPAY_CLIENT_ID;
+const GOPAY_CLIENT_SECRET = process.env.GOPAY_CLIENT_SECRET;
+const GOPAY_GO_ID = process.env.GOPAY_GO_ID;
 
 /**
  * SECURITY: Fetch s timeoutem - zabraňuje visícím requestům při nedostupnosti externích API
@@ -705,6 +751,13 @@ app.post('/api/gopay/webhook',
           updateFields.push('payment_date = NOW()');
           updateFields.push('status = ?');
           updateValues.push('active');
+
+          // Vystav fakturu pokud ještě nemá číslo faktury
+          if (!order.invoice_number) {
+            updateFields.push('invoice_number = ?');
+            updateFields.push('invoice_issued_at = NOW()');
+            updateValues.push(`INV-${order.id}`);
+          }
         }
 
         updateValues.push(order.id);
@@ -859,6 +912,36 @@ app.post('/api/gopay/webhook',
           error: 'Webhook processing error (logged)'
         });
       }
+
+      // Po úspěšném zpracování webhooku a případném vystavení faktury pošli potvrzovací email (best-effort)
+      if (isPaid && order.payment_status !== 'paid') {
+        try {
+          const profile = await db.queryOne(
+            'SELECT email FROM profiles WHERE id = ?',
+            [order.user_id]
+          );
+          const toEmail = profile?.email || order.billing_email || order.customer_email;
+          if (toEmail) {
+            const appUrl = process.env.APP_URL || 'http://localhost:3000';
+            const invoiceUrl = `${appUrl.replace(/\/+$/, '')}/api/orders/${order.id}/invoice`;
+            const amount = Number(order.price) || 0;
+            const currency = order.currency || 'CZK';
+            await sendPaymentConfirmationEmail(
+              toEmail,
+              invoiceUrl,
+              amount.toLocaleString('cs-CZ', { style: 'currency', currency }),
+              currency,
+              order.id
+            );
+          }
+        } catch (emailError) {
+          logger.error('Failed to send payment confirmation email', {
+            requestId: req.id,
+            error: emailError.message || emailError,
+            orderId: order.id,
+          });
+        }
+      }
     };
     try {
       await handleWebhook(req, res);
@@ -872,14 +955,41 @@ app.post('/api/gopay/webhook',
 
 /**
  * Kontrola statusu platby
- * SECURITY: Vyžaduje autentizaci
+ * SECURITY:
+ *  - Vyžaduje autentizaci
+ *  - Uživatel může zkontrolovat pouze platby svých objednávek
+ *  - Admin může zkontrolovat libovolnou platbu
  */
 app.post('/api/gopay/check-payment', 
   authenticateUser, 
   validateCheckPayment,
   asyncHandler(async (req, res) => {
-    const { paymentId } = req.body;
-    logger.request(req, 'Checking payment status', { paymentId });
+    const { paymentId } = req.body || {};
+    logger.request(req, 'Checking payment status', { paymentId, userId: req.user.id });
+
+    if (!paymentId || typeof paymentId !== 'string' || !paymentId.trim()) {
+      throw new AppError('paymentId is required', 400);
+    }
+
+    // SECURITY: Než zavoláme GoPay API, ověř, že paymentId patří objednávce
+    // aktuálně přihlášeného uživatele (nebo že je volající admin).
+    const order = await db.queryOne(
+      'SELECT id, user_id FROM user_orders WHERE payment_id = ? LIMIT 1',
+      [paymentId.trim()]
+    );
+
+    if (!order) {
+      // Neprozrazujeme, jestli paymentId vůbec existuje v systému – jen 404
+      throw new AppError('Order not found for this payment', 404);
+    }
+
+    // PERFORMANCE: Použij is_admin z req.user (nastavený v authenticateUser)
+    const isAdmin = !!req.user.is_admin;
+
+    // Pokud není admin a objednávka nepatří jemu, odmítni
+    if (order.user_id !== req.user.id && !isAdmin) {
+      throw new AppError('Forbidden', 403);
+    }
 
     const accessToken = await getAccessToken();
 
@@ -1155,6 +1265,7 @@ app.post('/api/hestiacp/delete-account',
 // Authentication Endpoints (MySQL-based)
 // ============================================
 const authService = require('./services/authService');
+const { sendPaymentConfirmationEmail, sendTicketNotificationEmail } = require('./services/emailService');
 
 /**
  * Registrace nového uživatele
@@ -1214,7 +1325,7 @@ app.post('/api/auth/login',
   asyncHandler(async (req, res) => {
     logger.request(req, 'User login attempt');
     
-    const { email, password } = req.body;
+    const { email, password, mfaCode, recoveryCode } = req.body || {};
 
     if (!email || !password) {
       throw new AppError('Email a heslo jsou povinné', 400);
@@ -1225,7 +1336,7 @@ app.post('/api/auth/login',
       throw new AppError('Email a heslo musí být textové řetězce', 400);
     }
 
-    const result = await authService.login(email, password);
+    const result = await authService.login(email, password, mfaCode, recoveryCode);
 
     if (result.success) {
       logger.request(req, 'User logged in successfully', { userId: result.user.id });
@@ -1237,6 +1348,14 @@ app.post('/api/auth/login',
         accessToken: result.accessToken,
       });
     } else {
+      if (result.mfaRequired) {
+        logger.warn('Login MFA required', { requestId: req.id, email });
+        return res.status(401).json({
+          success: false,
+          error: result.error || 'Je vyžadován ověřovací kód',
+          mfaRequired: true,
+        });
+      }
       logger.warn('Login failed', { requestId: req.id, email });
       throw new AppError(result.error || 'Nesprávný email nebo heslo', 401);
     }
@@ -1247,6 +1366,7 @@ app.post('/api/auth/login',
  * Refresh access token
  */
 app.post('/api/auth/refresh',
+  requireCsrfGuard,
   asyncHandler(async (req, res) => {
     // SECURITY: Čti refresh token z httpOnly cookie (fallback na body pro zpětnou kompatibilitu)
     const refreshToken = req.cookies?.[REFRESH_COOKIE_NAME] || req.body?.refreshToken;
@@ -1258,6 +1378,10 @@ app.post('/api/auth/refresh',
     const result = await authService.refreshAccessToken(refreshToken);
 
     if (result.success) {
+      // SECURITY: Refresh token rotation – ulož nový refresh token do httpOnly cookie
+      if (result.refreshToken) {
+        setRefreshTokenCookie(res, result.refreshToken);
+      }
       res.json({
         success: true,
         accessToken: result.accessToken,
@@ -1274,6 +1398,7 @@ app.post('/api/auth/refresh',
  * Odhlášení uživatele
  */
 app.post('/api/auth/logout',
+  requireCsrfGuard,
   asyncHandler(async (req, res) => {
     // SECURITY: Čti refresh token z httpOnly cookie (fallback na body)
     const refreshToken = req.cookies?.[REFRESH_COOKIE_NAME] || req.body?.refreshToken;
@@ -1285,6 +1410,131 @@ app.post('/api/auth/logout',
     // Smaž cookie
     clearRefreshTokenCookie(res);
     res.json({ success: true, message: 'Odhlášení úspěšné' });
+  })
+);
+
+// ============================================
+// OAuth Endpoints (Google, GitHub)
+// ============================================
+const oauthService = require('./services/oauthService');
+
+// Dočasné úložiště pro OAuth state (prevence CSRF)
+// V produkci by mělo být v Redis/DB, ale pro malý provoz stačí in-memory s TTL
+const oauthStates = new Map();
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, value] of oauthStates) {
+    if (now - value.createdAt > 10 * 60 * 1000) { // 10 minut TTL
+      oauthStates.delete(key);
+    }
+  }
+}, 60 * 1000);
+
+/**
+ * Zahájení OAuth flow – přesměruje na provider
+ */
+app.get('/api/auth/oauth/:provider/start',
+  authLimiter,
+  asyncHandler(async (req, res) => {
+    const { provider } = req.params;
+    const { redirect } = req.query;
+
+    if (!['google', 'github'].includes(provider)) {
+      throw new AppError(`Nepodporovaný OAuth provider: ${provider}`, 400);
+    }
+
+    if (!oauthService.isProviderConfigured(provider)) {
+      throw new AppError(`OAuth provider ${provider} není nakonfigurovaný. Nastavte ${provider.toUpperCase()}_CLIENT_ID a ${provider.toUpperCase()}_CLIENT_SECRET v .env`, 500);
+    }
+
+    // Generuj state token pro CSRF ochranu
+    const state = require('crypto').randomBytes(32).toString('hex');
+    oauthStates.set(state, {
+      provider,
+      frontendRedirect: redirect || '/',
+      createdAt: Date.now(),
+    });
+
+    const appUrl = process.env.APP_URL || 'http://localhost:3000';
+    const callbackUrl = `${appUrl.replace(/\/+$/, '')}/api/auth/oauth/${provider}/callback`;
+
+    const authorizationUrl = oauthService.getAuthorizationUrl(provider, callbackUrl, state);
+    res.redirect(authorizationUrl);
+  })
+);
+
+/**
+ * OAuth callback – provider přesměruje sem po autorizaci
+ */
+app.get('/api/auth/oauth/:provider/callback',
+  asyncHandler(async (req, res) => {
+    const { provider } = req.params;
+    const { code, state, error: oauthError } = req.query;
+
+    // Zjisti frontend redirect z uloženého state
+    const stateData = state ? oauthStates.get(state) : null;
+    const frontendRedirect = stateData?.frontendRedirect || '/auth/callback';
+    const appUrl = process.env.APP_URL || 'http://localhost:3000';
+    const frontendUrl = `${appUrl.replace(/\/+$/, '')}${frontendRedirect.startsWith('/') ? frontendRedirect : '/' + frontendRedirect}`;
+
+    // Vyčisti state
+    if (state) {
+      oauthStates.delete(state);
+    }
+
+    // Chyba od providera
+    if (oauthError) {
+      logger.warn('OAuth error from provider', { provider, error: oauthError });
+      return res.redirect(`${frontendUrl}?error=${encodeURIComponent(oauthError)}`);
+    }
+
+    // Validace
+    if (!code || !state || !stateData) {
+      logger.warn('OAuth callback missing code or invalid state', { provider, hasCode: !!code, hasState: !!state });
+      return res.redirect(`${frontendUrl}?error=${encodeURIComponent('Neplatný OAuth požadavek')}`);
+    }
+
+    if (stateData.provider !== provider) {
+      logger.warn('OAuth state provider mismatch', { expected: stateData.provider, got: provider });
+      return res.redirect(`${frontendUrl}?error=${encodeURIComponent('Neplatný OAuth požadavek')}`);
+    }
+
+    try {
+      const callbackUrl = `${appUrl.replace(/\/+$/, '')}/api/auth/oauth/${provider}/callback`;
+
+      // Vyměň code za access token
+      const oauthAccessToken = await oauthService.exchangeCodeForToken(provider, code, callbackUrl);
+
+      // Získej profil uživatele
+      const profile = await oauthService.getUserProfile(provider, oauthAccessToken);
+
+      // Najdi nebo vytvoř uživatele
+      const user = await oauthService.findOrCreateUser(provider, profile);
+
+      // Vydej JWT tokeny
+      const accessToken = authService.generateAccessToken(user);
+      const refreshToken = authService.generateRefreshToken(user);
+
+      // Ulož refresh token do DB
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + 7);
+      await db.execute(
+        `INSERT INTO refresh_tokens (user_id, token, expires_at) VALUES (?, ?, ?)`,
+        [user.id, refreshToken, expiresAt]
+      );
+
+      // Nastav refresh token cookie
+      setRefreshTokenCookie(res, refreshToken);
+
+      logger.info('OAuth login successful', { provider, userId: user.id, email: user.email });
+
+      // Redirect na frontend s access tokenem v URL fragment (bezpečnější než query string – neodesílá se na server)
+      res.redirect(`${frontendUrl}#access_token=${accessToken}`);
+
+    } catch (err) {
+      logger.error('OAuth callback error', { provider, error: err.message });
+      res.redirect(`${frontendUrl}?error=${encodeURIComponent(err.message || 'OAuth přihlášení se nezdařilo')}`);
+    }
   })
 );
 
@@ -1300,6 +1550,7 @@ app.get('/api/auth/user',
          u.id,
          u.email,
          u.email_verified,
+         u.mfa_enabled,
          u.provider,
          u.created_at,
          u.updated_at,
@@ -1329,7 +1580,8 @@ app.get('/api/auth/user',
         avatar_url: fullUser.avatar_url,
         email_verified: !!fullUser.email_verified,
         created_at: fullUser.created_at,
-        updated_at: fullUser.updated_at
+        updated_at: fullUser.updated_at,
+        two_factor_enabled: !!fullUser.mfa_enabled
       }
     });
   })
@@ -1423,9 +1675,126 @@ app.post('/api/auth/reset-password',
 );
 
 /**
+ * Ověření emailu pomocí tokenu
+ */
+app.post('/api/auth/verify-email',
+  authLimiter,
+  asyncHandler(async (req, res) => {
+    const { token } = req.body || {};
+
+    if (!token) {
+      throw new AppError('Verifikační token je povinný', 400);
+    }
+
+    const result = await authService.verifyEmail(token);
+
+    if (result.success) {
+      res.json(result);
+    } else {
+      throw new AppError(result.error || 'Ověření emailu se nezdařilo', 400);
+    }
+  })
+);
+
+/**
+ * Zaslat znovu ověřovací email (pouze přihlášený uživatel)
+ */
+app.post('/api/auth/resend-verification',
+  authenticateUser,
+  authLimiter,
+  asyncHandler(async (req, res) => {
+    const email = req.user.email;
+
+    if (!email) {
+      throw new AppError('Uživatel nemá nastavený email', 400);
+    }
+
+    try {
+      await authService.createEmailVerificationForUser(req.user.id, email);
+    } catch (error) {
+      logger.errorRequest(req, error, { context: 'resend_verification' });
+      throw new AppError('Odeslání ověřovacího emailu se nezdařilo', 500);
+    }
+
+    res.json({
+      success: true,
+      message: 'Pokud email ještě není ověřen, byl odeslán nový ověřovací email',
+    });
+  })
+);
+
+/**
+ * MFA: Začátek nastavení (vytvoření secretu a recovery kódů)
+ */
+app.post('/api/auth/mfa/setup',
+  sensitiveOpLimiter,
+  authenticateUser,
+  asyncHandler(async (req, res) => {
+    const userId = req.user.id;
+    const email = req.user.email;
+
+    const setup = await authService.startMfaSetup(userId, email);
+
+    res.json({
+      success: true,
+      ...setup,
+    });
+  })
+);
+
+/**
+ * MFA: Potvrzení nastavení (ověření TOTP kódu)
+ */
+app.post('/api/auth/mfa/verify',
+  sensitiveOpLimiter,
+  authenticateUser,
+  asyncHandler(async (req, res) => {
+    const userId = req.user.id;
+    const { code } = req.body || {};
+
+    if (!code) {
+      throw new AppError('Ověřovací kód je povinný', 400);
+    }
+
+    const result = await authService.confirmMfaSetup(userId, String(code));
+
+    if (result.success) {
+      res.json(result);
+    } else {
+      throw new AppError(result.error || 'Ověření kódu se nezdařilo', 400);
+    }
+  })
+);
+
+/**
+ * MFA: Vypnutí (vyžaduje heslo)
+ */
+app.post('/api/auth/mfa/disable',
+  sensitiveOpLimiter,
+  authenticateUser,
+  asyncHandler(async (req, res) => {
+    const userId = req.user.id;
+    const { password } = req.body || {};
+
+    if (!password) {
+      throw new AppError('Heslo je povinné', 400);
+    }
+
+    const result = await authService.disableMfa(userId, password);
+
+    if (result.success) {
+      res.json(result);
+    } else {
+      throw new AppError(result.error || 'Vypnutí 2FA se nezdařilo', 400);
+    }
+  })
+);
+
+/**
  * Změna hesla přihlášeného uživatele
  */
 app.post('/api/auth/change-password',
+  sensitiveOpLimiter,
   authenticateUser,
   asyncHandler(async (req, res) => {
     const { oldPassword, newPassword } = req.body;
@@ -1554,25 +1923,19 @@ app.get('/api/tickets',
   authenticateUser,
   asyncHandler(async (req, res) => {
     const userId = req.user.id;
+    const { page, limit, offset } = parsePagination(req.query);
 
-    const query = `
-      SELECT
-        id,
-        subject,
-        message,
-        status,
-        priority,
-        category,
-        created_at,
-        updated_at,
-        last_reply_at,
-        resolved_at
-      FROM support_tickets
-      WHERE user_id = ?
-      ORDER BY created_at DESC
-    `;
+    const countResult = await db.query(
+      'SELECT COUNT(*) as total FROM support_tickets WHERE user_id = ?', [userId]
+    );
+    const total = countResult[0]?.total || 0;
 
-    const tickets = await db.query(query, [userId]);
+    const tickets = await db.query(`
+      SELECT id, subject, message, status, priority, category,
+             created_at, updated_at, last_reply_at, resolved_at
+      FROM support_tickets WHERE user_id = ?
+      ORDER BY created_at DESC LIMIT ? OFFSET ?
+    `, [userId, limit, offset]);
 
     logger.info(`Retrieved ${tickets.length} tickets for user ${userId}`, {
       requestId: req.id,
@@ -1582,7 +1945,8 @@ app.get('/api/tickets',
 
     res.json({
       success: true,
-      tickets: tickets || []
+      tickets: tickets || [],
+      pagination: paginationMeta(page, limit, total)
     });
   })
 );
@@ -1604,9 +1968,8 @@ app.get('/api/tickets/:id',
     if (!ticket) throw new AppError('Ticket not found', 404);
 
     const isOwner = ticket.user_id === userId;
-    if (!isOwner) {
-      const adminProfile = await db.queryOne('SELECT is_admin FROM profiles WHERE id = ?', [userId]);
-      if (!adminProfile || !adminProfile.is_admin) throw new AppError('Forbidden', 403);
+    if (!isOwner && !req.user.is_admin) {
+      throw new AppError('Forbidden', 403);
     }
 
     res.json({ success: true, ticket });
@@ -1628,23 +1991,30 @@ app.put('/api/tickets/:id',
     if (!ticket) throw new AppError('Ticket not found', 404);
 
     const isOwner = ticket.user_id === req.user.id;
-    const adminProfile = await db.queryOne('SELECT is_admin FROM profiles WHERE id = ?', [req.user.id]);
-    const isAdmin = !!(adminProfile && adminProfile.is_admin);
+    const isAdmin = !!req.user.is_admin;
     if (!isOwner && !isAdmin) throw new AppError('Forbidden', 403);
 
     const updates = [];
     const values = [];
     const validStatus = ['open', 'in_progress', 'waiting', 'resolved', 'closed'];
     const validPriority = ['low', 'medium', 'high', 'urgent'];
+
+    // SECURITY: Non-admin users can only close their own tickets
     if (status && validStatus.includes(status)) {
+      if (!isAdmin && status !== 'closed') {
+        throw new AppError('You can only close tickets', 403);
+      }
       updates.push('status = ?');
       values.push(status);
     }
+    // SECURITY: Only admins can change priority and assignment
     if (priority && validPriority.includes(priority)) {
+      if (!isAdmin) throw new AppError('Only admins can change priority', 403);
       updates.push('priority = ?');
       values.push(priority);
     }
     if (assigned_to !== undefined) {
+      if (!isAdmin) throw new AppError('Only admins can assign tickets', 403);
       updates.push('assigned_to = ?');
       values.push(assigned_to === null || assigned_to === '' ? null : assigned_to);
     }
@@ -1672,8 +2042,7 @@ app.get('/api/tickets/:id/messages',
     if (!ticket) throw new AppError('Ticket not found', 404);
 
     const isOwner = ticket.user_id === req.user.id;
-    const adminProfile = await db.queryOne('SELECT is_admin FROM profiles WHERE id = ?', [req.user.id]);
-    if (!isOwner && (!adminProfile || !adminProfile.is_admin)) throw new AppError('Forbidden', 403);
+    if (!isOwner && !req.user.is_admin) throw new AppError('Forbidden', 403);
 
     const messages = await db.query(
       `SELECT id, ticket_id, user_id, message, is_admin_reply, created_at
@@ -1697,17 +2066,22 @@ app.post('/api/tickets/:id/messages',
 
     if (typeof message !== 'string' || !message.trim()) throw new AppError('Message is required', 400);
 
-    const ticket = await db.queryOne('SELECT id, user_id FROM support_tickets WHERE id = ?', [ticketId]);
+    const ticket = await db.queryOne(
+      `SELECT t.id, t.user_id, t.subject, p.email AS user_email
+       FROM support_tickets t
+       LEFT JOIN profiles p ON p.id = t.user_id
+       WHERE t.id = ?`,
+      [ticketId]
+    );
     if (!ticket) throw new AppError('Ticket not found', 404);
 
     const isOwner = ticket.user_id === req.user.id;
-    const adminProfile = await db.queryOne('SELECT is_admin FROM profiles WHERE id = ?', [req.user.id]);
-    const isAdmin = !!(adminProfile && adminProfile.is_admin);
+    const isAdmin = !!req.user.is_admin;
     if (!isOwner && !isAdmin) throw new AppError('Forbidden', 403);
 
     await db.execute(
       'INSERT INTO ticket_messages (ticket_id, user_id, message, is_admin_reply) VALUES (?, ?, ?, ?)',
-      [ticketId, req.user.id, message.trim(), !!is_admin_reply]
+      [ticketId, req.user.id, message.trim(), isAdmin]
     );
     await db.execute(
       'UPDATE support_tickets SET last_reply_at = NOW(), updated_at = NOW() WHERE id = ?',
@@ -1718,6 +2092,44 @@ app.post('/api/tickets/:id/messages',
       'SELECT id, ticket_id, user_id, message, is_admin_reply, created_at FROM ticket_messages WHERE ticket_id = ? ORDER BY created_at ASC',
       [ticketId]
     );
+
+    // BEST-EFFORT EMAIL NOTIFIKACE (neblokuje odpověď)
+    try {
+      const appUrl = process.env.APP_URL || 'http://localhost:3000';
+      const subjectBase = ticket.subject || `Ticket #${ticket.id}`;
+      const preview = message.trim().slice(0, 200);
+
+      // Pokud odpovídá admin → pošli mail uživateli
+      if (isAdmin && ticket.user_email) {
+        await sendTicketNotificationEmail(
+          ticket.user_email,
+          `Nová odpověď na ticket: ${subjectBase}`,
+          preview,
+          ticket.id
+        );
+      }
+
+      // Pokud odpovídá uživatel → TODO: tady by bylo vhodné poslat email na support/admin adresu
+      // Můžeme použít SMTP_FROM jako fallback příjemce
+      if (!isAdmin) {
+        const supportEmail = process.env.SMTP_FROM || process.env.MAIL_FROM;
+        if (supportEmail) {
+          await sendTicketNotificationEmail(
+            supportEmail,
+            `Nová zpráva od zákazníka v ticketu: ${subjectBase}`,
+            preview,
+            ticket.id
+          );
+        }
+      }
+    } catch (emailError) {
+      logger.error('Failed to send ticket notification email', {
+        requestId: req.id,
+        error: emailError.message || emailError,
+        ticketId,
+      });
+    }
+
     res.json({ success: true, messages: messages || [] });
   })
 );
@@ -1734,19 +2146,17 @@ app.get('/api/admin/users',
   authenticateUser,
   requireAdmin,
   asyncHandler(async (req, res) => {
+    const { page, limit, offset } = parsePagination(req.query);
+
+    const countResult = await db.query('SELECT COUNT(*) as total FROM users');
+    const total = countResult[0]?.total || 0;
+
     const rows = await db.query(
-      `SELECT 
-         u.id,
-         u.email,
-         u.email_verified,
-         u.created_at,
-         u.last_login,
-         p.first_name,
-         p.last_name,
-         p.is_admin
-       FROM users u
-       LEFT JOIN profiles p ON p.id = u.id
-       ORDER BY u.created_at DESC`
+      `SELECT
+         u.id, u.email, u.email_verified, u.created_at, u.last_login,
+         u.failed_logins, u.locked_until, p.first_name, p.last_name, p.is_admin
+       FROM users u LEFT JOIN profiles p ON p.id = u.id
+       ORDER BY u.created_at DESC LIMIT ? OFFSET ?`, [limit, offset]
     );
 
     const users = (rows || []).map(row => ({
@@ -1757,12 +2167,37 @@ app.get('/api/admin/users',
       is_admin: !!row.is_admin,
       email_verified: !!row.email_verified,
       created_at: row.created_at,
-      last_login: row.last_login
+      last_login: row.last_login,
+      failed_logins: typeof row.failed_logins === 'number' ? row.failed_logins : 0,
+      locked_until: row.locked_until || null,
     }));
 
     res.json({
       success: true,
-      users
+      users,
+      pagination: paginationMeta(page, limit, total)
+    });
+  })
+);
+
+/**
+ * Admin: unlock user account (reset failed_logins and locked_until)
+ * POST /api/admin/users/:userId/unlock
+ */
+app.post('/api/admin/users/:userId/unlock',
+  authenticateUser,
+  requireAdmin,
+  asyncHandler(async (req, res) => {
+    const targetUserId = req.params.userId;
+
+    await db.execute(
+      'UPDATE users SET failed_logins = 0, locked_until = NULL WHERE id = ?',
+      [targetUserId]
+    );
+
+    res.json({
+      success: true,
+      message: 'Uživatelský účet byl odemknut.',
     });
   })
 );
@@ -1778,15 +2213,8 @@ app.get('/api/profile/:userId',
   asyncHandler(async (req, res) => {
     const targetUserId = req.params.userId;
 
-    if (req.user.id !== targetUserId) {
-      // Only admins can access other users' profiles
-      const adminProfile = await db.queryOne(
-        'SELECT is_admin FROM profiles WHERE id = ?',
-        [req.user.id]
-      );
-      if (!adminProfile || !adminProfile.is_admin) {
-        throw new AppError('Forbidden', 403);
-      }
+    if (req.user.id !== targetUserId && !req.user.is_admin) {
+      throw new AppError('Forbidden', 403);
     }
 
     const profile = await db.queryOne(
@@ -1799,6 +2227,9 @@ app.get('/api/profile/:userId',
          p.avatar_url,
          p.phone,
          p.company,
+         p.address,
+         p.ico,
+         p.dic,
          p.created_at,
          p.updated_at,
          p.last_login,
@@ -1824,6 +2255,9 @@ app.get('/api/profile/:userId',
         avatar_url: profile.avatar_url,
         phone: profile.phone,
         company: profile.company,
+        address: profile.address || '',
+        ico: profile.ico || '',
+        dic: profile.dic || '',
         created_at: profile.created_at,
         updated_at: profile.updated_at,
         last_login: profile.last_login,
@@ -1863,6 +2297,9 @@ app.put('/api/profile/:userId',
          p.avatar_url,
          p.phone,
          p.company,
+         p.address,
+         p.ico,
+         p.dic,
          p.created_at,
          p.updated_at,
          p.last_login,
@@ -1884,6 +2321,9 @@ app.put('/api/profile/:userId',
         avatar_url: updated.avatar_url,
         phone: updated.phone,
         company: updated.company,
+        address: updated.address || '',
+        ico: updated.ico || '',
+        dic: updated.dic || '',
         created_at: updated.created_at,
         updated_at: updated.updated_at,
         last_login: updated.last_login,
@@ -1900,7 +2340,7 @@ app.put('/api/profile/:userId',
 app.put('/api/profile',
   authenticateUser,
   asyncHandler(async (req, res) => {
-    const { userId, firstName, lastName, phone, company, avatarUrl, newsletter } = req.body || {};
+    const { userId, firstName, lastName, phone, company, avatarUrl, newsletter, address, ico, dic } = req.body || {};
     const targetUserId = userId || req.user.id;
 
     if (targetUserId !== req.user.id) {
@@ -1926,6 +2366,18 @@ app.put('/api/profile',
     if (typeof company === 'string') {
       fields.push('company = ?');
       values.push(company);
+    }
+    if (typeof address === 'string') {
+      fields.push('address = ?');
+      values.push(address);
+    }
+    if (typeof ico === 'string') {
+      fields.push('ico = ?');
+      values.push(ico.trim());
+    }
+    if (typeof dic === 'string') {
+      fields.push('dic = ?');
+      values.push(dic.trim());
     }
     if (typeof avatarUrl === 'string') {
       // SECURITY: Validace avatar URL - povoleny jen http(s) protokoly
@@ -1966,6 +2418,9 @@ app.put('/api/profile',
          p.avatar_url,
          p.phone,
          p.company,
+         p.address,
+         p.ico,
+         p.dic,
          p.created_at,
          p.updated_at,
          p.last_login,
@@ -1987,6 +2442,9 @@ app.put('/api/profile',
         avatar_url: updated.avatar_url,
         phone: updated.phone,
         company: updated.company,
+        address: updated.address || '',
+        ico: updated.ico || '',
+        dic: updated.dic || '',
         created_at: updated.created_at,
         updated_at: updated.updated_at,
         last_login: updated.last_login,
@@ -2140,25 +2598,46 @@ app.get('/api/orders',
   authenticateUser,
   asyncHandler(async (req, res) => {
     const { payment_id: paymentId } = req.query || {};
-    const adminProfile = await db.queryOne('SELECT is_admin FROM profiles WHERE id = ?', [req.user.id]);
-    const isAdmin = !!(adminProfile && adminProfile.is_admin);
+    const isAdmin = !!req.user.is_admin;
+    const { page, limit, offset } = parsePagination(req.query);
 
-    let orders;
+    let countQuery, dataQuery, params, countParams;
+
     if (isAdmin) {
       if (paymentId && typeof paymentId === 'string') {
-        orders = await db.query('SELECT * FROM user_orders WHERE payment_id = ? ORDER BY created_at DESC', [paymentId.trim()]);
+        countQuery = 'SELECT COUNT(*) as total FROM user_orders WHERE payment_id = ?';
+        dataQuery = 'SELECT * FROM user_orders WHERE payment_id = ? ORDER BY created_at DESC LIMIT ? OFFSET ?';
+        countParams = [paymentId.trim()];
+        params = [paymentId.trim(), limit, offset];
       } else {
-        orders = await db.query('SELECT * FROM user_orders ORDER BY created_at DESC');
+        countQuery = 'SELECT COUNT(*) as total FROM user_orders';
+        dataQuery = 'SELECT * FROM user_orders ORDER BY created_at DESC LIMIT ? OFFSET ?';
+        countParams = [];
+        params = [limit, offset];
       }
     } else {
       if (paymentId && typeof paymentId === 'string') {
-        orders = await db.query('SELECT * FROM user_orders WHERE user_id = ? AND payment_id = ? ORDER BY created_at DESC', [req.user.id, paymentId.trim()]);
+        countQuery = 'SELECT COUNT(*) as total FROM user_orders WHERE user_id = ? AND payment_id = ?';
+        dataQuery = 'SELECT * FROM user_orders WHERE user_id = ? AND payment_id = ? ORDER BY created_at DESC LIMIT ? OFFSET ?';
+        countParams = [req.user.id, paymentId.trim()];
+        params = [req.user.id, paymentId.trim(), limit, offset];
       } else {
-        orders = await db.query('SELECT * FROM user_orders WHERE user_id = ? ORDER BY created_at DESC', [req.user.id]);
+        countQuery = 'SELECT COUNT(*) as total FROM user_orders WHERE user_id = ?';
+        dataQuery = 'SELECT * FROM user_orders WHERE user_id = ? ORDER BY created_at DESC LIMIT ? OFFSET ?';
+        countParams = [req.user.id];
+        params = [req.user.id, limit, offset];
       }
     }
 
-    res.json({ success: true, orders: orders || [] });
+    const countResult = await db.query(countQuery, countParams);
+    const total = countResult[0]?.total || 0;
+    const orders = await db.query(dataQuery, params);
+
+    res.json({
+      success: true,
+      orders: orders || [],
+      pagination: paginationMeta(page, limit, total)
+    });
   })
 );
 
@@ -2171,15 +2650,8 @@ app.get('/api/orders/user/:userId',
   asyncHandler(async (req, res) => {
     const targetUserId = req.params.userId;
 
-    if (targetUserId !== req.user.id) {
-      // Only admins can read other users' orders
-      const adminProfile = await db.queryOne(
-        'SELECT is_admin FROM profiles WHERE id = ?',
-        [req.user.id]
-      );
-      if (!adminProfile || !adminProfile.is_admin) {
-        throw new AppError('Forbidden', 403);
-      }
+    if (targetUserId !== req.user.id && !req.user.is_admin) {
+      throw new AppError('Forbidden', 403);
     }
 
     const orders = await db.query(
@@ -2220,14 +2692,8 @@ app.get('/api/orders/:id',
     }
 
     // Only owner or admin can see order
-    if (order.user_id !== req.user.id) {
-      const adminProfile = await db.queryOne(
-        'SELECT is_admin FROM profiles WHERE id = ?',
-        [req.user.id]
-      );
-      if (!adminProfile || !adminProfile.is_admin) {
-        throw new AppError('Forbidden', 403);
-      }
+    if (order.user_id !== req.user.id && !req.user.is_admin) {
+      throw new AppError('Forbidden', 403);
     }
 
     res.json({
@@ -2245,6 +2711,156 @@ app.get('/api/orders/:id',
 );
 
 /**
+ * Generate simple HTML invoice for an order
+ * GET /api/orders/:id/invoice
+ */
+app.get('/api/orders/:id/invoice',
+  authenticateUser,
+  asyncHandler(async (req, res) => {
+    const orderId = validateNumericId(req.params.id);
+
+    const order = await db.queryOne('SELECT * FROM user_orders WHERE id = ?', [orderId]);
+    if (!order) {
+      throw new AppError('Order not found', 404);
+    }
+
+    // Only owner or admin can view invoice
+    if (order.user_id !== req.user.id && !req.user.is_admin) {
+      throw new AppError('Forbidden', 403);
+    }
+
+    const profile = await db.queryOne(
+      `SELECT first_name, last_name, company, address, email, ico, dic
+       FROM profiles
+       WHERE id = ?`,
+      [order.user_id]
+    );
+
+    const invoiceNumber = order.invoice_number || `INV-${order.id}`;
+    const issuedAt = order.invoice_issued_at || order.payment_date || order.created_at;
+
+    const customerName = profile
+      ? `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || profile.email || ''
+      : order.billing_name || order.customer_name || '';
+
+    const billingCompany = order.billing_company || profile?.company || customerName;
+    const billingAddress = order.billing_address || profile?.address || '';
+    const billingIco = order.billing_ico || profile?.ico || '';
+    const billingDic = order.billing_dic || profile?.dic || '';
+
+    const amount = Number(order.price) || 0;
+    const currency = order.currency || 'CZK';
+    const paymentDate = order.payment_date ? new Date(order.payment_date).toLocaleDateString('cs-CZ') : '';
+
+    // SECURITY: Escape HTML entities to prevent XSS in invoice
+    const esc = (str) => {
+      if (typeof str !== 'string') return '';
+      return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    };
+
+    const html = `<!DOCTYPE html>
+<html lang="cs">
+  <head>
+    <meta charset="utf-8" />
+    <title>Faktura ${esc(invoiceNumber)}</title>
+    <style>
+      body { font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; margin: 40px; color: #111827; font-size: 14px; }
+      .invoice-header { display: flex; justify-content: space-between; margin-bottom: 32px; border-bottom: 2px solid #111827; padding-bottom: 16px; }
+      .invoice-title { font-size: 28px; font-weight: 700; margin-bottom: 4px; }
+      .muted { color: #6b7280; font-size: 13px; }
+      .section { margin-bottom: 24px; }
+      .section-title { font-weight: 600; margin-bottom: 8px; font-size: 15px; }
+      .parties { display: flex; gap: 40px; margin-bottom: 32px; }
+      .party { flex: 1; }
+      .box { border: 1px solid #e5e7eb; border-radius: 8px; padding: 14px 18px; }
+      table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+      th, td { padding: 10px 8px; text-align: left; font-size: 14px; }
+      th { border-bottom: 2px solid #d1d5db; font-weight: 600; background: #f9fafb; }
+      td { border-bottom: 1px solid #f3f4f6; }
+      tfoot td { border-top: 2px solid #111827; font-weight: 700; font-size: 16px; border-bottom: none; }
+      .text-right { text-align: right; }
+      .print-btn { display: inline-block; padding: 8px 20px; background: #111827; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; margin-top: 24px; }
+      .print-btn:hover { background: #374151; }
+      @media print { .no-print { display: none !important; } body { margin: 20px; } }
+    </style>
+  </head>
+  <body>
+    <div class="invoice-header">
+      <div>
+        <div class="invoice-title">Faktura</div>
+        <div class="muted">Číslo: ${esc(invoiceNumber)}</div>
+        <div class="muted">Datum vystavení: ${issuedAt ? esc(new Date(issuedAt).toLocaleDateString('cs-CZ')) : ''}</div>
+        ${paymentDate ? `<div class="muted">Datum úhrady: ${esc(paymentDate)}</div>` : ''}
+      </div>
+      <div style="text-align:right">
+        <div><strong>Alatyr Hosting</strong></div>
+        <div class="muted">Dodavatel</div>
+      </div>
+    </div>
+
+    <div class="parties">
+      <div class="party">
+        <div class="section-title">Dodavatel</div>
+        <div class="box">
+          <div><strong>Alatyr Hosting</strong></div>
+          <div class="muted">Hostingové služby</div>
+        </div>
+      </div>
+      <div class="party">
+        <div class="section-title">Odběratel</div>
+        <div class="box">
+          <div><strong>${esc(billingCompany || customerName || '-')}</strong></div>
+          ${billingAddress ? `<div>${esc(billingAddress)}</div>` : ''}
+          ${billingIco ? `<div class="muted">IČO: ${esc(billingIco)}</div>` : ''}
+          ${billingDic ? `<div class="muted">DIČ: ${esc(billingDic)}</div>` : ''}
+          ${profile?.email ? `<div class="muted">${esc(profile.email)}</div>` : ''}
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Položky</div>
+      <table>
+        <thead>
+          <tr>
+            <th>Položka</th>
+            <th class="text-right">Množství</th>
+            <th class="text-right">Cena</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>${esc(order.plan_name || 'Hostingová služba')}${order.domain_name ? ` (${esc(order.domain_name)})` : ''}</td>
+            <td class="text-right">1</td>
+            <td class="text-right">${esc(amount.toLocaleString('cs-CZ', { style: 'currency', currency }))}</td>
+          </tr>
+        </tbody>
+        <tfoot>
+          <tr>
+            <td>Celkem k úhradě</td>
+            <td></td>
+            <td class="text-right">${esc(amount.toLocaleString('cs-CZ', { style: 'currency', currency }))}</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+
+    <p class="muted">
+      Tato faktura byla vygenerována automaticky systémem Alatyr Hosting.
+    </p>
+
+    <div class="no-print" style="text-align:center">
+      <button class="print-btn" onclick="window.print()">Vytisknout / Uložit jako PDF</button>
+    </div>
+  </body>
+</html>`;
+
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.send(html);
+  })
+);
+
+/**
  * Update order (status, payment_status)
  * PUT /api/orders/:id
  * body: { status?, payment_status? }
@@ -2258,9 +2874,7 @@ app.put('/api/orders/:id',
     const order = await db.queryOne('SELECT id, user_id FROM user_orders WHERE id = ?', [orderId]);
     if (!order) throw new AppError('Order not found', 404);
 
-    // SECURITY: Zjisti, jestli je volající admin
-    const adminProfile = await db.queryOne('SELECT is_admin FROM profiles WHERE id = ?', [req.user.id]);
-    const isAdmin = !!(adminProfile && adminProfile.is_admin);
+    const isAdmin = !!req.user.is_admin;
 
     if (order.user_id !== req.user.id && !isAdmin) {
       throw new AppError('Forbidden', 403);
@@ -2288,14 +2902,16 @@ app.put('/api/orders/:id',
       updates.push('gopay_status = ?');
       values.push(gopay_status.trim());
     }
-    // Allow non-admin users to update payment_id and payment_url (set by frontend after creating GoPay payment)
+    // SECURITY: payment_id a payment_url může nastavit jen admin
+    // (dříve mohl kdokoliv — riziko přesměrování na phishing payment page)
     const { payment_id, payment_url } = req.body || {};
     if (payment_id !== undefined && typeof payment_id === 'string') {
+      if (!isAdmin) throw new AppError('Only admins can update payment ID', 403);
       updates.push('payment_id = ?');
       values.push(payment_id.trim());
     }
     if (payment_url !== undefined && typeof payment_url === 'string') {
-      // SECURITY: Validate payment_url is http(s)
+      if (!isAdmin) throw new AppError('Only admins can update payment URL', 403);
       if (payment_url.trim() && !/^https?:\/\//i.test(payment_url.trim())) {
         throw new AppError('Invalid payment URL', 400);
       }
@@ -2323,33 +2939,33 @@ app.put('/api/orders/:id',
 app.get('/api/hosting-services',
   authenticateUser,
   asyncHandler(async (req, res) => {
-    const isAdminRow = await db.queryOne(
-      'SELECT is_admin FROM profiles WHERE id = ?',
-      [req.user.id]
-    );
-    const isAdmin = !!(isAdminRow && isAdminRow.is_admin);
+    const isAdmin = !!req.user.is_admin;
+    const { page, limit, offset } = parsePagination(req.query);
 
-    let services;
+    let countQuery, dataQuery, params, countParams;
+
     if (isAdmin) {
-      services = await db.query(
-        `SELECT h.*,
-                p.email AS user_email,
-                p.first_name AS user_first_name,
-                p.last_name AS user_last_name
-         FROM user_hosting_services h
-         LEFT JOIN profiles p ON p.id = h.user_id
-         ORDER BY h.created_at DESC`
-      );
+      countQuery = 'SELECT COUNT(*) as total FROM user_hosting_services';
+      dataQuery = `SELECT h.*, p.email AS user_email, p.first_name AS user_first_name, p.last_name AS user_last_name
+         FROM user_hosting_services h LEFT JOIN profiles p ON p.id = h.user_id
+         ORDER BY h.created_at DESC LIMIT ? OFFSET ?`;
+      countParams = [];
+      params = [limit, offset];
     } else {
-      services = await db.query(
-        'SELECT * FROM user_hosting_services WHERE user_id = ? ORDER BY created_at DESC',
-        [req.user.id]
-      );
+      countQuery = 'SELECT COUNT(*) as total FROM user_hosting_services WHERE user_id = ?';
+      dataQuery = 'SELECT * FROM user_hosting_services WHERE user_id = ? ORDER BY created_at DESC LIMIT ? OFFSET ?';
+      countParams = [req.user.id];
+      params = [req.user.id, limit, offset];
     }
+
+    const countResult = await db.query(countQuery, countParams);
+    const total = countResult[0]?.total || 0;
+    const services = await db.query(dataQuery, params);
 
     res.json({
       success: true,
-      services: services || []
+      services: services || [],
+      pagination: paginationMeta(page, limit, total)
     });
   })
 );
@@ -2393,19 +3009,159 @@ app.get('/api/hosting-services/:id',
       throw new AppError('Service not found', 404);
     }
 
-    if (service.user_id !== req.user.id) {
-      const adminProfile = await db.queryOne(
-        'SELECT is_admin FROM profiles WHERE id = ?',
-        [req.user.id]
-      );
-      if (!adminProfile || !adminProfile.is_admin) {
-        throw new AppError('Forbidden', 403);
-      }
+    if (service.user_id !== req.user.id && !req.user.is_admin) {
+      throw new AppError('Forbidden', 403);
     }
 
     res.json({
       success: true,
       service
+    });
+  })
+);
+
+/**
+ * Toggle auto-renewal for a hosting service
+ * PUT /api/hosting-services/:id/auto-renewal
+ * body: { auto_renewal: boolean, renewal_period?: 'monthly' | 'yearly' }
+ */
+app.put('/api/hosting-services/:id/auto-renewal',
+  authenticateUser,
+  asyncHandler(async (req, res) => {
+    const serviceId = validateNumericId(req.params.id);
+    const { auto_renewal, renewal_period } = req.body || {};
+
+    const service = await db.queryOne(
+      'SELECT * FROM user_hosting_services WHERE id = ?',
+      [serviceId]
+    );
+
+    if (!service) {
+      throw new AppError('Service not found', 404);
+    }
+
+    // Ownership check
+    if (service.user_id !== req.user.id && !req.user.is_admin) {
+      throw new AppError('Forbidden', 403);
+    }
+
+    if (typeof auto_renewal !== 'boolean') {
+      throw new AppError('auto_renewal must be boolean', 400);
+    }
+
+    const updates = ['auto_renewal = ?'];
+    const values = [auto_renewal ? 1 : 0];
+
+    if (renewal_period && ['monthly', 'yearly'].includes(renewal_period)) {
+      updates.push('renewal_period = ?');
+      values.push(renewal_period);
+    }
+
+    values.push(serviceId);
+
+    await db.execute(
+      `UPDATE user_hosting_services SET ${updates.join(', ')}, updated_at = NOW() WHERE id = ?`,
+      values
+    );
+
+    const updated = await db.queryOne(
+      'SELECT * FROM user_hosting_services WHERE id = ?',
+      [serviceId]
+    );
+
+    res.json({
+      success: true,
+      service: updated,
+    });
+  })
+);
+
+/**
+ * Job: renew hosting services that have auto_renewal enabled
+ * This endpoint is intended to be called from cron (e.g. once per day).
+ * POST /api/jobs/renew-services
+ */
+app.post('/api/jobs/renew-services',
+  authenticateUser,
+  asyncHandler(async (req, res) => {
+    // Only admin can trigger this job
+    if (!req.user.is_admin) {
+      throw new AppError('Forbidden', 403);
+    }
+
+    // Services that:
+    // - have auto_renewal = 1
+    // - are active
+    // - expire within next 7 days
+    // - and haven't been renewed after last expires_at
+    const servicesToRenew = await db.query(
+      `SELECT h.*
+       FROM user_hosting_services h
+       WHERE h.auto_renewal = 1
+         AND h.status = 'active'
+         AND h.expires_at IS NOT NULL
+         AND h.expires_at <= DATE_ADD(NOW(), INTERVAL 7 DAY)
+         AND (h.last_renewed_at IS NULL OR h.last_renewed_at < h.expires_at)`
+    );
+
+    const renewed = [];
+
+    for (const service of servicesToRenew) {
+      // Najdi poslední objednávku pro získání billing údajů
+      const lastOrder = await db.queryOne(
+        'SELECT * FROM user_orders WHERE id = ?',
+        [service.order_id]
+      );
+
+      if (!lastOrder) {
+        continue;
+      }
+
+      const insertResult = await db.execute(
+        `INSERT INTO user_orders (
+           user_id, plan_id, plan_name, price, currency,
+           billing_email, billing_name, billing_company, billing_address, billing_phone,
+           customer_email, customer_name,
+           status, payment_status,
+           domain_name
+         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', 'unpaid', ?)`,
+        [
+          service.user_id,
+          lastOrder.plan_id,
+          lastOrder.plan_name,
+          lastOrder.price,
+          lastOrder.currency || 'CZK',
+          lastOrder.billing_email || null,
+          lastOrder.billing_name || null,
+          lastOrder.billing_company || null,
+          lastOrder.billing_address || null,
+          lastOrder.billing_phone || null,
+          lastOrder.customer_email || null,
+          lastOrder.customer_name || null,
+          lastOrder.domain_name || null,
+        ]
+      );
+
+      const newOrderId = insertResult.insertId;
+
+      // Update service last_renewed_at (reálné prodloužení expirace provede až úspěšná platba)
+      await db.execute(
+        `UPDATE user_hosting_services
+         SET last_renewed_at = NOW(), updated_at = NOW()
+         WHERE id = ?`,
+        [service.id]
+      );
+
+      renewed.push({
+        serviceId: service.id,
+        newOrderId,
+      });
+    }
+
+    res.json({
+      success: true,
+      renewedCount: renewed.length,
+      renewed,
     });
   })
 );
@@ -2429,14 +3185,8 @@ app.get('/api/hosting-services/:id/stats',
     }
 
     // Ownership check
-    if (service.user_id !== req.user.id) {
-      const adminProfile = await db.queryOne(
-        'SELECT is_admin FROM profiles WHERE id = ?',
-        [req.user.id]
-      );
-      if (!adminProfile || !adminProfile.is_admin) {
-        throw new AppError('Forbidden', 403);
-      }
+    if (service.user_id !== req.user.id && !req.user.is_admin) {
+      throw new AppError('Forbidden', 403);
     }
 
     // Pokud HestiaCP účet ještě nebyl vytvořen
@@ -2550,6 +3300,26 @@ app.put('/api/hosting-services/:id',
 // ============================================
 
 /**
+ * Pagination helper - parsuje page/limit z query params, vrací SQL LIMIT/OFFSET a metadata
+ */
+function parsePagination(query, defaultLimit = 20, maxLimit = 100) {
+  const page = Math.max(1, parseInt(query.page, 10) || 1);
+  const limit = Math.min(maxLimit, Math.max(1, parseInt(query.limit, 10) || defaultLimit));
+  const offset = (page - 1) * limit;
+  return { page, limit, offset };
+}
+
+function paginationMeta(page, limit, total) {
+  return {
+    page,
+    limit,
+    total,
+    totalPages: Math.ceil(total / limit),
+    hasMore: page * limit < total
+  };
+}
+
+/**
  * SECURITY: Validace že ID parametr je kladné celé číslo
  * Zabraňuje SQL injection přes nevalidní ID (i přes prepared statements je to dobrá praxe)
  */
@@ -2606,17 +3376,18 @@ async function resolveServiceForFiles(req) {
   if (!service) {
     throw new AppError('Service not found', 404);
   }
-  if (service.user_id !== req.user.id) {
-    const adminProfile = await db.queryOne(
-      'SELECT is_admin FROM profiles WHERE id = ?',
-      [req.user.id]
-    );
-    if (!adminProfile || !adminProfile.is_admin) {
-      throw new AppError('Forbidden', 403);
-    }
+  if (service.user_id !== req.user.id && !req.user.is_admin) {
+    throw new AppError('Forbidden', 403);
   }
   if (!service.hestia_created || !service.hestia_username) {
     throw new AppError('HestiaCP account not yet created', 400);
+  }
+  // SECURITY: Odmítni file operace na expirovaných/suspendovaných službách
+  if (service.status === 'expired' || service.status === 'suspended' || service.status === 'cancelled') {
+    throw new AppError('Service is not active. File operations are disabled.', 403);
+  }
+  if (service.expires_at && new Date(service.expires_at) < new Date()) {
+    throw new AppError('Service has expired. Renew to access files.', 403);
   }
   // SECURITY: Validate hestia_username format to prevent command injection
   // HestiaCP usernames are alphanumeric with underscores/hyphens only
@@ -2773,19 +3544,21 @@ app.post('/api/hosting-services/:serviceId/files/save',
     }
 
     // SECURITY: Zápis obsahu souboru přes base64 - zabraňuje command injection
-    // HestiaCP nemá přímý write příkaz, použijeme v-run-cmd s base64 dekódováním
-    // Base64 je bezpečný pro shell - neobsahuje speciální znaky
+    // Používáme printf + single-quoted shell string pro bezpečné předání base64 obsahu
+    // a quoting cesty přes single quotes s escapováním existujících apostrofů
     const base64Content = Buffer.from(content, 'utf-8').toString('base64');
 
-    // SECURITY: Validace že safePath neobsahuje shell-dangerous znaky
-    // sanitizeFilePath již zajistil že cesta je v home dir, ale pro shell ji ještě ověříme
-    if (/[`$\\!;|&><()"'\n\r]/.test(safePath)) {
-      throw new AppError('Invalid characters in file path', 400);
+    // SECURITY: Validace base64 - smí obsahovat pouze [A-Za-z0-9+/=]
+    if (!/^[A-Za-z0-9+/=]*$/.test(base64Content)) {
+      throw new AppError('Internal encoding error', 500);
     }
+
+    // SECURITY: Shell-safe path quoting — single quotes + escape apostrofů uvnitř
+    const shellSafePath = "'" + safePath.replace(/'/g, "'\\''") + "'";
 
     const writeResult = await hestiacp.callAPI('v-run-cmd', [
       service.hestia_username,
-      `echo ${base64Content} | base64 -d > ${safePath}`
+      `printf '%s' '${base64Content}' | base64 -d > ${shellSafePath}`
     ]);
 
     if (!writeResult.success) {
@@ -2851,14 +3624,17 @@ app.post('/api/hosting-services/:serviceId/files/upload',
     // Re-encode the raw binary as base64 (requestBody base64Content is user input from FileReader)
     const uploadBase64 = fileBuffer.toString('base64');
 
-    // Validace cesty pro shell
-    if (/[`$\\!;|&><()"'\n\r]/.test(fullPath)) {
-      throw new AppError('Invalid characters in file path', 400);
+    // SECURITY: Validace base64 obsahu
+    if (!/^[A-Za-z0-9+/=]*$/.test(uploadBase64)) {
+      throw new AppError('Internal encoding error', 500);
     }
+
+    // SECURITY: Shell-safe path quoting
+    const shellSafePath = "'" + fullPath.replace(/'/g, "'\\''") + "'";
 
     const writeResult = await hestiacp.callAPI('v-run-cmd', [
       service.hestia_username,
-      `echo ${uploadBase64} | base64 -d > ${fullPath}`
+      `printf '%s' '${uploadBase64}' | base64 -d > ${shellSafePath}`
     ]);
 
     if (!writeResult.success) {
@@ -3227,15 +4003,15 @@ app.get('/api/admin/tickets',
   authenticateUser,
   requireAdmin,
   asyncHandler(async (req, res) => {
+    const { page, limit, offset } = parsePagination(req.query);
+
+    const countResult = await db.query('SELECT COUNT(*) as total FROM support_tickets');
+    const total = countResult[0]?.total || 0;
+
     const tickets = await db.query(
-      `SELECT 
-         t.*,
-         p.email AS user_email,
-         p.first_name,
-         p.last_name
-       FROM support_tickets t
-       LEFT JOIN profiles p ON p.id = t.user_id
-       ORDER BY t.created_at DESC`
+      `SELECT t.*, p.email AS user_email, p.first_name, p.last_name
+       FROM support_tickets t LEFT JOIN profiles p ON p.id = t.user_id
+       ORDER BY t.created_at DESC LIMIT ? OFFSET ?`, [limit, offset]
     );
 
     const formatted = (tickets || []).map(t => ({
@@ -3256,7 +4032,8 @@ app.get('/api/admin/tickets',
 
     res.json({
       success: true,
-      tickets: formatted
+      tickets: formatted,
+      pagination: paginationMeta(page, limit, total)
     });
   })
 );
@@ -3310,7 +4087,7 @@ app.get('/health', asyncHandler(async (req, res) => {
   if (process.env.NODE_ENV !== 'production') {
     healthResponse.database.mysql_host = process.env.MYSQL_HOST || 'not configured';
     healthResponse.database.mysql_database = process.env.MYSQL_DATABASE || 'not configured';
-    healthResponse.gopay_environment = process.env.REACT_APP_GOPAY_ENVIRONMENT || 'SANDBOX';
+    healthResponse.gopay_environment = process.env.GOPAY_ENVIRONMENT || 'SANDBOX';
     healthResponse.hestiacp_configured = !!(process.env.HESTIACP_URL && process.env.HESTIACP_ACCESS_KEY);
     healthResponse.jwt_auth_configured = !!(process.env.JWT_SECRET);
   } else {
@@ -3328,12 +4105,22 @@ app.get('/health', asyncHandler(async (req, res) => {
 // MUST BE LAST - after all API routes
 // ============================================
 if (process.env.NODE_ENV === 'production') {
-  // Serve static files from React build
-  app.use(express.static(path.join(__dirname, 'build')));
-  
+  // PERFORMANCE: Serve static files with long cache (hashed filenames from Vite)
+  app.use(express.static(path.join(__dirname, 'build'), {
+    maxAge: '1y',
+    immutable: true,
+    setHeaders: (res, filePath) => {
+      // index.html must not be cached (SPA routing)
+      if (filePath.endsWith('.html')) {
+        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      }
+    },
+  }));
+
   // Handle React routing - return all requests to React app
   // (API routes are handled above, so they won't reach here)
   app.get('*', (req, res) => {
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
     res.sendFile(path.join(__dirname, 'build', 'index.html'));
   });
 }
@@ -3344,7 +4131,7 @@ if (process.env.NODE_ENV === 'production') {
 app.use(notFoundHandler); // 404 handler
 app.use(errorHandler); // Global error handler
 
-app.listen(PORT, async () => {
+const server = app.listen(PORT, async () => {
   console.log('================================================');
   console.log('  GoPay & HestiaCP Proxy Server');
   console.log('================================================');
@@ -3370,7 +4157,7 @@ app.listen(PORT, async () => {
 
   console.log(`Server běží na: http://localhost:${PORT}`);
   console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`GoPay Environment: ${process.env.REACT_APP_GOPAY_ENVIRONMENT || 'SANDBOX'}`);
+  console.log(`GoPay Environment: ${process.env.GOPAY_ENVIRONMENT || 'SANDBOX'}`);
   console.log(`GoID: ${GOPAY_GO_ID}`);
   console.log(`Allowed Origins: ${allowedOrigins.join(', ')}`);
   console.log('================================================');
@@ -3398,3 +4185,29 @@ app.listen(PORT, async () => {
   console.log('HestiaCP Status:', process.env.HESTIACP_URL ? '✅ Configured' : '❌ Not configured');
   console.log('================================================');
 });
+
+// ============================================
+// Graceful Shutdown
+// ============================================
+function gracefulShutdown(signal) {
+  logger.info(`${signal} received, shutting down gracefully...`);
+  server.close(async () => {
+    logger.info('HTTP server closed');
+    try {
+      await db.getPool().end();
+      logger.info('Database pool drained');
+    } catch (err) {
+      logger.error('Error draining DB pool', { error: err.message });
+    }
+    process.exit(0);
+  });
+
+  // Force exit after 30s if connections don't close
+  setTimeout(() => {
+    logger.error('Forced shutdown after timeout');
+    process.exit(1);
+  }, 30000);
+}
+
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));

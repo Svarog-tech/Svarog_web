@@ -24,6 +24,7 @@ const About = lazy(() => import('./pages/About'));
 const Register = lazy(() => import('./pages/Register'));
 const Login = lazy(() => import('./pages/Login'));
 const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
+const ResetPassword = lazy(() => import('./pages/ResetPassword'));
 const AuthCallback = lazy(() => import('./pages/AuthCallback'));
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Services = lazy(() => import('./pages/Services'));
@@ -36,6 +37,7 @@ const Admin = lazy(() => import('./pages/Admin'));
 const AdminTickets = lazy(() => import('./pages/AdminTickets'));
 const AdminUsers = lazy(() => import('./pages/AdminUsers'));
 const PaymentSuccess = lazy(() => import('./pages/PaymentSuccess'));
+const VerifyEmail = lazy(() => import('./pages/VerifyEmail'));
 const NotFound = lazy(() => import('./pages/NotFound'));
 
 function App() {
@@ -62,8 +64,10 @@ function App() {
                       <Route path="/register" element={<Register />} />
                       <Route path="/login" element={<Login />} />
                       <Route path="/forgot-password" element={<ForgotPassword />} />
+                      <Route path="/reset-password" element={<ResetPassword />} />
                       <Route path="/auth/callback" element={<AuthCallback />} />
                       <Route path="/payment/success" element={<PaymentSuccess />} />
+                      <Route path="/verify-email" element={<VerifyEmail />} />
 
                       {/* Protected routes */}
                       <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />

@@ -15,12 +15,23 @@ import {
   faKey,
   faLink,
   faCheckCircle,
-  faTimesCircle
+  faTimesCircle,
+  faToggleOn,
+  faToggleOff,
 } from '@fortawesome/free-solid-svg-icons';
 import { useAuth } from '../contexts/AuthContext';
 import { useCurrency } from '../contexts/CurrencyContext';
-import { getUserOrders, getAllUserHostingServices, HostingService, Order } from '../lib/api';
-import Loading from '../components/Loading';
+import {
+  getUserOrders,
+  getAllUserHostingServices,
+  HostingService,
+  Order,
+  API_BASE_URL,
+  updateHostingServiceAutoRenewal,
+  RenewalPeriod,
+} from '../lib/api';
+import { getAuthHeader } from '../lib/auth';
+import { SkeletonList } from '../components/Skeleton';
 import './Services.css';
 
 interface Service extends HostingService {
@@ -39,6 +50,7 @@ const Services: React.FC = () => {
   const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'active' | 'pending' | 'expired'>('all');
+  const [updatingServiceId, setUpdatingServiceId] = useState<number | null>(null);
 
   useEffect(() => {
     if (user) {
@@ -50,10 +62,11 @@ const Services: React.FC = () => {
     try {
       setLoading(true);
       // Získej hosting služby s HestiaCP údaji
-      const hostingServices = await getAllUserHostingServices();
+      const hostingResult = await getAllUserHostingServices({ limit: 100 });
+      const hostingServices = hostingResult.data;
       // Získej objednávky pro doplnění údajů
       const orders = await getUserOrders();
-      
+
       // Spoj data - hosting služby mají HestiaCP údaje
       const servicesData = hostingServices.map((service: HostingService) => {
         const order = orders?.find((o: Order) => o.id === service.order_id);
@@ -64,6 +77,7 @@ const Services: React.FC = () => {
           domain_name: service.hestia_domain || order?.domain_name,
           service_start_date: service.activated_at,
           service_end_date: service.expires_at,
+          auto_renewal: Boolean((service as any).auto_renewal),
         };
       });
       
@@ -72,6 +86,30 @@ const Services: React.FC = () => {
       console.error('Error fetching services:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDownloadInvoice = async (orderId: number) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/orders/${orderId}/invoice`, {
+        method: 'GET',
+        headers: {
+          ...getAuthHeader(),
+        },
+      });
+
+      const html = await response.text();
+
+      const win = window.open('', '_blank');
+      if (win) {
+        win.document.open();
+        win.document.write(html);
+        win.document.close();
+      } else {
+        console.error('Unable to open invoice window');
+      }
+    } catch (error) {
+      console.error('Error downloading invoice:', error);
     }
   };
 
@@ -105,13 +143,44 @@ const Services: React.FC = () => {
     }
   };
 
+  const handleToggleAutoRenewal = async (service: Service) => {
+    if (!user) return;
+    setUpdatingServiceId(service.id);
+    try {
+      const newValue = !service.auto_renewal;
+      const renewalPeriod: RenewalPeriod | undefined = (service as any).renewal_period || 'monthly';
+
+      const updated = await updateHostingServiceAutoRenewal(service.id, newValue, renewalPeriod);
+
+      setServices(prev =>
+        prev.map(s => (s.id === service.id ? { ...s, auto_renewal: Boolean((updated as any).auto_renewal) } : s))
+      );
+    } catch (error) {
+      console.error('Error updating auto renewal:', error);
+    } finally {
+      setUpdatingServiceId(null);
+    }
+  };
+
   const filteredServices = services.filter(service => {
     if (filter === 'all') return true;
     return service.status === filter;
   });
 
   if (loading) {
-    return <Loading message="Načítání služeb..." />;
+    return (
+      <div className="services-page">
+        <div className="services-container">
+          <div className="services-header" style={{ marginBottom: '1.5rem' }}>
+            <div>
+              <h1 className="services-title">Moje služby</h1>
+              <p className="services-subtitle">Načítání...</p>
+            </div>
+          </div>
+          <SkeletonList count={3} type="card" />
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -276,12 +345,20 @@ const Services: React.FC = () => {
                     )}
                   </div>
 
-                  {service.auto_renewal && (
-                    <div className="auto-renewal-badge">
-                      <FontAwesomeIcon icon={faSync} />
-                      Automatické prodloužení
-                    </div>
-                  )}
+                  <div className="auto-renewal-toggle">
+                    <button
+                      type="button"
+                      className={`auto-renewal-btn ${service.auto_renewal ? 'enabled' : 'disabled'}`}
+                      onClick={() => handleToggleAutoRenewal(service)}
+                      disabled={updatingServiceId === service.id}
+                    >
+                      <FontAwesomeIcon icon={service.auto_renewal ? faToggleOn : faToggleOff} />
+                      <span>
+                        Automatické prodloužení{' '}
+                        {service.auto_renewal ? '(zapnuto)' : '(vypnuto)'}
+                      </span>
+                    </button>
+                  </div>
                 </div>
 
                 <div className="service-card-footer">
@@ -292,6 +369,15 @@ const Services: React.FC = () => {
                     <FontAwesomeIcon icon={faCog} />
                     Spravovat
                   </button>
+                  {service.order_id && service.status === 'active' && (
+                    <button
+                      className="service-action-btn secondary"
+                      onClick={() => handleDownloadInvoice(service.order_id)}
+                    >
+                      <FontAwesomeIcon icon={faMoneyBill} />
+                      Faktura
+                    </button>
+                  )}
                   {service.cpanel_url ? (
                     <a
                       href={service.cpanel_url}

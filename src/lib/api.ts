@@ -1,36 +1,24 @@
 // Backend API client – volání vlastního Node API (objednávky, hosting, tikety, profil)
 
 import { getCurrentUser, getAuthHeader, refreshAccessToken } from './auth';
+import type { UserProfile } from '../types/auth';
+import { API_BASE_URL, API_ROOT_URL } from './apiConfig';
+export { API_BASE_URL, API_ROOT_URL };
 
-/**
- * API Base URL – jediné místo pro definici.
- * Chování:
- * - pokud je nastaveno REACT_APP_API_URL → použij ho
- * - v dev prostředí na localhost:3000 → backend na http://localhost:3001/api
- * - jinak relativní /api (produkce na stejné doméně)
- */
-const resolveApiBaseUrl = (): string => {
-  if (process.env.REACT_APP_API_URL) {
-    return process.env.REACT_APP_API_URL;
+// SECURITY: CSRF guard header – prohlížeč neumí přidat custom header přes cross-site form submit
+function getCsrfHeaders(method?: string): Record<string, string> {
+  const m = (method || 'GET').toUpperCase();
+  if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(m)) {
+    return { 'X-CSRF-Guard': '1' };
   }
-  if (typeof window !== 'undefined' && window.location.origin.includes('localhost:3000')) {
-    return 'http://localhost:3001/api';
-  }
-  return '/api';
-};
-
-export const API_BASE_URL = resolveApiBaseUrl();
-/** Base URL bez /api (pro webhook, proxy, download) */
-export const API_ROOT_URL = API_BASE_URL.replace(/\/api\/?$/, '') || (
-  typeof window !== 'undefined' && window.location.origin.includes('localhost:3000')
-    ? 'http://localhost:3001'
-    : ''
-);
+  return {};
+}
 
 // Helper pro API volání s automatickým refresh tokenu
 export async function apiCall<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   let headers = {
     'Content-Type': 'application/json',
+    ...getCsrfHeaders(options.method),
     ...getAuthHeader(),
     ...options.headers,
   };
@@ -49,6 +37,7 @@ export async function apiCall<T>(endpoint: string, options: RequestInit = {}): P
     if (refreshed) {
       headers = {
         'Content-Type': 'application/json',
+        ...getCsrfHeaders(options.method),
         ...getAuthHeader(),
         ...options.headers,
       };
@@ -66,6 +55,35 @@ export async function apiCall<T>(endpoint: string, options: RequestInit = {}): P
   }
 
   return response.json();
+}
+
+// ============================================
+// PAGINATION
+// ============================================
+
+export interface PaginationParams {
+  page?: number;
+  limit?: number;
+}
+
+export interface PaginationMeta {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+  hasMore: boolean;
+}
+
+export interface PaginatedResult<T> {
+  data: T[];
+  pagination: PaginationMeta;
+}
+
+function buildQuery(params: PaginationParams): string {
+  const q = new URLSearchParams();
+  if (params.page) q.set('page', String(params.page));
+  if (params.limit) q.set('limit', String(params.limit));
+  return q.toString() ? `?${q.toString()}` : '';
 }
 
 // ============================================
@@ -111,7 +129,7 @@ export interface Order {
 }
 
 export const createOrder = async (orderData: Omit<Order, 'id' | 'created_at'>) => {
-  const result = await apiCall<any>('/orders', {
+  const result = await apiCall<{ success: boolean; order: Order; error?: string }>('/orders', {
     method: 'POST',
     body: JSON.stringify(orderData),
   });
@@ -122,9 +140,9 @@ export const createOrder = async (orderData: Omit<Order, 'id' | 'created_at'>) =
   throw new Error(result.error || 'Failed to create order');
 };
 
-export const getOrders = async (): Promise<Order[]> => {
-  const result = await apiCall<{ orders: Order[] }>('/orders');
-  return result.orders || [];
+export const getOrders = async (params: PaginationParams = {}): Promise<PaginatedResult<Order>> => {
+  const result = await apiCall<{ orders: Order[]; pagination: PaginationMeta }>(`/orders${buildQuery(params)}`);
+  return { data: result.orders || [], pagination: result.pagination };
 };
 
 // ============================================
@@ -178,8 +196,8 @@ export const getUserProfile = async (userId?: string) => {
   }
 
   try {
-    const result = await apiCall<any>(`/profile/${targetUserId}`);
-    return result.profile || null;
+    const result = await apiCall<{ profile?: UserProfile | null }>(`/profile/${targetUserId}`);
+    return (result.profile as UserProfile | null) || null;
   } catch (error) {
     console.error('Get user profile error:', error);
     return null;
@@ -196,7 +214,7 @@ export interface ProfileUpdateData {
 }
 
 export const updateUserProfile = async (userId: string, data: ProfileUpdateData) => {
-  const result = await apiCall<any>('/profile', {
+  const result = await apiCall<{ success: boolean; profile?: UserProfile; error?: string }>('/profile', {
     method: 'PUT',
     body: JSON.stringify({
       userId,
@@ -228,7 +246,7 @@ export interface HostingOrderData {
 }
 
 export const createHostingOrder = async (data: HostingOrderData) => {
-  const result = await apiCall<any>('/orders/hosting', {
+  const result = await apiCall<{ success: boolean; order: Order; error?: string }>('/orders/hosting', {
     method: 'POST',
     body: JSON.stringify(data),
   });
@@ -267,7 +285,7 @@ export interface SupportTicketData {
 }
 
 export const createSupportTicket = async (data: SupportTicketData) => {
-  const result = await apiCall<any>('/tickets', {
+  const result = await apiCall<{ success: boolean; ticket?: any; error?: string }>('/tickets', {
     method: 'POST',
     body: JSON.stringify(data),
   });
@@ -322,6 +340,8 @@ export interface HostingService {
   cpanel_url?: string;
 }
 
+export type RenewalPeriod = 'monthly' | 'yearly';
+
 /**
  * Získá aktivní hosting služby uživatele
  */
@@ -336,12 +356,40 @@ export const getUserHostingServices = async (): Promise<HostingService[]> => {
 };
 
 /**
+ * Aktualizuje nastavení automatického prodloužení pro službu
+ */
+export const updateHostingServiceAutoRenewal = async (
+  serviceId: number,
+  autoRenewal: boolean,
+  renewalPeriod?: RenewalPeriod
+): Promise<HostingService> => {
+  const body: any = { auto_renewal: autoRenewal };
+  if (renewalPeriod) {
+    body.renewal_period = renewalPeriod;
+  }
+
+  const result = await apiCall<{ success: boolean; service: HostingService }>(
+    `/hosting-services/${serviceId}/auto-renewal`,
+    {
+      method: 'PUT',
+      body: JSON.stringify(body),
+    }
+  );
+
+  if (!result.success || !result.service) {
+    throw new Error('Failed to update auto renewal settings');
+  }
+
+  return result.service;
+};
+
+/**
  * Získá všechny hosting služby uživatele (včetně vypršených)
  */
-export const getAllUserHostingServices = async (): Promise<HostingService[]> => {
+export const getAllUserHostingServices = async (params: PaginationParams = {}): Promise<PaginatedResult<HostingService>> => {
   try {
-    const result = await apiCall<{ services: HostingService[] }>('/hosting-services');
-    return result.services || [];
+    const result = await apiCall<{ services: HostingService[]; pagination: PaginationMeta }>(`/hosting-services${buildQuery(params)}`);
+    return { data: result.services || [], pagination: result.pagination };
   } catch (error) {
     console.error('Error fetching all hosting services:', error);
     throw error;

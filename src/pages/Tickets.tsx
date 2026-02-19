@@ -15,6 +15,7 @@ import { useToast } from '../components/Toast';
 import { createSupportTicket, API_BASE_URL } from '../lib/api';
 import { getAuthHeader } from '../lib/auth';
 import TriangularBackground from '../components/TriangularBackground';
+import { SkeletonList } from '../components/Skeleton';
 import './Tickets.css';
 
 interface Ticket {
@@ -30,6 +31,7 @@ interface Ticket {
 const Tickets: React.FC = () => {
   const { user } = useAuth();
   const { t } = useLanguage();
+  const { showError } = useToast();
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [loading, setLoading] = useState(true);
   const [showNewTicketForm, setShowNewTicketForm] = useState(false);
@@ -219,7 +221,9 @@ const Tickets: React.FC = () => {
             </div>
 
         {/* Tickets List */}
-        {tickets.length === 0 ? (
+        {loading ? (
+          <SkeletonList count={3} type="ticket" />
+        ) : tickets.length === 0 ? (
           <motion.div
             className="empty-state"
             initial={{ opacity: 0, scale: 0.9 }}
@@ -332,7 +336,12 @@ const Tickets: React.FC = () => {
                         <label>Priorita</label>
                         <select
                           value={formData.priority}
-                          onChange={(e) => setFormData({ ...formData, priority: e.target.value as any })}
+                          onChange={(e) =>
+                            setFormData({
+                              ...formData,
+                              priority: e.target.value as Ticket['priority']
+                            })
+                          }
                         >
                           <option value="low">Nízká</option>
                           <option value="medium">Střední</option>

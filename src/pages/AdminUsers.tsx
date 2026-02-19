@@ -31,6 +31,8 @@ interface User {
   email_verified: boolean;
   created_at: string;
   last_login?: string;
+  failed_logins?: number;
+  locked_until?: string | null;
 }
 
 interface Stats {
@@ -62,6 +64,7 @@ const AdminUsers: React.FC = () => {
   const [hestiaPackages, setHestiaPackages] = useState<string[]>([]);
   const [loadingPackages, setLoadingPackages] = useState(false);
   const [creatingWeb, setCreatingWeb] = useState(false);
+  const [unlockingUserId, setUnlockingUserId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user || !profile?.is_admin) {
@@ -234,6 +237,38 @@ const AdminUsers: React.FC = () => {
     });
   };
 
+  const isUserLocked = (u: User) => {
+    if (!u.locked_until) return false;
+    const lockedUntilDate = new Date(u.locked_until);
+    return lockedUntilDate > new Date();
+  };
+
+  const unlockUser = async (userId: string) => {
+    try {
+      setUnlockingUserId(userId);
+      const response = await fetch(`${API_BASE_URL}/admin/users/${userId}/unlock`, {
+        method: 'POST',
+        headers: {
+          ...getAuthHeader()
+        }
+      });
+
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'Nepodařilo se odemknout účet');
+      }
+
+      showSuccess('Účet byl odemknut.');
+      fetchUsers();
+    } catch (error) {
+      console.error('Error unlocking user:', error);
+      showError('Chyba při odemykání uživatelského účtu');
+    } finally {
+      setUnlockingUserId(null);
+    }
+  };
+
   if (loading) {
     return (
       <div className="admin-users-page">
@@ -389,6 +424,7 @@ const AdminUsers: React.FC = () => {
                     <th>Email</th>
                     <th>Role</th>
                     <th>Stav</th>
+                    <th>Bezpečnost</th>
                     <th>Registrace</th>
                     <th>Poslední přihlášení</th>
                     <th>Akce</th>
@@ -445,6 +481,26 @@ const AdminUsers: React.FC = () => {
                         {u.last_login ? formatDate(u.last_login) : 'Nikdy'}
                       </td>
                       <td>
+                        <div className="security-cell">
+                          {isUserLocked(u) ? (
+                            <span className="status-badge locked">
+                              <FontAwesomeIcon icon={faTimesCircle} />
+                              Zamknutý účet
+                            </span>
+                          ) : (
+                            <span className="status-badge safe">
+                              <FontAwesomeIcon icon={faCheckCircle} />
+                              Aktivní
+                            </span>
+                          )}
+                          {u.failed_logins && u.failed_logins > 0 && !isUserLocked(u) && (
+                            <span className="failed-logins-label">
+                              Neúspěšné pokusy: {u.failed_logins}
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                      <td>
                         <div className="user-actions">
                           {editingUser === u.id ? (
                             <div className="edit-actions">
@@ -468,6 +524,16 @@ const AdminUsers: React.FC = () => {
                               onClick={() => setEditingUser(u.id)}
                             >
                               <FontAwesomeIcon icon={faEdit} />
+                            </button>
+                          )}
+                          {isUserLocked(u) && (
+                            <button
+                              className="action-btn unlock"
+                              title="Odemknout účet"
+                              onClick={() => unlockUser(u.id)}
+                              disabled={unlockingUserId === u.id}
+                            >
+                              <FontAwesomeIcon icon={faCheckCircle} />
                             </button>
                           )}
                           <button

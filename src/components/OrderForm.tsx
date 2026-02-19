@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import type { IconDefinition } from '@fortawesome/free-solid-svg-icons';
 import {
   faTimes,
   faCheck,
@@ -33,7 +34,7 @@ interface Addon {
   name: string;
   description: string;
   price: number;
-  icon: any;
+  icon: IconDefinition;
   quantity: number;
   max?: number;
 }
@@ -110,7 +111,7 @@ const OrderForm: React.FC = () => {
   const [orderSuccess, setOrderSuccess] = useState(false);
 
   useEffect(() => {
-    const handlePlanSelect = (event: any) => {
+    const handlePlanSelect = (event: CustomEvent<HostingPlan>) => {
       setSelectedPlan(event.detail);
       setIsVisible(true);
       setCurrentStep(1);
@@ -309,7 +310,9 @@ const OrderForm: React.FC = () => {
                             name="domain"
                             value="new"
                             checked={domainOption === 'new'}
-                            onChange={(e) => setDomainOption(e.target.value as any)}
+                            onChange={(e) =>
+                              setDomainOption(e.target.value as typeof domainOption)
+                            }
                           />
                           <div className="option-content">
                             <FontAwesomeIcon icon={faGlobe} />
@@ -326,7 +329,9 @@ const OrderForm: React.FC = () => {
                             name="domain"
                             value="existing"
                             checked={domainOption === 'existing'}
-                            onChange={(e) => setDomainOption(e.target.value as any)}
+                            onChange={(e) =>
+                              setDomainOption(e.target.value as typeof domainOption)
+                            }
                           />
                           <div className="option-content">
                             <FontAwesomeIcon icon={faGlobe} />
@@ -343,7 +348,9 @@ const OrderForm: React.FC = () => {
                             name="domain"
                             value="none"
                             checked={domainOption === 'none'}
-                            onChange={(e) => setDomainOption(e.target.value as any)}
+                            onChange={(e) =>
+                              setDomainOption(e.target.value as typeof domainOption)
+                            }
                           />
                           <div className="option-content">
                             <FontAwesomeIcon icon={faGlobe} />

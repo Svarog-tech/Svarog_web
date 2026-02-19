@@ -24,11 +24,13 @@ const Login: React.FC = () => {
   const [error, setError] = useState<string>('');
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [mfaCode, setMfaCode] = useState('');
+  const [mfaRequired, setMfaRequired] = useState(false);
 
   // Redirect if already logged in
   useEffect(() => {
     if (user) {
-      const state = location.state as { returnUrl?: string; plan?: any };
+      const state = location.state as { returnUrl?: string; plan?: unknown } | null;
       if (state?.returnUrl && state?.plan) {
         // Redirect back to configurator with plan data
         navigate(state.returnUrl, { state: { plan: state.plan } });
@@ -90,14 +92,17 @@ const Login: React.FC = () => {
     setError('');
 
     try {
-      const result = await signIn(formData);
+      const result = await signIn({ ...formData, mfaCode: mfaCode || undefined });
 
       if (result.success) {
         navigate('/dashboard');
       } else {
         setError(result.error || t('auth.loginFailed'));
+        if (result.mfaRequired) {
+          setMfaRequired(true);
+        }
       }
-    } catch (error: any) {
+    } catch {
       setError(t('profile.error.unexpected'));
     } finally {
       setIsSubmitting(false);
@@ -258,6 +263,32 @@ const Login: React.FC = () => {
                 <span className="field-error">{fieldErrors.password}</span>
               )}
             </motion.div>
+
+            {mfaRequired && (
+              <motion.div
+                className="form-group"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.45 }}
+              >
+                <label htmlFor="mfaCode" className="form-label">
+                  2FA kód (z Authenticator aplikace)
+                </label>
+                <div className="input-wrapper">
+                  <input
+                    type="text"
+                    id="mfaCode"
+                    name="mfaCode"
+                    value={mfaCode}
+                    onChange={(e) => setMfaCode(e.target.value)}
+                    className="form-input"
+                    placeholder="123 456"
+                    disabled={isFormDisabled}
+                    autoComplete="one-time-code"
+                  />
+                </div>
+              </motion.div>
+            )}
 
             <motion.button
               type="submit"

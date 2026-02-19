@@ -101,21 +101,6 @@ async function testConnection() {
   }
 }
 
-// Zavření pool při ukončení aplikace
-process.on('SIGINT', async () => {
-  if (pool) {
-    await pool.end();
-    pool = null;
-  }
-});
-
-process.on('SIGTERM', async () => {
-  if (pool) {
-    await pool.end();
-    pool = null;
-  }
-});
-
 module.exports = {
   getPool,
   getConnection,

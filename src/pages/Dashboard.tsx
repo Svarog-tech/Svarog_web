@@ -81,8 +81,9 @@ const Dashboard: React.FC = () => {
       // Fetch user orders
       const ordersData = await getUserOrders();
       // Fetch hosting services with HestiaCP data
-      const hostingServices = await getAllUserHostingServices();
-      
+      const hostingResult = await getAllUserHostingServices({ limit: 100 });
+      const hostingServices = hostingResult.data;
+
       // Merge data
       const mergedOrders = ordersData?.map((order: ApiOrder): Order => {
         const service = hostingServices?.find((s: HostingService) => s.order_id === order.id);
@@ -94,7 +95,7 @@ const Dashboard: React.FC = () => {
           hestia_created: service?.hestia_created
         };
       }) || [];
-      
+
       setOrders(mergedOrders);
 
       // Calculate stats

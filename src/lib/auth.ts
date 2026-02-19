@@ -8,25 +8,7 @@ import type {
   OAuthProvider,
   AppUser,
 } from '../types/auth';
-
-// API Base URL
-// Chování:
-// - pokud je nastaveno REACT_APP_API_URL → použij ho (např. https://alatyrhosting.eu/api)
-// - jinak:
-//   - v dev prostředí na localhost:3000 voláme backend na http://localhost:3001/api
-//   - ve všech ostatních případech použijeme relativní /api (stejná doména)
-const resolveDefaultApiBaseUrl = (): string => {
-  if (typeof window !== 'undefined') {
-    const origin = window.location.origin;
-    if (origin.includes('localhost:3000')) {
-      return 'http://localhost:3001/api';
-    }
-    return '/api';
-  }
-  return '/api';
-};
-
-const API_BASE_URL = process.env.REACT_APP_API_URL || resolveDefaultApiBaseUrl();
+import { API_BASE_URL } from './apiConfig';
 
 // ==============================================
 // TOKEN MANAGEMENT
@@ -71,6 +53,7 @@ async function refreshAccessToken(): Promise<boolean> {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'X-CSRF-Guard': '1',
       },
       credentials: 'include',
     });
@@ -247,6 +230,7 @@ export const signIn = async (data: LoginData) => {
       body: JSON.stringify({
         email: data.email,
         password: data.password,
+        mfaCode: data.mfaCode,
       }),
     });
 
@@ -290,6 +274,7 @@ export const signIn = async (data: LoginData) => {
     return {
       success: false,
       error: result.error || 'Nesprávný email nebo heslo',
+      mfaRequired: !!result.mfaRequired,
     };
   } catch (error: any) {
     console.error('Sign in error:', error);
@@ -326,6 +311,7 @@ export const signOut = async () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'X-CSRF-Guard': '1',
         },
         credentials: 'include',
       });
@@ -579,15 +565,14 @@ export const getUserProfile = async (userId: string): Promise<UserProfile | null
 
 export const updateProfile = async (userId: string, updates: Partial<UserProfile>) => {
   try {
-    // TODO: Implementovat update profile API endpoint na backendu
-    // Zatím předpokládáme, že backend podporuje PUT /api/auth/user
-    const response = await fetch(`${API_BASE_URL}/auth/user`, {
+    const response = await fetch(`${API_BASE_URL}/profile`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
         ...getAuthHeader(),
       },
-      body: JSON.stringify(updates),
+      credentials: 'include',
+      body: JSON.stringify({ userId, ...updates }),
     });
 
     const result = await response.json();
@@ -612,4 +597,4 @@ export const createUserProfile = async (user: AppUser): Promise<UserProfile | nu
 // EXPORT getAuthHeader pro použití v jiných modulech
 // ==============================================
 
-export { getAuthHeader, getAccessToken, refreshAccessToken };
+export { getAuthHeader, getAccessToken, setAccessToken, refreshAccessToken };

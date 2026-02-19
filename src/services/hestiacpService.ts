@@ -156,10 +156,10 @@ export const createHostingAccountForOrder = async (
 ): Promise<CreateHostingAccountResult> => {
   try {
     // Získej údaje o objednávce
-    let order: any = null;
+    let order: { profiles?: { email?: string }; billing_email?: string; plan_id: string } | null = null;
     try {
       const orderResult = await apiCall<{ order: any }>(`/orders/${orderId}`);
-      order = orderResult.order;
+      order = orderResult.order as typeof order;
     } catch {
       // Order fetch failed
     }
@@ -179,10 +179,11 @@ export const createHostingAccountForOrder = async (
     });
 
     // Najdi hosting službu podle order_id
-    let hostingService: any = null;
+    let hostingService: { id: number } | null = null;
     try {
-      const servicesResult = await apiCall<{ services: any[] }>('/hosting-services');
-      hostingService = servicesResult.services?.find((s: any) => s.order_id === orderId);
+      const servicesResult = await apiCall<{ services: { id: number; order_id: number }[] }>('/hosting-services');
+      hostingService =
+        servicesResult.services?.find((s) => s.order_id === orderId) || null;
     } catch {
       // Services fetch failed
     }

@@ -4,11 +4,16 @@ export interface UserProfile {
   email: string;
   first_name?: string;
   last_name?: string;
+  // camelCase aliases (used by API endpoints)
+  firstName?: string;
+  lastName?: string;
   full_name?: string;
   avatar_url?: string;
   phone?: string;
   address?: string;
   company?: string;
+  ico?: string;
+  dic?: string;
   provider?: string;
   provider_id?: string;
   email_verified?: boolean;
@@ -53,6 +58,7 @@ export interface RegistrationData {
 export interface LoginData {
   email: string;
   password: string;
+  mfaCode?: string;
 }
 
 // Auth State
@@ -83,6 +89,7 @@ export interface AuthResult {
   message?: string;
   user?: AppUser | null;
   session?: any;
+  mfaRequired?: boolean;
 }
 
 // Auth Error Types

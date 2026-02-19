@@ -1,10 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSpinner, faCheckCircle, faExclamationTriangle } from '@fortawesome/free-solid-svg-icons';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
+import { setAccessToken, getCurrentUser } from '../lib/auth';
 import './AuthCallback.css';
 
 const AuthCallback: React.FC = () => {
@@ -13,6 +14,7 @@ const AuthCallback: React.FC = () => {
   const { user, loading: authLoading, initialized } = useAuth();
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
   const [error, setError] = useState<string>('');
+  const oauthHandled = useRef(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -48,6 +50,31 @@ const AuthCallback: React.FC = () => {
           }
 
           window.history.replaceState({}, document.title, '/auth/callback');
+          return;
+        }
+
+        // OAuth flow: přečti access token z URL hash fragmentu (#access_token=...)
+        const hashAccessToken = hashParams.get('access_token');
+        if (hashAccessToken && !oauthHandled.current) {
+          oauthHandled.current = true;
+
+          // Ulož access token do paměti
+          setAccessToken(hashAccessToken);
+
+          // Vyčisti URL (access token nesmí zůstat v URL)
+          window.history.replaceState({}, document.title, '/auth/callback');
+
+          // Načti uživatele s novým tokenem a přesměruj na dashboard
+          const oauthUser = await getCurrentUser();
+          if (oauthUser && isMounted) {
+            setStatus('success');
+            timeoutId = setTimeout(() => {
+              window.location.href = '/dashboard';
+            }, 1000);
+          } else if (isMounted) {
+            setError('Nepodařilo se načíst profil po OAuth přihlášení.');
+            setStatus('error');
+          }
           return;
         }
 
