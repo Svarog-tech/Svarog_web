@@ -2,10 +2,30 @@
 
 import { getCurrentUser, getAuthHeader, refreshAccessToken } from './auth';
 
-// API Base URL – jediné místo pro definici
-export const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
+/**
+ * API Base URL – jediné místo pro definici.
+ * Chování:
+ * - pokud je nastaveno REACT_APP_API_URL → použij ho
+ * - v dev prostředí na localhost:3000 → backend na http://localhost:3001/api
+ * - jinak relativní /api (produkce na stejné doméně)
+ */
+const resolveApiBaseUrl = (): string => {
+  if (process.env.REACT_APP_API_URL) {
+    return process.env.REACT_APP_API_URL;
+  }
+  if (typeof window !== 'undefined' && window.location.origin.includes('localhost:3000')) {
+    return 'http://localhost:3001/api';
+  }
+  return '/api';
+};
+
+export const API_BASE_URL = resolveApiBaseUrl();
 /** Base URL bez /api (pro webhook, proxy, download) */
-export const API_ROOT_URL = API_BASE_URL.replace(/\/api\/?$/, '') || 'http://localhost:3001';
+export const API_ROOT_URL = API_BASE_URL.replace(/\/api\/?$/, '') || (
+  typeof window !== 'undefined' && window.location.origin.includes('localhost:3000')
+    ? 'http://localhost:3001'
+    : ''
+);
 
 // Helper pro API volání s automatickým refresh tokenu
 export async function apiCall<T>(endpoint: string, options: RequestInit = {}): Promise<T> {

@@ -17,6 +17,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { useToast } from '../components/Toast';
 import { getAuthHeader } from '../lib/auth';
 import { API_BASE_URL } from '../lib/api';
 import './AdminUsers.css';
@@ -42,6 +43,7 @@ interface Stats {
 const AdminUsers: React.FC = () => {
   const { user, profile } = useAuth();
   const navigate = useNavigate();
+  const { showSuccess, showError, showWarning } = useToast();
   const [users, setUsers] = useState<User[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
@@ -145,7 +147,7 @@ const AdminUsers: React.FC = () => {
       setEditingUser(null);
     } catch (error) {
       console.error('Error updating user role:', error);
-      alert('Chyba při změně role uživatele');
+      showError('Chyba při změně role uživatele');
     }
   };
 
@@ -184,7 +186,7 @@ const AdminUsers: React.FC = () => {
     if (!target) return;
     const trimmedDomain = createWebDomain.trim();
     if (!trimmedDomain) {
-      alert('Zadej doménu (např. example.cz).');
+      showWarning('Zadej doménu (např. example.cz).');
       return;
     }
 
@@ -209,14 +211,14 @@ const AdminUsers: React.FC = () => {
       const result = await response.json();
 
       if (response.ok && result.success) {
-        alert(`Webhosting pro ${target.email} byl vytvořen.\nHestiaCP uživatel: ${result.hestia?.username || 'neznámý'}`);
+        showSuccess(`Webhosting pro ${target.email} byl vytvořen. HestiaCP uživatel: ${result.hestia?.username || 'neznámý'}`);
         closeCreateWebModal();
       } else {
-        alert(`Služba byla částečně/nebyla vytvořena: ${result.error || result.warning || result.hestiaError || 'Neznámá chyba'}`);
+        showWarning(`Služba byla částečně/nebyla vytvořena: ${result.error || result.warning || result.hestiaError || 'Neznámá chyba'}`);
       }
     } catch (error) {
       console.error('Error creating hosting service for user:', error);
-      alert('Chyba při vytváření webu pro uživatele');
+      showError('Chyba při vytváření webu pro uživatele');
     } finally {
       setCreatingWeb(false);
     }

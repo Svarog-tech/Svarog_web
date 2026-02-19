@@ -6,7 +6,7 @@ import { faGoogle, faGithub } from '@fortawesome/free-brands-svg-icons';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
-import { LoginData, OAuthProvider } from '../types/auth';
+import { LoginData } from '../types/auth';
 import { validateEmail } from '../lib/auth';
 import './Login.css';
 
@@ -104,19 +104,18 @@ const Login: React.FC = () => {
     }
   };
 
-  const handleOAuthLogin = async (provider: OAuthProvider) => {
+  const oauthProviders = [
+    { name: 'Google', icon: faGoogle, color: '#DB4437', key: 'google' as 'google' },
+    { name: 'GitHub', icon: faGithub, color: '#333', key: 'github' as 'github' },
+  ];
+
+  const handleOAuthLogin = async (provider: 'google' | 'github') => {
     try {
       await signInWithOAuth(provider);
-    } catch (error: any) {
-      console.error(`OAuth ${provider} login failed:`, error);
-      setError(t('auth.loginFailed'));
+    } catch (e) {
+      setError(t('auth.oauthError'));
     }
   };
-
-  const oauthProviders = [
-    { name: 'Google', icon: faGoogle, color: '#DB4437', key: 'google' as OAuthProvider },
-    { name: 'GitHub', icon: faGithub, color: '#333', key: 'github' as OAuthProvider }
-  ];
 
   const isFormDisabled = loading || isSubmitting;
 

@@ -26,6 +26,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { useToast } from '../components/Toast';
 import { getAuthHeader } from '../lib/auth';
 import { getAllUserHostingServices, HostingService, API_BASE_URL } from '../lib/api';
 import { suspendHostingAccount, unsuspendHostingAccount, deleteHostingAccount } from '../services/hestiacpService';
@@ -73,6 +74,7 @@ interface Stats {
 const Admin: React.FC = () => {
   const { user, profile } = useAuth();
   const navigate = useNavigate();
+  const { showSuccess, showError } = useToast();
   const [orders, setOrders] = useState<Order[]>([]);
   const [filteredOrders, setFilteredOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
@@ -140,13 +142,13 @@ const Admin: React.FC = () => {
           body: JSON.stringify({ status: 'suspended' })
         });
         await fetchHostingServices();
-        alert('HestiaCP účet byl suspendován');
+        showSuccess('HestiaCP účet byl suspendován');
       } else {
-        alert(`Chyba: ${result.error}`);
+        showError(`Chyba: ${result.error}`);
       }
     } catch (error) {
       console.error('Error suspending account:', error);
-      alert('Chyba při suspendování účtu');
+      showError('Chyba při suspendování účtu');
     } finally {
       setLoadingHestia(false);
     }
@@ -169,13 +171,13 @@ const Admin: React.FC = () => {
           body: JSON.stringify({ status: 'active' })
         });
         await fetchHostingServices();
-        alert('HestiaCP účet byl obnoven');
+        showSuccess('HestiaCP účet byl obnoven');
       } else {
-        alert(`Chyba: ${result.error}`);
+        showError(`Chyba: ${result.error}`);
       }
     } catch (error) {
       console.error('Error unsuspending account:', error);
-      alert('Chyba při obnovování účtu');
+      showError('Chyba při obnovování účtu');
     } finally {
       setLoadingHestia(false);
     }
@@ -198,13 +200,13 @@ const Admin: React.FC = () => {
           body: JSON.stringify({ status: 'cancelled', hestia_created: false })
         });
         await fetchHostingServices();
-        alert('HestiaCP účet byl smazán');
+        showSuccess('HestiaCP účet byl smazán');
       } else {
-        alert(`Chyba: ${result.error}`);
+        showError(`Chyba: ${result.error}`);
       }
     } catch (error) {
       console.error('Error deleting account:', error);
-      alert('Chyba při mazání účtu');
+      showError('Chyba při mazání účtu');
     } finally {
       setLoadingHestia(false);
     }
@@ -273,8 +275,9 @@ const Admin: React.FC = () => {
     }
   };
 
-  const getStatusBadge = (status?: string) => {
-    const statusMap: Record<string, { color: string; icon: any; label: string }> = {
+  // Sjednocená funkce pro status badge (order i service)
+  const getStatusBadge = (status?: string, type: 'order' | 'service' = 'order') => {
+    const orderStatusMap: Record<string, { color: string; icon: any; label: string }> = {
       pending: { color: '#f59e0b', icon: faClock, label: 'Čeká' },
       processing: { color: '#3b82f6', icon: faClock, label: 'Zpracovává se' },
       active: { color: '#10b981', icon: faCheckCircle, label: 'Aktivní' },
@@ -282,6 +285,15 @@ const Admin: React.FC = () => {
       expired: { color: '#6b7280', icon: faTimesCircle, label: 'Expirováno' }
     };
 
+    const serviceStatusMap: Record<string, { color: string; icon: any; label: string }> = {
+      pending: { color: '#f59e0b', icon: faClock, label: 'Čeká' },
+      active: { color: '#10b981', icon: faCheckCircle, label: 'Aktivní' },
+      suspended: { color: '#ef4444', icon: faBan, label: 'Pozastaveno' },
+      expired: { color: '#6b7280', icon: faTimesCircle, label: 'Expirováno' },
+      cancelled: { color: '#6b7280', icon: faTimesCircle, label: 'Zrušeno' }
+    };
+
+    const statusMap = type === 'service' ? serviceStatusMap : orderStatusMap;
     const statusInfo = statusMap[status || 'pending'] || statusMap.pending;
 
     return (
@@ -289,23 +301,6 @@ const Admin: React.FC = () => {
         className="status-badge"
         style={{ background: `${statusInfo.color}20`, color: statusInfo.color }}
       >
-        <FontAwesomeIcon icon={statusInfo.icon} />
-        {statusInfo.label}
-      </span>
-    );
-  };
-
-  const getServiceStatusBadge = (status?: string) => {
-    const statusMap: Record<string, { color: string; icon: any; label: string }> = {
-      pending: { color: '#f59e0b', icon: faClock, label: 'Čeká' },
-      active: { color: '#10b981', icon: faCheckCircle, label: 'Aktivní' },
-      suspended: { color: '#ef4444', icon: faBan, label: 'Pozastaveno' },
-      expired: { color: '#6b7280', icon: faTimesCircle, label: 'Expirováno' },
-      cancelled: { color: '#6b7280', icon: faTimesCircle, label: 'Zrušeno' }
-    };
-    const statusInfo = statusMap[status || 'pending'] || statusMap.pending;
-    return (
-      <span className="status-badge" style={{ background: `${statusInfo.color}20`, color: statusInfo.color }}>
         <FontAwesomeIcon icon={statusInfo.icon} />
         {statusInfo.label}
       </span>
@@ -573,12 +568,7 @@ const Admin: React.FC = () => {
                 </thead>
                 <tbody>
                   {filteredOrders.map((order) => (
-                    <motion.tr
-                      key={order.id}
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ duration: 0.3 }}
-                    >
+                    <tr key={order.id}>
                       <td>#{order.id}</td>
                       <td className="customer-name">{order.customer_name || order.billing_name || '-'}</td>
                       <td>{order.customer_email || order.billing_email || '-'}</td>
@@ -665,7 +655,7 @@ const Admin: React.FC = () => {
                           })()}
                         </div>
                       </td>
-                    </motion.tr>
+                    </tr>
                   ))}
                 </tbody>
               </table>
@@ -713,12 +703,7 @@ const Admin: React.FC = () => {
                     const svc = service as HostingService & { user_email?: string; user_first_name?: string; user_last_name?: string };
                     const userName = [svc.user_first_name, svc.user_last_name].filter(Boolean).join(' ').trim() || svc.user_email || '-';
                     return (
-                      <motion.tr
-                        key={service.id}
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ duration: 0.3 }}
-                      >
+                      <tr key={service.id}>
                         <td>#{service.id}</td>
                         <td>
                           <div className="customer-name">{userName}</div>
@@ -727,7 +712,7 @@ const Admin: React.FC = () => {
                         <td className="domain-name">{service.hestia_domain || '-'}</td>
                         <td className="plan-name">{service.plan_name || '-'}</td>
                         <td className="price">{formatPrice(service.price)}</td>
-                        <td>{getServiceStatusBadge(service.status)}</td>
+                        <td>{getStatusBadge(service.status, 'service')}</td>
                         <td>
                           {service.hestia_created && service.hestia_username ? (
                             <div className="hestiacp-info-cell">
@@ -768,7 +753,7 @@ const Admin: React.FC = () => {
                             )}
                           </div>
                         </td>
-                      </motion.tr>
+                      </tr>
                     );
                   })}
                 </tbody>

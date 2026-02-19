@@ -1,5 +1,5 @@
-import { apiCall, API_ROOT_URL } from '../lib/api';
-import { getAccessToken } from '../lib/auth';
+import { apiCall, API_BASE_URL } from '../lib/api';
+import { getAuthHeader } from '../lib/auth';
 
 export interface FileEntry {
   name: string;
@@ -110,10 +110,36 @@ export async function uploadFile(serviceId: number, dirPath: string, file: File)
   });
 }
 
-export function getDownloadUrl(serviceId: number, filePath: string): string {
-  // SECURITY: Přidej auth token do URL, protože download endpoint vyžaduje autentizaci
-  const token = getAccessToken() || '';
-  return `${API_ROOT_URL}/api/hosting-services/${serviceId}/files/download?path=${encodeURIComponent(filePath)}&token=${encodeURIComponent(token)}`;
+/**
+ * Stáhne soubor bezpečně přes POST request s auth headerem.
+ * SECURITY: Token se NIKDY nevkládá do URL (byl by v logách, browser history, referrer headerech).
+ */
+export async function downloadFile(serviceId: number, filePath: string): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}/hosting-services/${serviceId}/files/download`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...getAuthHeader(),
+    },
+    credentials: 'include',
+    body: JSON.stringify({ path: filePath }),
+  });
+
+  if (!response.ok) {
+    throw new Error('Download failed');
+  }
+
+  const blob = await response.blob();
+  const url = window.URL.createObjectURL(blob);
+  const fileName = filePath.split('/').pop() || 'download';
+
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = fileName;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  window.URL.revokeObjectURL(url);
 }
 
 // Detekce jazyka podle přípony souboru

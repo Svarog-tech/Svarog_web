@@ -1,35 +1,42 @@
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import './App.css';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { LanguageProvider } from './contexts/LanguageContext';
 import { CurrencyProvider } from './contexts/CurrencyContext';
 import { AuthProvider } from './contexts/AuthContext';
+import { ToastProvider } from './components/Toast';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import CookieBanner from './components/CookieBanner';
 import ScrollToTop from './components/ScrollToTop';
 import TriangularBackground from './components/TriangularBackground';
-import Home from './pages/Home';
-import Hosting from './pages/Hosting';
-import DomainsSimple from './pages/DomainsSimple';
-import Support from './pages/Support';
-import About from './pages/About';
-import Register from './pages/Register';
-import Login from './pages/Login';
-import AuthCallback from './pages/AuthCallback';
-import Dashboard from './pages/Dashboard';
-import Services from './pages/Services';
-import Tickets from './pages/Tickets';
-import Profile from './pages/Profile';
-import Configurator from './pages/Configurator';
-import Admin from './pages/Admin';
-import AdminTickets from './pages/AdminTickets';
-import AdminUsers from './pages/AdminUsers';
-import PaymentSuccess from './pages/PaymentSuccess';
-import ServiceDetail from './pages/ServiceDetail';
-import FileManager from './pages/FileManager';
 import ProtectedRoute from './components/ProtectedRoute';
+import ErrorBoundary from './components/ErrorBoundary';
+import Loading from './components/Loading';
+
+// Lazy-loaded pages – každá stránka se načte až když ji uživatel navštíví
+const Home = lazy(() => import('./pages/Home'));
+const Hosting = lazy(() => import('./pages/Hosting'));
+const DomainsSimple = lazy(() => import('./pages/DomainsSimple'));
+const Support = lazy(() => import('./pages/Support'));
+const About = lazy(() => import('./pages/About'));
+const Register = lazy(() => import('./pages/Register'));
+const Login = lazy(() => import('./pages/Login'));
+const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
+const AuthCallback = lazy(() => import('./pages/AuthCallback'));
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const Services = lazy(() => import('./pages/Services'));
+const ServiceDetail = lazy(() => import('./pages/ServiceDetail'));
+const FileManager = lazy(() => import('./pages/FileManager'));
+const Tickets = lazy(() => import('./pages/Tickets'));
+const Profile = lazy(() => import('./pages/Profile'));
+const Configurator = lazy(() => import('./pages/Configurator'));
+const Admin = lazy(() => import('./pages/Admin'));
+const AdminTickets = lazy(() => import('./pages/AdminTickets'));
+const AdminUsers = lazy(() => import('./pages/AdminUsers'));
+const PaymentSuccess = lazy(() => import('./pages/PaymentSuccess'));
+const NotFound = lazy(() => import('./pages/NotFound'));
 
 function App() {
   return (
@@ -37,36 +44,51 @@ function App() {
       <LanguageProvider>
         <CurrencyProvider>
           <AuthProvider>
-            <Router>
+            <ToastProvider>
+              <Router>
               <ScrollToTop />
-          <div className="App">
-            <TriangularBackground opacity={0.25} />
-            <Header />
-            <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/hosting" element={<Hosting />} />
-              <Route path="/domains" element={<DomainsSimple />} />
-              <Route path="/support" element={<Support />} />
-              <Route path="/about" element={<About />} />
-              <Route path="/register" element={<Register />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/auth/callback" element={<AuthCallback />} />
-              <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-              <Route path="/services" element={<ProtectedRoute><Services /></ProtectedRoute>} />
-              <Route path="/services/:id" element={<ProtectedRoute><ServiceDetail /></ProtectedRoute>} />
-              <Route path="/services/:id/files" element={<ProtectedRoute><FileManager /></ProtectedRoute>} />
-              <Route path="/tickets" element={<ProtectedRoute><Tickets /></ProtectedRoute>} />
-              <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-              <Route path="/configurator" element={<ProtectedRoute><Configurator /></ProtectedRoute>} />
-              <Route path="/admin" element={<ProtectedRoute requireAdmin><Admin /></ProtectedRoute>} />
-              <Route path="/admin/tickets" element={<ProtectedRoute requireAdmin><AdminTickets /></ProtectedRoute>} />
-              <Route path="/admin/users" element={<ProtectedRoute requireAdmin><AdminUsers /></ProtectedRoute>} />
-              <Route path="/payment/success" element={<PaymentSuccess />} />
-            </Routes>
-            <Footer />
-            <CookieBanner />
-          </div>
+              <div className="App">
+                <TriangularBackground opacity={0.25} />
+                <Header />
+                <ErrorBoundary>
+                  <Suspense fallback={<Loading message="Načítám..." minHeight="60vh" />}>
+                    <Routes>
+                      {/* Public routes */}
+                      <Route path="/" element={<Home />} />
+                      <Route path="/hosting" element={<Hosting />} />
+                      <Route path="/domains" element={<DomainsSimple />} />
+                      <Route path="/support" element={<Support />} />
+                      <Route path="/about" element={<About />} />
+                      <Route path="/register" element={<Register />} />
+                      <Route path="/login" element={<Login />} />
+                      <Route path="/forgot-password" element={<ForgotPassword />} />
+                      <Route path="/auth/callback" element={<AuthCallback />} />
+                      <Route path="/payment/success" element={<PaymentSuccess />} />
+
+                      {/* Protected routes */}
+                      <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+                      <Route path="/services" element={<ProtectedRoute><Services /></ProtectedRoute>} />
+                      <Route path="/services/:id" element={<ProtectedRoute><ServiceDetail /></ProtectedRoute>} />
+                      <Route path="/services/:id/files" element={<ProtectedRoute><FileManager /></ProtectedRoute>} />
+                      <Route path="/tickets" element={<ProtectedRoute><Tickets /></ProtectedRoute>} />
+                      <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+                      <Route path="/configurator" element={<ProtectedRoute><Configurator /></ProtectedRoute>} />
+
+                      {/* Admin routes */}
+                      <Route path="/admin" element={<ProtectedRoute requireAdmin><Admin /></ProtectedRoute>} />
+                      <Route path="/admin/tickets" element={<ProtectedRoute requireAdmin><AdminTickets /></ProtectedRoute>} />
+                      <Route path="/admin/users" element={<ProtectedRoute requireAdmin><AdminUsers /></ProtectedRoute>} />
+
+                      {/* 404 catch-all */}
+                      <Route path="*" element={<NotFound />} />
+                    </Routes>
+                  </Suspense>
+                </ErrorBoundary>
+                <Footer />
+                <CookieBanner />
+              </div>
             </Router>
+            </ToastProvider>
           </AuthProvider>
         </CurrencyProvider>
       </LanguageProvider>

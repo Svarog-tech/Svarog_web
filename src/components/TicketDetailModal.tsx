@@ -16,6 +16,7 @@ import {
 import { getAuthHeader } from '../lib/auth';
 import { API_BASE_URL } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
+import { useToast } from './Toast';
 import DOMPurify from 'dompurify';
 import './TicketDetailModal.css';
 

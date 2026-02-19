@@ -298,12 +298,20 @@ export const signIn = async (data: LoginData) => {
 };
 
 // ==============================================
-// OAUTH PŘIHLÁŠENÍ (TODO: Implementovat pokud je potřeba)
+// OAUTH PŘIHLÁŠENÍ
 // ==============================================
 
 export const signInWithOAuth = async (provider: OAuthProvider) => {
-  // TODO: Implementovat OAuth pokud je potřeba
-  throw new Error('OAuth není momentálně podporováno');
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  // OAuth flow je řešený na backendu (redirect na Google/GitHub, vytvoření session, návrat na /auth/callback)
+  // Frontend pouze přesměruje na start endpoint.
+  const redirectUrl = `${window.location.origin}/auth/callback`;
+  const url = `${API_BASE_URL}/auth/oauth/${provider}/start?redirect=${encodeURIComponent(redirectUrl)}`;
+
+  window.location.href = url;
 };
 
 // ==============================================
@@ -378,8 +386,12 @@ export const resetPassword = async (email: string) => {
 // AKTUALIZACE HESLA
 // ==============================================
 
-export const updatePassword = async (newPassword: string, oldPassword?: string) => {
+export const updatePassword = async (newPassword: string, oldPassword: string) => {
   try {
+    if (!oldPassword || oldPassword.trim().length === 0) {
+      return { success: false, error: 'Zadejte současné heslo' };
+    }
+
     const passwordValidation = validatePassword(newPassword);
     if (!passwordValidation.isValid) {
       return { success: false, error: passwordValidation.errors[0] };
@@ -391,6 +403,7 @@ export const updatePassword = async (newPassword: string, oldPassword?: string) 
         'Content-Type': 'application/json',
         ...getAuthHeader(),
       },
+      credentials: 'include',
       body: JSON.stringify({ oldPassword, newPassword }),
     });
 

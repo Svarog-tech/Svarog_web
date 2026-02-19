@@ -3,8 +3,7 @@
  * Handles communication with HestiaCP API through backend proxy
  */
 
-import { getCurrentSession, getAuthHeader } from '../lib/auth';
-import { API_ROOT_URL } from '../lib/api';
+import { apiCall } from '../lib/api';
 
 export interface CreateHostingAccountParams {
   email: string;
@@ -31,44 +30,22 @@ export interface HostingAccountActionResult {
 
 /**
  * Vytvoří nový hosting účet v HestiaCP
- * @param params - Parametry pro vytvoření účtu
- * @returns Výsledek vytvoření včetně přihlašovacích údajů
  */
 export const createHostingAccount = async (
   params: CreateHostingAccountParams
 ): Promise<CreateHostingAccountResult> => {
   try {
-    console.log('[HestiaCP Frontend] Creating hosting account:', params);
-
-    // SECURITY: Získej JWT token pro autentizaci
-    const session = await getCurrentSession();
-    if (!session || !session.access_token) {
-      return {
-        success: false,
-        error: 'Authentication required'
-      };
-    }
-
-    const response = await fetch(`${API_ROOT_URL}/api/hestiacp/create-account`, {
+    const result = await apiCall<CreateHostingAccountResult>('/hestiacp/create-account', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...getAuthHeader()
-      },
-      body: JSON.stringify(params)
+      body: JSON.stringify(params),
     });
 
-    const result = await response.json();
-
     if (!result.success) {
-      console.error('[HestiaCP Frontend] Failed to create account:', result.error);
       return {
         success: false,
-        error: result.error || 'Failed to create hosting account'
+        error: result.error || 'Failed to create hosting account',
       };
     }
-
-    console.log('[HestiaCP Frontend] Account created successfully:', result);
 
     return {
       success: true,
@@ -76,262 +53,163 @@ export const createHostingAccount = async (
       password: result.password,
       domain: result.domain,
       cpanelUrl: result.cpanelUrl,
-      package: result.package
+      package: result.package,
     };
   } catch (error) {
-    console.error('[HestiaCP Frontend] Error creating hosting account:', error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Network error'
+      error: error instanceof Error ? error.message : 'Network error',
     };
   }
 };
 
 /**
- * Suspenduje hosting účet
- * @param username - HestiaCP uživatelské jméno
+ * Suspenduje hosting účet (vyžaduje admin práva)
  */
 export const suspendHostingAccount = async (
   username: string
 ): Promise<HostingAccountActionResult> => {
   try {
-    console.log('[HestiaCP Frontend] Suspending account:', username);
-
-    // SECURITY: Získej JWT token pro autentizaci (vyžaduje admin práva)
-    const session = await getCurrentSession();
-    if (!session || !session.access_token) {
-      return {
-        success: false,
-        error: 'Authentication required'
-      };
-    }
-
-    const response = await fetch(`${API_ROOT_URL}/api/hestiacp/suspend-account`, {
+    const result = await apiCall<HostingAccountActionResult>('/hestiacp/suspend-account', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...getAuthHeader()
-      },
-      body: JSON.stringify({ username })
+      body: JSON.stringify({ username }),
     });
 
-    const result = await response.json();
-
     if (!result.success) {
-      console.error('[HestiaCP Frontend] Failed to suspend account:', result.error);
       return {
         success: false,
-        error: result.error || 'Failed to suspend hosting account'
+        error: result.error || 'Failed to suspend hosting account',
       };
     }
-
-    console.log('[HestiaCP Frontend] Account suspended successfully');
 
     return { success: true };
   } catch (error) {
-    console.error('[HestiaCP Frontend] Error suspending hosting account:', error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Network error'
+      error: error instanceof Error ? error.message : 'Network error',
     };
   }
 };
 
 /**
- * Obnoví suspendovaný hosting účet
- * @param username - HestiaCP uživatelské jméno
+ * Obnoví suspendovaný hosting účet (vyžaduje admin práva)
  */
 export const unsuspendHostingAccount = async (
   username: string
 ): Promise<HostingAccountActionResult> => {
   try {
-    console.log('[HestiaCP Frontend] Unsuspending account:', username);
-
-    // SECURITY: Získej JWT token pro autentizaci (vyžaduje admin práva)
-    const session = await getCurrentSession();
-    if (!session || !session.access_token) {
-      return {
-        success: false,
-        error: 'Authentication required'
-      };
-    }
-
-    const response = await fetch(`${API_ROOT_URL}/api/hestiacp/unsuspend-account`, {
+    const result = await apiCall<HostingAccountActionResult>('/hestiacp/unsuspend-account', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...getAuthHeader()
-      },
-      body: JSON.stringify({ username })
+      body: JSON.stringify({ username }),
     });
 
-    const result = await response.json();
-
     if (!result.success) {
-      console.error('[HestiaCP Frontend] Failed to unsuspend account:', result.error);
       return {
         success: false,
-        error: result.error || 'Failed to unsuspend hosting account'
+        error: result.error || 'Failed to unsuspend hosting account',
       };
     }
-
-    console.log('[HestiaCP Frontend] Account unsuspended successfully');
 
     return { success: true };
   } catch (error) {
-    console.error('[HestiaCP Frontend] Error unsuspending hosting account:', error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Network error'
+      error: error instanceof Error ? error.message : 'Network error',
     };
   }
 };
 
 /**
- * Smaže hosting účet
- * @param username - HestiaCP uživatelské jméno
+ * Smaže hosting účet (vyžaduje admin práva)
  */
 export const deleteHostingAccount = async (
   username: string
 ): Promise<HostingAccountActionResult> => {
   try {
-    console.log('[HestiaCP Frontend] Deleting account:', username);
-
-    // SECURITY: Získej JWT token pro autentizaci (vyžaduje admin práva)
-    const session = await getCurrentSession();
-    if (!session || !session.access_token) {
-      return {
-        success: false,
-        error: 'Authentication required'
-      };
-    }
-
-    const response = await fetch(`${API_ROOT_URL}/api/hestiacp/delete-account`, {
+    const result = await apiCall<HostingAccountActionResult>('/hestiacp/delete-account', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...getAuthHeader()
-      },
-      body: JSON.stringify({ username })
+      body: JSON.stringify({ username }),
     });
 
-    const result = await response.json();
-
     if (!result.success) {
-      console.error('[HestiaCP Frontend] Failed to delete account:', result.error);
       return {
         success: false,
-        error: result.error || 'Failed to delete hosting account'
+        error: result.error || 'Failed to delete hosting account',
       };
     }
-
-    console.log('[HestiaCP Frontend] Account deleted successfully');
 
     return { success: true };
   } catch (error) {
-    console.error('[HestiaCP Frontend] Error deleting hosting account:', error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Network error'
+      error: error instanceof Error ? error.message : 'Network error',
     };
   }
 };
 
 /**
  * Automaticky vytvoří hosting účet po zaplacení objednávky
- * @param orderId - ID objednávky
- * @param domain - Doména pro hosting
  */
 export const createHostingAccountForOrder = async (
   orderId: number,
   domain: string
 ): Promise<CreateHostingAccountResult> => {
   try {
-    console.log('[HestiaCP Frontend] Creating hosting account for order:', orderId);
-
-    // Získej údaje o objednávce z databáze
-    let order = null;
+    // Získej údaje o objednávce
+    let order: any = null;
     try {
-      const orderResponse = await fetch(`${API_ROOT_URL}/api/orders/${orderId}`, {
-        method: 'GET',
-        headers: {
-          ...getAuthHeader()
-        }
-      });
-
-      if (orderResponse.ok) {
-        const orderResult = await orderResponse.json();
-        order = orderResult.order;
-      }
-    } catch (error) {
-      console.error('[HestiaCP Frontend] Failed to fetch order:', error);
+      const orderResult = await apiCall<{ order: any }>(`/orders/${orderId}`);
+      order = orderResult.order;
+    } catch {
+      // Order fetch failed
     }
 
     if (!order) {
-      console.error('[HestiaCP Frontend] Order not found');
       return {
         success: false,
-        error: 'Order not found'
+        error: 'Order not found',
       };
     }
 
     // Vytvoř hosting účet
     const result = await createHostingAccount({
-      email: order.profiles.email || order.billing_email,
+      email: order.profiles?.email || order.billing_email,
       domain,
-      package: order.plan_id
+      package: order.plan_id,
     });
 
     // Najdi hosting službu podle order_id
-    let hostingService = null;
+    let hostingService: any = null;
     try {
-      const servicesResponse = await fetch(`${API_ROOT_URL}/api/hosting-services`, {
-        method: 'GET',
-        headers: {
-          ...getAuthHeader()
-        }
-      });
-
-      if (servicesResponse.ok) {
-        const servicesResult = await servicesResponse.json();
-        hostingService = servicesResult.services?.find((s: any) => s.order_id === orderId);
-      }
-    } catch (error) {
-      console.error('[HestiaCP Frontend] Failed to fetch hosting services:', error);
+      const servicesResult = await apiCall<{ services: any[] }>('/hosting-services');
+      hostingService = servicesResult.services?.find((s: any) => s.order_id === orderId);
+    } catch {
+      // Services fetch failed
     }
 
     if (!result.success) {
       // Ulož chybu do databáze
       if (hostingService) {
         try {
-          await fetch(`${API_ROOT_URL}/api/hosting-services/${hostingService.id}`, {
+          await apiCall(`/hosting-services/${hostingService.id}`, {
             method: 'PUT',
-            headers: {
-              'Content-Type': 'application/json',
-              ...getAuthHeader()
-            },
             body: JSON.stringify({
               hestia_error: result.error,
-              hestia_created: false
-            })
+              hestia_created: false,
+            }),
           });
-        } catch (error) {
-          console.error('[HestiaCP Frontend] Failed to update hosting service:', error);
+        } catch {
+          // Update failed silently
         }
       }
-
       return result;
     }
 
     // Ulož údaje o hosting účtu do databáze
     if (hostingService) {
       try {
-        await fetch(`${API_ROOT_URL}/api/hosting-services/${hostingService.id}`, {
+        await apiCall(`/hosting-services/${hostingService.id}`, {
           method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            ...getAuthHeader()
-          },
           body: JSON.stringify({
             hestia_username: result.username,
             hestia_domain: result.domain,
@@ -342,23 +220,19 @@ export const createHostingAccountForOrder = async (
             ftp_host: result.domain,
             ftp_username: result.username,
             // SECURITY: Heslo NIKDY neukládej do databáze!
-            // Heslo by mělo být posláno emailem uživateli
-            notes: `HestiaCP Username: ${result.username}\nControl Panel: ${result.cpanelUrl}\n\nPOZNÁMKA: Heslo bylo posláno emailem uživateli.`
-          })
+            notes: `HestiaCP Username: ${result.username}\nControl Panel: ${result.cpanelUrl}`,
+          }),
         });
-      } catch (error) {
-        console.error('[HestiaCP Frontend] Failed to update hosting service:', error);
+      } catch {
+        // Update failed silently
       }
     }
 
-    console.log('[HestiaCP Frontend] Hosting account created and saved successfully');
-
     return result;
   } catch (error) {
-    console.error('[HestiaCP Frontend] Error creating hosting account for order:', error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: error instanceof Error ? error.message : 'Unknown error',
     };
   }
 };

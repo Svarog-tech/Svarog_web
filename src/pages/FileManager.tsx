@@ -14,7 +14,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { getHostingService, HostingService } from '../lib/api';
 import { useFileManager, OpenFile } from '../hooks/useFileManager';
 import Loading from '../components/Loading';
-import { FileEntry, getLanguageFromPath, isBinaryFile, isImageFile, getDownloadUrl } from '../services/fileManagerService';
+import { FileEntry, getLanguageFromPath, isBinaryFile, isImageFile, downloadFile } from '../services/fileManagerService';
 import './FileManager.css';
 
 // File icon helper
@@ -466,16 +466,15 @@ const FileManager: React.FC = () => {
                   </button>
                 )}
                 {fm.contextMenu.target.type === 'file' && (
-                  <a
+                  <button
                     className="fm-context-item"
-                    href={getDownloadUrl(service.id, `${fm.currentPath}/${fm.contextMenu.target.name}`)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={fm.hideContextMenu}
-                    style={{ textDecoration: 'none', color: 'inherit' }}
+                    onClick={() => {
+                      downloadFile(service.id, `${fm.currentPath}/${fm.contextMenu!.target!.name}`);
+                      fm.hideContextMenu();
+                    }}
                   >
                     <FontAwesomeIcon icon={faDownload} /> Stáhnout
-                  </a>
+                  </button>
                 )}
                 <div className="fm-context-sep" />
                 <button

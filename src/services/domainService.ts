@@ -179,42 +179,45 @@ export async function searchDomains(searchDomain: string, selectedExtensions?: s
   // Clean the domain name
   const cleanDomain = cleanDomainName(searchDomain, extensions);
 
-  // Check availability for each extension
+  // Paralelní kontrola dostupnosti – max 5 současně (throttling)
+  const CONCURRENCY = 5;
   const results: DomainAvailabilityResult[] = [];
 
-  for (const ext of extensions) {
-    const domainToCheck = cleanDomain + ext;
+  for (let i = 0; i < extensions.length; i += CONCURRENCY) {
+    const batch = extensions.slice(i, i + CONCURRENCY);
 
-    try {
-      const available = await checkDomainAvailability(domainToCheck);
+    const batchResults = await Promise.allSettled(
+      batch.map(async (ext) => {
+        const domainToCheck = cleanDomain + ext;
+        try {
+          const available = await checkDomainAvailability(domainToCheck);
+          return {
+            domain: domainToCheck,
+            available,
+            extension: ext,
+            price: EXTENSION_PRICING[ext as keyof typeof EXTENSION_PRICING] || '349 Kč/rok',
+          };
+        } catch {
+          return {
+            domain: domainToCheck,
+            available: simulateDomainAvailability(domainToCheck),
+            extension: ext,
+            price: EXTENSION_PRICING[ext as keyof typeof EXTENSION_PRICING] || '349 Kč/rok',
+          };
+        }
+      })
+    );
 
-      results.push({
-        domain: domainToCheck,
-        available,
-        extension: ext,
-        price: EXTENSION_PRICING[ext as keyof typeof EXTENSION_PRICING] || '349 Kč/rok'
-      });
-    } catch (error) {
-      console.warn(`Failed to check ${domainToCheck}:`, error);
-
-      // Use simulation as fallback instead of showing error
-      const simulatedAvailable = simulateDomainAvailability(domainToCheck);
-
-      results.push({
-        domain: domainToCheck,
-        available: simulatedAvailable,
-        extension: ext,
-        price: EXTENSION_PRICING[ext as keyof typeof EXTENSION_PRICING] || '349 Kč/rok'
-      });
+    for (const r of batchResults) {
+      if (r.status === 'fulfilled') {
+        results.push(r.value);
+      }
     }
-
-    // Small delay to avoid overwhelming APIs
-    await new Promise(resolve => setTimeout(resolve, 200));
   }
 
   return {
     searchedDomain: cleanDomain,
-    results
+    results,
   };
 }
 
