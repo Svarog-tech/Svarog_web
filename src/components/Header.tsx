@@ -167,7 +167,12 @@ const Header: React.FC = () => {
                       >
                         <div className="profile-avatar">
                           {profile?.avatar_url ? (
-                            <img src={profile.avatar_url} alt="Avatar" />
+                            <img
+                              src={profile.avatar_url}
+                              alt="Avatar"
+                              loading="lazy"
+                              decoding="async"
+                            />
                           ) : (
                             <div className="avatar-initials">
                               {getUserInitials()}
@@ -238,7 +243,12 @@ const Header: React.FC = () => {
                   <div className="mobile-profile-info">
                     <div className="profile-avatar">
                       {profile?.avatar_url ? (
-                        <img src={profile.avatar_url} alt="Avatar" />
+                        <img
+                          src={profile.avatar_url}
+                          alt="Avatar"
+                          loading="lazy"
+                          decoding="async"
+                        />
                       ) : (
                         <div className="avatar-initials">
                           {getUserInitials()}

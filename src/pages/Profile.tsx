@@ -168,7 +168,12 @@ const Profile: React.FC = () => {
             <div className="avatar-card">
               <div className="avatar-large">
                 {profile?.avatar_url ? (
-                  <img src={profile.avatar_url} alt="Avatar" />
+                  <img
+                    src={profile.avatar_url}
+                    alt="Avatar"
+                    loading="lazy"
+                    decoding="async"
+                  />
                 ) : (
                   <div className="avatar-initials-large">
                     {getUserInitials()}

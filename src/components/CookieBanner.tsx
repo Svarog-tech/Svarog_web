@@ -21,27 +21,54 @@ const CookieBanner: React.FC = () => {
     marketing: false
   });
 
+  const COOKIE_NAME = 'cookieConsent';
+
+  const loadPreferencesFromCookie = (): CookiePreferences | null => {
+    if (typeof document === 'undefined') return null;
+    const match = document.cookie.split('; ').find(row => row.startsWith(`${COOKIE_NAME}=`));
+    if (!match) return null;
+    try {
+      const value = decodeURIComponent(match.split('=')[1]);
+      const parsed = JSON.parse(value);
+      if (
+        typeof parsed === 'object' &&
+        typeof parsed.necessary === 'boolean' &&
+        typeof parsed.analytics === 'boolean' &&
+        typeof parsed.marketing === 'boolean'
+      ) {
+        return parsed as CookiePreferences;
+      }
+    } catch {
+      // ignore parse errors and fall back to banner
+    }
+    return null;
+  };
+
+  const savePreferencesToCookie = (prefs: CookiePreferences) => {
+    if (typeof document === 'undefined') return;
+    const value = encodeURIComponent(JSON.stringify(prefs));
+    // cca 6 měsíců
+    const maxAge = 60 * 60 * 24 * 180;
+    const isHttps = typeof window !== 'undefined' && window.location.protocol === 'https:';
+    const secureFlag = isHttps ? '; Secure' : '';
+    document.cookie = `${COOKIE_NAME}=${value}; Path=/; Max-Age=${maxAge}; SameSite=Lax${secureFlag}`;
+  };
+
   useEffect(() => {
-    // Check if user has already made a choice
-    const cookieConsent = localStorage.getItem('cookieConsent');
-    if (!cookieConsent) {
+    // Check if user has already made a choice (cookie-based, ne localStorage)
+    const savedPrefs = loadPreferencesFromCookie();
+    if (!savedPrefs) {
       // Show banner after a short delay
       setTimeout(() => {
         setShowBanner(true);
       }, 1000);
     } else {
-      // Load saved preferences
-      try {
-        const savedPrefs = JSON.parse(cookieConsent);
-        setPreferences(savedPrefs);
-      } catch (e) {
-        setShowBanner(true);
-      }
+      setPreferences(savedPrefs);
     }
   }, []);
 
   const setCookieConsent = (prefs: CookiePreferences) => {
-    localStorage.setItem('cookieConsent', JSON.stringify(prefs));
+    savePreferencesToCookie(prefs);
     setPreferences(prefs);
     setShowBanner(false);
     setShowSettings(false);
