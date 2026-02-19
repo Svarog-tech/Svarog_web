@@ -21,7 +21,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import { useCurrency } from '../contexts/CurrencyContext';
 import { useAuth } from '../contexts/AuthContext';
-import { createOrder, Order } from '../lib/api';
+import { createOrder, Order, API_ROOT_URL } from '../lib/api';
 import { createGoPayPayment } from '../services/paymentService';
 import MultiStateButton from '../components/MultiStateButton';
 import TwoFactorModal from '../components/TwoFactorModal';
@@ -210,7 +210,7 @@ const Configurator: React.FC = () => {
         customerEmail: formData.customerEmail,
         customerName: formData.customerName,
         returnUrl: `${window.location.origin}/payment/success`,
-        notifyUrl: `${process.env.REACT_APP_API_URL || 'http://localhost:3001'}/api/gopay/webhook`
+        notifyUrl: `${API_ROOT_URL}/api/gopay/webhook`
       });
 
       if (payment.success && payment.paymentUrl) {

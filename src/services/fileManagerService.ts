@@ -1,4 +1,4 @@
-import { apiCall } from '../lib/api';
+import { apiCall, API_ROOT_URL } from '../lib/api';
 import { getAccessToken } from '../lib/auth';
 
 export interface FileEntry {
@@ -111,12 +111,9 @@ export async function uploadFile(serviceId: number, dirPath: string, file: File)
 }
 
 export function getDownloadUrl(serviceId: number, filePath: string): string {
-  const API_URL = process.env.REACT_APP_API_URL || '';
   // SECURITY: Přidej auth token do URL, protože download endpoint vyžaduje autentizaci
-  // BUG FIX: Token je uložen v paměti (accessTokenInMemory v auth.ts), NE v localStorage
-  // localStorage.getItem('accessToken') vracelo vždy null → download linky nefungovaly
   const token = getAccessToken() || '';
-  return `${API_URL}/api/hosting-services/${serviceId}/files/download?path=${encodeURIComponent(filePath)}&token=${encodeURIComponent(token)}`;
+  return `${API_ROOT_URL}/api/hosting-services/${serviceId}/files/download?path=${encodeURIComponent(filePath)}&token=${encodeURIComponent(token)}`;
 }
 
 // Detekce jazyka podle přípony souboru

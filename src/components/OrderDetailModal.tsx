@@ -16,6 +16,7 @@ import {
   faExclamationTriangle
 } from '@fortawesome/free-solid-svg-icons';
 import { getAuthHeader } from '../lib/auth';
+import { API_BASE_URL } from '../lib/api';
 import { useLanguage } from '../contexts/LanguageContext';
 import './OrderDetailModal.css';
 
@@ -71,8 +72,7 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({ order, isOpen, onCl
       setSaving(true);
       setError('');
 
-      const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
-      const response = await fetch(`${API_URL}/orders/${order.id}`, {
+      const response = await fetch(`${API_BASE_URL}/orders/${order.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

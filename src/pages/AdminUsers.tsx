@@ -18,6 +18,7 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { getAuthHeader } from '../lib/auth';
+import { API_BASE_URL } from '../lib/api';
 import './AdminUsers.css';
 
 interface User {
@@ -91,8 +92,7 @@ const AdminUsers: React.FC = () => {
     try {
       setLoading(true);
 
-      const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
-      const response = await fetch(`${API_URL}/admin/users`, {
+      const response = await fetch(`${API_BASE_URL}/admin/users`, {
         method: 'GET',
         headers: {
           ...getAuthHeader()
@@ -127,8 +127,7 @@ const AdminUsers: React.FC = () => {
 
   const toggleAdminRole = async (userId: string, currentIsAdmin: boolean) => {
     try {
-      const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
-      const response = await fetch(`${API_URL}/profile/${userId}`, {
+      const response = await fetch(`${API_BASE_URL}/profile/${userId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -157,8 +156,7 @@ const AdminUsers: React.FC = () => {
     setHestiaPackages([]);
     setLoadingPackages(true);
     try {
-      const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
-      const res = await fetch(`${API_URL}/admin/hestiacp-packages`, { headers: getAuthHeader() });
+      const res = await fetch(`${API_BASE_URL}/admin/hestiacp-packages`, { headers: getAuthHeader() });
       const data = await res.json();
       if (data.success && Array.isArray(data.packages) && data.packages.length > 0) {
         setHestiaPackages(data.packages);
@@ -192,8 +190,7 @@ const AdminUsers: React.FC = () => {
 
     setCreatingWeb(true);
     try {
-      const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
-      const response = await fetch(`${API_URL}/admin/create-hosting-service`, {
+      const response = await fetch(`${API_BASE_URL}/admin/create-hosting-service`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

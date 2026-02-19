@@ -4,8 +4,7 @@
  */
 
 import { getCurrentSession, getAuthHeader } from '../lib/auth';
-
-const PROXY_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
+import { API_ROOT_URL } from '../lib/api';
 
 export interface CreateHostingAccountParams {
   email: string;
@@ -50,7 +49,7 @@ export const createHostingAccount = async (
       };
     }
 
-    const response = await fetch(`${PROXY_URL}/api/hestiacp/create-account`, {
+    const response = await fetch(`${API_ROOT_URL}/api/hestiacp/create-account`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -107,7 +106,7 @@ export const suspendHostingAccount = async (
       };
     }
 
-    const response = await fetch(`${PROXY_URL}/api/hestiacp/suspend-account`, {
+    const response = await fetch(`${API_ROOT_URL}/api/hestiacp/suspend-account`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -157,7 +156,7 @@ export const unsuspendHostingAccount = async (
       };
     }
 
-    const response = await fetch(`${PROXY_URL}/api/hestiacp/unsuspend-account`, {
+    const response = await fetch(`${API_ROOT_URL}/api/hestiacp/unsuspend-account`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -207,7 +206,7 @@ export const deleteHostingAccount = async (
       };
     }
 
-    const response = await fetch(`${PROXY_URL}/api/hestiacp/delete-account`, {
+    const response = await fetch(`${API_ROOT_URL}/api/hestiacp/delete-account`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -253,7 +252,7 @@ export const createHostingAccountForOrder = async (
     // Získej údaje o objednávce z databáze
     let order = null;
     try {
-      const orderResponse = await fetch(`${PROXY_URL}/api/orders/${orderId}`, {
+      const orderResponse = await fetch(`${API_ROOT_URL}/api/orders/${orderId}`, {
         method: 'GET',
         headers: {
           ...getAuthHeader()
@@ -286,7 +285,7 @@ export const createHostingAccountForOrder = async (
     // Najdi hosting službu podle order_id
     let hostingService = null;
     try {
-      const servicesResponse = await fetch(`${PROXY_URL}/api/hosting-services`, {
+      const servicesResponse = await fetch(`${API_ROOT_URL}/api/hosting-services`, {
         method: 'GET',
         headers: {
           ...getAuthHeader()
@@ -305,7 +304,7 @@ export const createHostingAccountForOrder = async (
       // Ulož chybu do databáze
       if (hostingService) {
         try {
-          await fetch(`${PROXY_URL}/api/hosting-services/${hostingService.id}`, {
+          await fetch(`${API_ROOT_URL}/api/hosting-services/${hostingService.id}`, {
             method: 'PUT',
             headers: {
               'Content-Type': 'application/json',
@@ -327,7 +326,7 @@ export const createHostingAccountForOrder = async (
     // Ulož údaje o hosting účtu do databáze
     if (hostingService) {
       try {
-        await fetch(`${PROXY_URL}/api/hosting-services/${hostingService.id}`, {
+        await fetch(`${API_ROOT_URL}/api/hosting-services/${hostingService.id}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',

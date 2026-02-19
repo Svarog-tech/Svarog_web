@@ -18,6 +18,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useCurrency } from '../contexts/CurrencyContext';
 import { getUserOrders, getAllUserHostingServices, HostingService, Order as ApiOrder } from '../lib/api';
+import Loading from '../components/Loading';
 import './Dashboard.css';
 
 interface Order {
@@ -110,12 +111,7 @@ const Dashboard: React.FC = () => {
   };
 
   if (loading) {
-    return (
-      <div className="dashboard-loading">
-        <div className="loading-spinner"></div>
-        <p>{t('dashboard.loading')}</p>
-      </div>
-    );
+    return <Loading message={t('dashboard.loading')} minHeight="60vh" />;
   }
 
   return (

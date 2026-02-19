@@ -27,7 +27,7 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { getAuthHeader } from '../lib/auth';
-import { getAllUserHostingServices, HostingService } from '../lib/api';
+import { getAllUserHostingServices, HostingService, API_BASE_URL } from '../lib/api';
 import { suspendHostingAccount, unsuspendHostingAccount, deleteHostingAccount } from '../services/hestiacpService';
 import OrderDetailModal from '../components/OrderDetailModal';
 import './Admin.css';
@@ -103,8 +103,7 @@ const Admin: React.FC = () => {
   const fetchHostingServices = async () => {
     try {
       // Získej všechny hosting služby (admin vidí všechny)
-      const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
-      const response = await fetch(`${API_URL}/hosting-services`, {
+      const response = await fetch(`${API_BASE_URL}/hosting-services`, {
         method: 'GET',
         headers: {
           ...getAuthHeader()
@@ -132,8 +131,7 @@ const Admin: React.FC = () => {
       setLoadingHestia(true);
       const result = await suspendHostingAccount(service.hestia_username);
       if (result.success) {
-        const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
-        await fetch(`${API_URL}/hosting-services/${service.id}`, {
+        await fetch(`${API_BASE_URL}/hosting-services/${service.id}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -162,8 +160,7 @@ const Admin: React.FC = () => {
       setLoadingHestia(true);
       const result = await unsuspendHostingAccount(service.hestia_username);
       if (result.success) {
-        const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
-        await fetch(`${API_URL}/hosting-services/${service.id}`, {
+        await fetch(`${API_BASE_URL}/hosting-services/${service.id}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -192,8 +189,7 @@ const Admin: React.FC = () => {
       setLoadingHestia(true);
       const result = await deleteHostingAccount(service.hestia_username);
       if (result.success) {
-        const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
-        await fetch(`${API_URL}/hosting-services/${service.id}`, {
+        await fetch(`${API_BASE_URL}/hosting-services/${service.id}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -241,8 +237,7 @@ const Admin: React.FC = () => {
       setLoading(true);
 
       // Načtení všech objednávek (pouze pro adminy)
-      const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
-      const response = await fetch(`${API_URL}/orders`, {
+      const response = await fetch(`${API_BASE_URL}/orders`, {
         method: 'GET',
         headers: {
           ...getAuthHeader()

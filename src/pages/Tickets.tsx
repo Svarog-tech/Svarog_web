@@ -11,7 +11,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
-import { createSupportTicket } from '../lib/api';
+import { createSupportTicket, API_BASE_URL } from '../lib/api';
 import { getAuthHeader } from '../lib/auth';
 import TriangularBackground from '../components/TriangularBackground';
 import './Tickets.css';
@@ -50,8 +50,7 @@ const Tickets: React.FC = () => {
 
     try {
       setLoading(true);
-      const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
-      const response = await fetch(`${API_URL}/tickets`, {
+      const response = await fetch(`${API_BASE_URL}/tickets`, {
         method: 'GET',
         headers: {
           ...getAuthHeader()

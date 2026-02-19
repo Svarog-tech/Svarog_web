@@ -26,8 +26,7 @@ export interface PaymentStatusResult {
   error?: string;
 }
 
-// API URL z .env (fallback na localhost pro development)
-const PROXY_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
+import { API_ROOT_URL } from '../lib/api';
 
 /**
  * Vytvoření platby v GoPay - přes lokální proxy server
@@ -45,7 +44,7 @@ export const createGoPayPayment = async (data: PaymentData): Promise<PaymentResu
       };
     }
 
-    const response = await fetch(`${PROXY_URL}/api/gopay/create-payment`, {
+    const response = await fetch(`${API_ROOT_URL}/api/gopay/create-payment`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -65,7 +64,7 @@ export const createGoPayPayment = async (data: PaymentData): Promise<PaymentResu
 
     // Uložení payment_id a payment_url do databáze
     try {
-      const updateResponse = await fetch(`${PROXY_URL}/api/orders/${data.orderId}`, {
+      const updateResponse = await fetch(`${API_ROOT_URL}/api/orders/${data.orderId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -116,7 +115,7 @@ export const checkPaymentStatus = async (paymentId: string): Promise<PaymentStat
       };
     }
 
-    const response = await fetch(`${PROXY_URL}/api/gopay/check-payment`, {
+    const response = await fetch(`${API_ROOT_URL}/api/gopay/check-payment`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -147,7 +146,7 @@ export const checkPaymentStatus = async (paymentId: string): Promise<PaymentStat
     let updatedOrder = null;
     try {
       // Najdi objednávku podle payment_id
-      const findResponse = await fetch(`${PROXY_URL}/api/orders?payment_id=${paymentId}`, {
+      const findResponse = await fetch(`${API_ROOT_URL}/api/orders?payment_id=${paymentId}`, {
         method: 'GET',
         headers: {
           ...getAuthHeader()
@@ -160,7 +159,7 @@ export const checkPaymentStatus = async (paymentId: string): Promise<PaymentStat
           const orderId = findResult.orders[0].id;
           
           // Aktualizuj objednávku
-          const updateResponse = await fetch(`${PROXY_URL}/api/orders/${orderId}`, {
+          const updateResponse = await fetch(`${API_ROOT_URL}/api/orders/${orderId}`, {
             method: 'PUT',
             headers: {
               'Content-Type': 'application/json',
@@ -228,7 +227,7 @@ export const cancelPayment = async (paymentId: string): Promise<{ success: boole
 
     // Aktualizace v databázi - najdi objednávku a aktualizuj
     try {
-      const findResponse = await fetch(`${PROXY_URL}/api/orders?payment_id=${paymentId}`, {
+      const findResponse = await fetch(`${API_ROOT_URL}/api/orders?payment_id=${paymentId}`, {
         method: 'GET',
         headers: {
           ...getAuthHeader()
@@ -239,7 +238,7 @@ export const cancelPayment = async (paymentId: string): Promise<{ success: boole
         const findResult = await findResponse.json();
         if (findResult.orders && findResult.orders.length > 0) {
           const orderId = findResult.orders[0].id;
-          await fetch(`${PROXY_URL}/api/orders/${orderId}`, {
+          await fetch(`${API_ROOT_URL}/api/orders/${orderId}`, {
             method: 'PUT',
             headers: {
               'Content-Type': 'application/json',
@@ -279,7 +278,7 @@ export const refundPayment = async (
 
     // Aktualizace v databázi - najdi objednávku a aktualizuj
     try {
-      const findResponse = await fetch(`${PROXY_URL}/api/orders?payment_id=${paymentId}`, {
+      const findResponse = await fetch(`${API_ROOT_URL}/api/orders?payment_id=${paymentId}`, {
         method: 'GET',
         headers: {
           ...getAuthHeader()
@@ -290,7 +289,7 @@ export const refundPayment = async (
         const findResult = await findResponse.json();
         if (findResult.orders && findResult.orders.length > 0) {
           const orderId = findResult.orders[0].id;
-          await fetch(`${PROXY_URL}/api/orders/${orderId}`, {
+          await fetch(`${API_ROOT_URL}/api/orders/${orderId}`, {
             method: 'PUT',
             headers: {
               'Content-Type': 'application/json',

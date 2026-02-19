@@ -19,7 +19,8 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import { useAuth } from '../contexts/AuthContext';
 import { useCurrency } from '../contexts/CurrencyContext';
-import { getUserOrders, getAllUserHostingServices, HostingService } from '../lib/api';
+import { getUserOrders, getAllUserHostingServices, HostingService, Order } from '../lib/api';
+import Loading from '../components/Loading';
 import './Services.css';
 
 interface Service extends HostingService {
@@ -55,7 +56,7 @@ const Services: React.FC = () => {
       
       // Spoj data - hosting služby mají HestiaCP údaje
       const servicesData = hostingServices.map((service: HostingService) => {
-        const order = orders?.find((o: any) => o.id === service.order_id);
+        const order = orders?.find((o: Order) => o.id === service.order_id);
         return {
           ...service,
           currency: order?.currency || 'CZK',
@@ -110,12 +111,7 @@ const Services: React.FC = () => {
   });
 
   if (loading) {
-    return (
-      <div className="services-loading">
-        <div className="loading-spinner"></div>
-        <p>Načítání služeb...</p>
-      </div>
-    );
+    return <Loading message="Načítání služeb..." />;
   }
 
   return (

@@ -13,6 +13,7 @@ import Editor from '@monaco-editor/react';
 import { useAuth } from '../contexts/AuthContext';
 import { getHostingService, HostingService } from '../lib/api';
 import { useFileManager, OpenFile } from '../hooks/useFileManager';
+import Loading from '../components/Loading';
 import { FileEntry, getLanguageFromPath, isBinaryFile, isImageFile, getDownloadUrl } from '../services/fileManagerService';
 import './FileManager.css';
 
@@ -163,10 +164,7 @@ const FileManager: React.FC = () => {
 
   if (pageLoading) {
     return (
-      <div className="fm-loading">
-        <div className="loading-spinner"></div>
-        <p>Načítání...</p>
-      </div>
+      <Loading message="Načítání..." className="fm-loading" />
     );
   }
 

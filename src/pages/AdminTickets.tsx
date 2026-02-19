@@ -16,6 +16,7 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { getAuthHeader } from '../lib/auth';
+import { API_BASE_URL } from '../lib/api';
 import TicketDetailModal from '../components/TicketDetailModal';
 import './AdminTickets.css';
 
@@ -97,8 +98,7 @@ const AdminTickets: React.FC = () => {
       setLoading(true);
 
       // Fetch all tickets with user info (admin endpoint)
-      const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
-      const response = await fetch(`${API_URL}/admin/tickets`, {
+      const response = await fetch(`${API_BASE_URL}/admin/tickets`, {
         method: 'GET',
         headers: {
           ...getAuthHeader()

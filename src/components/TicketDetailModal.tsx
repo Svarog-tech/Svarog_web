@@ -14,11 +14,10 @@ import {
   faSave
 } from '@fortawesome/free-solid-svg-icons';
 import { getAuthHeader } from '../lib/auth';
+import { API_BASE_URL } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
 import DOMPurify from 'dompurify';
 import './TicketDetailModal.css';
-
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
 
 interface Ticket {
   id: number;
