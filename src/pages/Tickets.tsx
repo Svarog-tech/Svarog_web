@@ -11,6 +11,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useToast } from '../components/Toast';
 import { createSupportTicket, API_BASE_URL } from '../lib/api';
 import { getAuthHeader } from '../lib/auth';
 import TriangularBackground from '../components/TriangularBackground';
@@ -100,7 +101,7 @@ const Tickets: React.FC = () => {
       }, 2000);
     } catch (error) {
       console.error('Error creating ticket:', error);
-      alert(t('tickets.error.creating'));
+      showError(t('tickets.error.creating'));
     } finally {
       setSubmitting(false);
     }

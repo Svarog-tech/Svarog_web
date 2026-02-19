@@ -54,6 +54,7 @@ interface TicketDetailModalProps {
 
 const TicketDetailModal: React.FC<TicketDetailModalProps> = ({ ticket, isOpen, onClose, onUpdate }) => {
   const { user, profile } = useAuth();
+  const { showInfo, showError } = useToast();
   const [status, setStatus] = useState(ticket?.status || 'open');
   const [priority, setPriority] = useState(ticket?.priority || 'medium');
   const [messages, setMessages] = useState<TicketMessage[]>([]);
@@ -208,7 +209,7 @@ const TicketDetailModal: React.FC<TicketDetailModalProps> = ({ ticket, isOpen, o
     try {
       // TODO: Implementovat file upload endpoint na backendu
       // Pro teď zobrazíme chybu
-      alert('Nahrávání souborů není momentálně implementováno. Použijte externí hosting (např. imgur) a vložte URL do zprávy.');
+      showInfo('Nahrávání souborů není momentálně implementováno. Použijte externí hosting (např. imgur) a vložte URL do zprávy.');
       
       // Pro budoucí implementaci:
       // const formData = new FormData();
@@ -229,7 +230,7 @@ const TicketDetailModal: React.FC<TicketDetailModalProps> = ({ ticket, isOpen, o
 
     } catch (error) {
       console.error('Error uploading image:', error);
-      alert('Chyba při nahrávání obrázku');
+      showError('Chyba při nahrávání obrázku');
     } finally {
       setUploading(false);
     }

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
@@ -17,6 +17,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import { createOrder, Order } from '../lib/api';
 import { useCurrency } from '../contexts/CurrencyContext';
+import { useToast } from './Toast';
 
 interface HostingPlan {
   id: string;
@@ -38,6 +39,7 @@ interface Addon {
 }
 
 const OrderForm: React.FC = () => {
+  const { showError } = useToast();
   const [selectedPlan, setSelectedPlan] = useState<HostingPlan | null>(null);
   const [isVisible, setIsVisible] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
@@ -46,7 +48,8 @@ const OrderForm: React.FC = () => {
   const [domainName, setDomainName] = useState('');
   const { formatPrice } = useCurrency();
 
-  const [addons, setAddons] = useState<Addon[]>([
+  // Memoizované základní addons pole (nemění se mezi rendery)
+  const baseAddons = useMemo<Addon[]>(() => [
     {
       id: 'storage',
       name: '+10 GB prostoru',
@@ -92,7 +95,9 @@ const OrderForm: React.FC = () => {
       quantity: 0,
       max: 1
     }
-  ]);
+  ], []);
+
+  const [addons, setAddons] = useState<Addon[]>(baseAddons);
 
   const [formData, setFormData] = useState({
     customerName: '',
@@ -109,13 +114,13 @@ const OrderForm: React.FC = () => {
       setSelectedPlan(event.detail);
       setIsVisible(true);
       setCurrentStep(1);
-      // Reset addons when new plan is selected
-      setAddons(addons.map(addon => ({ ...addon, quantity: 0 })));
+      // Reset addons when new plan is selected (použijeme baseAddons jako template)
+      setAddons(baseAddons.map(addon => ({ ...addon, quantity: 0 })));
     };
 
     window.addEventListener('selectPlan', handlePlanSelect);
     return () => window.removeEventListener('selectPlan', handlePlanSelect);
-  }, []);
+  }, [baseAddons]);
 
   const updateAddonQuantity = (addonId: string, change: number) => {
     setAddons(addons.map(addon => {
@@ -171,7 +176,7 @@ const OrderForm: React.FC = () => {
       setFormData({ customerName: '', customerEmail: '', customerPhone: '', customerAddress: '' });
     } catch (error) {
       console.error('Error creating order:', error);
-      alert('Chyba při vytváření objednávky. Zkuste to prosím znovu.');
+      showError('Chyba při vytváření objednávky. Zkuste to prosím znovu.');
     } finally {
       setIsLoading(false);
     }
