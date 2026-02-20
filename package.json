@@ -57,6 +57,7 @@
     "server": "node server.js",
     "dev": "concurrently \"npm run server\" \"npm start\"",
     "build": "vite build",
+    "build:prod": "cross-env VITE_APP_BASE_URL=https://alatyrhosting.eu vite build",
     "build:server": "npm run build && cross-env NODE_ENV=production node server.js",
     "start:prod": "cross-env NODE_ENV=production node server.js",
     "test": "vitest"
