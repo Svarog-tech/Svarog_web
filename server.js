@@ -3641,9 +3641,7 @@ async function resolveServiceForFiles(req) {
 const fileOpsLimiter = rateLimit({
   windowMs: 60 * 1000,
   max: 60,
-  message: { success: false, error: 'Too many file operations, please try again later.' },
-  standardHeaders: true,
-  legacyHeaders: false,
+  message: { success: false, error: 'Too many file operations, please try again later.' }
 });
 
 /**
