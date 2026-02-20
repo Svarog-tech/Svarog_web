@@ -1,13 +1,25 @@
 <!DOCTYPE html>
 <html lang="cs">
-  <head>
-    <meta charset="UTF-8" />
+  <head><meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#1a1a2e" />
     <meta
       name="description"
-      content="Alatyr Hosting - Profesionální webhosting, domény a serverová řešení"
+      content="Alatyr Hosting – profesionální webhosting, domény a serverová řešení. SSL zdarma, podpora 24/7, HestiaCP panel. Vyberte si hosting nebo doménu."
     />
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Alatyr Hosting" />
+    <meta property="og:title" content="Alatyr Hosting – Webhosting a domény" />
+    <meta property="og:description" content="Profesionální webhosting, domény a serverová řešení. SSL zdarma, podpora 24/7." />
+    <meta property="og:locale" content="cs_CZ" />
+    <meta property="og:image" content="/alatyrlogo-removebg-preview.png" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Alatyr Hosting – Webhosting a domény" />
+    <meta name="twitter:description" content="Profesionální webhosting, domény a serverová řešení. SSL zdarma, podpora 24/7." />
 
     <!-- Security headers (nasměrují se přes nginx/HTTP, tady jen informativně) -->
     <meta http-equiv="X-Content-Type-Options" content="nosniff" />
@@ -17,7 +29,34 @@
     <link rel="icon" href="/favicon.ico" />
     <link rel="apple-touch-icon" href="/logo192.png" />
     <link rel="manifest" href="/manifest.json" />
-    <title>Alatyr Hosting</title>
+    <title>Alatyr Hosting – Webhosting, domény a serverová řešení</title>
+
+    <!-- Structured Data (JSON-LD). V produkci nahraďte http://localhost:3000 skutečnou doménou (viz DEPLOYMENT.md). -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "Alatyr Hosting",
+      "alternateName": "Alatyr Hosting - Webhosting a domény",
+      "url": "http://localhost:3000/",
+      "description": "Profesionální webhosting, domény a serverová řešení. SSL zdarma, podpora 24/7.",
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": "/hosting",
+        "query-input": "required name=search_term_string"
+      }
+    }
+    </script>
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "Alatyr Hosting",
+      "url": "http://localhost:3000/",
+      "logo": "http://localhost:3000/alatyrlogo-removebg-preview.png",
+      "description": "Profesionální webhosting, domény a serverová řešení."
+    }
+    </script>
   </head>
   <body>
     <noscript>Pro spuštění aplikace je potřeba zapnout JavaScript.</noscript>

@@ -4,6 +4,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faRocket, faUsers, faHeart, faShield, faBolt } from '@fortawesome/free-solid-svg-icons';
 import { useLanguage } from '../contexts/LanguageContext';
 import TriangularBackground from '../components/TriangularBackground';
+import PageMeta from '../components/PageMeta';
 
 const About: React.FC = () => {
   const { t } = useLanguage();
@@ -53,6 +54,11 @@ const About: React.FC = () => {
 
   return (
     <>
+      <PageMeta
+        title={`${t('about.title')}${t('about.titleHighlight')} – Alatyr Hosting`}
+        description="Poznejte tým Alatyr Hosting. Profesionální webhosting s důrazem na spolehlivost, inovace a zákaznickou podporu."
+        path="/about"
+      />
       <TriangularBackground opacity={0.12} />
       <main className="about-page">
       <motion.section

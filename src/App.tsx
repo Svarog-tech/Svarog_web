@@ -30,6 +30,13 @@ const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Services = lazy(() => import('./pages/Services'));
 const ServiceDetail = lazy(() => import('./pages/ServiceDetail'));
 const FileManager = lazy(() => import('./pages/FileManager'));
+const EmailManager = lazy(() => import('./pages/EmailManager'));
+const DomainManager = lazy(() => import('./pages/DomainManager'));
+const DatabaseManager = lazy(() => import('./pages/DatabaseManager'));
+const DNSManager = lazy(() => import('./pages/DNSManager'));
+const FTPManager = lazy(() => import('./pages/FTPManager'));
+const BackupManager = lazy(() => import('./pages/BackupManager'));
+const CronJobsManager = lazy(() => import('./pages/CronJobsManager'));
 const Tickets = lazy(() => import('./pages/Tickets'));
 const Profile = lazy(() => import('./pages/Profile'));
 const Configurator = lazy(() => import('./pages/Configurator'));
@@ -39,6 +46,8 @@ const AdminUsers = lazy(() => import('./pages/AdminUsers'));
 const PaymentSuccess = lazy(() => import('./pages/PaymentSuccess'));
 const VerifyEmail = lazy(() => import('./pages/VerifyEmail'));
 const NotFound = lazy(() => import('./pages/NotFound'));
+const Privacy = lazy(() => import('./pages/Privacy'));
+const Contact = lazy(() => import('./pages/Contact'));
 
 function App() {
   return (
@@ -49,9 +58,11 @@ function App() {
             <ToastProvider>
               <Router>
               <ScrollToTop />
+              <a href="#main-content" className="skip-link">Přeskočit na obsah</a>
               <div className="App">
                 <TriangularBackground opacity={0.25} />
                 <Header />
+                <div id="main-content" tabIndex={-1}>
                 <ErrorBoundary>
                   <Suspense fallback={<Loading message="Načítám..." minHeight="60vh" />}>
                     <Routes>
@@ -61,6 +72,8 @@ function App() {
                       <Route path="/domains" element={<DomainsSimple />} />
                       <Route path="/support" element={<Support />} />
                       <Route path="/about" element={<About />} />
+                      <Route path="/privacy" element={<Privacy />} />
+                      <Route path="/contact" element={<Contact />} />
                       <Route path="/register" element={<Register />} />
                       <Route path="/login" element={<Login />} />
                       <Route path="/forgot-password" element={<ForgotPassword />} />
@@ -74,6 +87,13 @@ function App() {
                       <Route path="/services" element={<ProtectedRoute><Services /></ProtectedRoute>} />
                       <Route path="/services/:id" element={<ProtectedRoute><ServiceDetail /></ProtectedRoute>} />
                       <Route path="/services/:id/files" element={<ProtectedRoute><FileManager /></ProtectedRoute>} />
+                      <Route path="/services/:id/emails" element={<ProtectedRoute><EmailManager /></ProtectedRoute>} />
+                      <Route path="/services/:id/domains" element={<ProtectedRoute><DomainManager /></ProtectedRoute>} />
+                      <Route path="/services/:id/databases" element={<ProtectedRoute><DatabaseManager /></ProtectedRoute>} />
+                      <Route path="/services/:id/dns" element={<ProtectedRoute><DNSManager /></ProtectedRoute>} />
+                      <Route path="/services/:id/ftp" element={<ProtectedRoute><FTPManager /></ProtectedRoute>} />
+                      <Route path="/services/:id/backups" element={<ProtectedRoute><BackupManager /></ProtectedRoute>} />
+                      <Route path="/services/:id/cron" element={<ProtectedRoute><CronJobsManager /></ProtectedRoute>} />
                       <Route path="/tickets" element={<ProtectedRoute><Tickets /></ProtectedRoute>} />
                       <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
                       <Route path="/configurator" element={<ProtectedRoute><Configurator /></ProtectedRoute>} />
@@ -88,6 +108,7 @@ function App() {
                     </Routes>
                   </Suspense>
                 </ErrorBoundary>
+                </div>
                 <CookieBanner />
                 <Footer />
               </div>

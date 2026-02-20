@@ -96,14 +96,19 @@ app.use(helmet({
       connectSrc: ["'self'"],
       styleSrc: ["'self'", "'unsafe-inline'"],
       scriptSrc: ["'self'"],
-      imgSrc: ["'self'", "data:", "https:"],
+      imgSrc: ["'self'", "data:", "https:", "blob:"],
+      fontSrc: ["'self'", "data:"],
     },
   },
   hsts: {
     maxAge: 31536000,
     includeSubDomains: true,
     preload: true
-  }
+  },
+  frameguard: { action: 'deny' },
+  noSniff: true,
+  xssFilter: true,
+  referrerPolicy: { policy: 'strict-origin-when-cross-origin' }
 }));
 
 // ============================================
@@ -1463,6 +1468,30 @@ app.post('/api/auth/logout',
     // Smaž cookie
     clearRefreshTokenCookie(res);
     res.json({ success: true, message: 'Odhlášení úspěšné' });
+  })
+);
+
+/**
+ * Odhlášení ze všech zařízení (invalidace všech refresh tokenů uživatele)
+ * POST /api/auth/logout-all
+ */
+app.post('/api/auth/logout-all',
+  authenticateUser,
+  requireCsrfGuard,
+  sensitiveOpLimiter,
+  asyncHandler(async (req, res) => {
+    const userId = req.user.id;
+    const result = await authService.logoutAll(userId);
+
+    if (!result.success) {
+      throw new AppError(result.error || 'Odhlášení ze všech zařízení se nezdařilo', 500);
+    }
+
+    clearRefreshTokenCookie(res);
+    res.json({
+      success: true,
+      message: `Byl jste odhlášen ze všech zařízení (${result.deletedCount || 0} relací)`
+    });
   })
 );
 
@@ -3304,6 +3333,136 @@ app.get('/api/hosting-services/:id/stats',
 );
 
 /**
+ * Get historical statistics for a service
+ * GET /api/hosting-services/:id/statistics/history
+ * Query params: ?period=24h|7d|30d|90d&metric=disk|bandwidth|all
+ */
+app.get('/api/hosting-services/:id/statistics/history',
+  authenticateUser,
+  asyncHandler(async (req, res) => {
+    const serviceId = validateNumericId(req.params.id);
+    const period = req.query.period || '7d'; // 24h, 7d, 30d, 90d
+    const metric = req.query.metric || 'all'; // disk, bandwidth, all
+
+    const service = await db.queryOne(
+      'SELECT * FROM user_hosting_services WHERE id = ?',
+      [serviceId]
+    );
+
+    if (!service) {
+      throw new AppError('Service not found', 404);
+    }
+
+    // Ownership check
+    if (service.user_id !== req.user.id && !req.user.is_admin) {
+      throw new AppError('Forbidden', 403);
+    }
+
+    // Calculate time range
+    const periodMap = {
+      '24h': 1,
+      '7d': 7,
+      '30d': 30,
+      '90d': 90
+    };
+    const days = periodMap[period] || 7;
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - days);
+
+    // Build query based on metric
+    let selectFields = '*';
+    if (metric === 'disk') {
+      selectFields = 'recorded_at, disk_used_mb';
+    } else if (metric === 'bandwidth') {
+      selectFields = 'recorded_at, bandwidth_used_mb';
+    }
+
+    const statistics = await db.query(
+      `SELECT ${selectFields} FROM service_statistics 
+       WHERE service_id = ? AND recorded_at >= ? 
+       ORDER BY recorded_at ASC`,
+      [serviceId, startDate]
+    );
+
+    res.json({
+      success: true,
+      statistics,
+      period,
+      metric
+    });
+  })
+);
+
+/**
+ * Admin: Get platform overview statistics
+ * GET /api/admin/statistics/overview
+ */
+app.get('/api/admin/statistics/overview',
+  authenticateUser,
+  requireAdmin,
+  asyncHandler(async (req, res) => {
+    const [
+      totalServices,
+      activeServices,
+      totalUsers,
+      totalTickets,
+      totalRevenue,
+      monthlyRevenue
+    ] = await Promise.all([
+      db.queryOne('SELECT COUNT(*) as count FROM user_hosting_services'),
+      db.queryOne('SELECT COUNT(*) as count FROM user_hosting_services WHERE status = "active"'),
+      db.queryOne('SELECT COUNT(*) as count FROM users'),
+      db.queryOne('SELECT COUNT(*) as count FROM support_tickets'),
+      db.queryOne('SELECT COALESCE(SUM(total_price), 0) as total FROM user_orders WHERE status = "completed"'),
+      db.queryOne('SELECT COALESCE(SUM(total_price), 0) as total FROM user_orders WHERE status = "completed" AND created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)')
+    ]);
+
+    res.json({
+      success: true,
+      overview: {
+        total_services: totalServices?.count || 0,
+        active_services: activeServices?.count || 0,
+        total_users: totalUsers?.count || 0,
+        total_tickets: totalTickets?.count || 0,
+        total_revenue: parseFloat(totalRevenue?.total || 0),
+        monthly_revenue: parseFloat(monthlyRevenue?.total || 0)
+      }
+    });
+  })
+);
+
+/**
+ * Admin: Get service statistics summary
+ * GET /api/admin/statistics/services
+ */
+app.get('/api/admin/statistics/services',
+  authenticateUser,
+  requireAdmin,
+  asyncHandler(async (req, res) => {
+    const services = await db.query(
+      `SELECT 
+        uhs.id,
+        uhs.plan_name,
+        uhs.status,
+        uhs.created_at,
+        p.email as user_email,
+        (SELECT disk_used_mb FROM service_statistics WHERE service_id = uhs.id ORDER BY recorded_at DESC LIMIT 1) as disk_used_mb,
+        (SELECT bandwidth_used_mb FROM service_statistics WHERE service_id = uhs.id ORDER BY recorded_at DESC LIMIT 1) as bandwidth_used_mb
+      FROM user_hosting_services uhs
+      LEFT JOIN profiles p ON uhs.user_id = p.id
+      WHERE uhs.hestia_created = 1
+      ORDER BY uhs.created_at DESC
+      LIMIT 100`
+    );
+
+    res.json({
+      success: true,
+      services
+    });
+  })
+);
+
+/**
  * Admin: update hosting service
  * PUT /api/hosting-services/:id
  */
@@ -3904,6 +4063,1031 @@ app.post('/api/hosting-services/:serviceId/files/chmod',
 );
 
 /**
+ * ============================================
+ * EMAIL MANAGEMENT
+ * ============================================
+ */
+
+/**
+ * Seznam všech email účtů pro službu
+ * GET /api/hosting-services/:serviceId/emails
+ */
+app.get('/api/hosting-services/:serviceId/emails',
+  authenticateUser,
+  fileOpsLimiter,
+  asyncHandler(async (req, res) => {
+    const service = await resolveServiceForFiles(req);
+
+    if (!service.hestia_username || !service.hestia_created) {
+      return res.json({
+        success: true,
+        emails: [],
+        message: 'HestiaCP account not yet created'
+      });
+    }
+
+    // Získej všechny web domény uživatele
+    const domainsResult = await hestiacp.listWebDomains(service.hestia_username);
+    
+    if (!domainsResult.success) {
+      throw new AppError('Failed to fetch domains', 502);
+    }
+
+    // Pro každou doménu získej email účty
+    const allEmails = [];
+    for (const domainInfo of domainsResult.domains || []) {
+      const accountsResult = await hestiacp.listMailAccounts(service.hestia_username, domainInfo.domain);
+      if (accountsResult.success && accountsResult.accounts) {
+        for (const account of accountsResult.accounts) {
+          allEmails.push({
+            id: `${account.email}`,
+            email: account.email,
+            domain: domainInfo.domain,
+            quota_used: account.quota_used,
+            quota_limit: account.quota_limit,
+            quota_percent: account.quota_limit > 0 
+              ? Math.round((account.quota_used / account.quota_limit) * 100) 
+              : 0,
+            suspended: account.suspended,
+          });
+        }
+      }
+    }
+
+    res.json({
+      success: true,
+      emails: allEmails
+    });
+  })
+);
+
+/**
+ * Vytvoření nového email účtu
+ * POST /api/hosting-services/:serviceId/emails
+ */
+app.post('/api/hosting-services/:serviceId/emails',
+  authenticateUser,
+  fileOpsLimiter,
+  asyncHandler(async (req, res) => {
+    const service = await resolveServiceForFiles(req);
+    const { domain, email, password } = req.body || {};
+
+    if (!service.hestia_username || !service.hestia_created) {
+      throw new AppError('HestiaCP account not yet created', 400);
+    }
+
+    // Validace
+    if (!domain || typeof domain !== 'string') {
+      throw new AppError('Domain is required', 400);
+    }
+    if (!email || typeof email !== 'string') {
+      throw new AppError('Email is required', 400);
+    }
+    if (!password || typeof password !== 'string' || password.length < 8) {
+      throw new AppError('Password is required and must be at least 8 characters', 400);
+    }
+
+    // Validace email formátu
+    const emailRegex = /^[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      throw new AppError('Invalid email format', 400);
+    }
+
+    // Vytvoř email účet
+    const result = await hestiacp.createMailAccount(
+      service.hestia_username,
+      domain,
+      email,
+      password
+    );
+
+    if (!result.success) {
+      throw new AppError(result.error || 'Failed to create email account', 502);
+    }
+
+    res.json({
+      success: true,
+      message: 'Email account created successfully'
+    });
+  })
+);
+
+/**
+ * Smazání email účtu
+ * DELETE /api/hosting-services/:serviceId/emails/:emailId
+ */
+app.delete('/api/hosting-services/:serviceId/emails/:emailId',
+  authenticateUser,
+  fileOpsLimiter,
+  asyncHandler(async (req, res) => {
+    const service = await resolveServiceForFiles(req);
+    const emailId = decodeURIComponent(req.params.emailId);
+
+    if (!service.hestia_username || !service.hestia_created) {
+      throw new AppError('HestiaCP account not yet created', 400);
+    }
+
+    // Parse email (formát: email@domain nebo email)
+    const emailParts = emailId.includes('@') ? emailId.split('@') : [emailId, ''];
+    const emailLocal = emailParts[0];
+    const domain = emailParts[1] || service.hestia_domain;
+
+    if (!domain) {
+      throw new AppError('Domain is required', 400);
+    }
+
+    const result = await hestiacp.deleteMailAccount(
+      service.hestia_username,
+      domain,
+      emailLocal
+    );
+
+    if (!result.success) {
+      throw new AppError(result.error || 'Failed to delete email account', 502);
+    }
+
+    res.json({
+      success: true,
+      message: 'Email account deleted successfully'
+    });
+  })
+);
+
+/**
+ * Změna hesla email účtu
+ * PUT /api/hosting-services/:serviceId/emails/:emailId/password
+ */
+app.put('/api/hosting-services/:serviceId/emails/:emailId/password',
+  authenticateUser,
+  fileOpsLimiter,
+  asyncHandler(async (req, res) => {
+    const service = await resolveServiceForFiles(req);
+    const emailId = decodeURIComponent(req.params.emailId);
+    const { password } = req.body || {};
+
+    if (!service.hestia_username || !service.hestia_created) {
+      throw new AppError('HestiaCP account not yet created', 400);
+    }
+
+    if (!password || typeof password !== 'string' || password.length < 8) {
+      throw new AppError('Password is required and must be at least 8 characters', 400);
+    }
+
+    // Parse email
+    const emailParts = emailId.includes('@') ? emailId.split('@') : [emailId, ''];
+    const emailLocal = emailParts[0];
+    const domain = emailParts[1] || service.hestia_domain;
+
+    if (!domain) {
+      throw new AppError('Domain is required', 400);
+    }
+
+    const result = await hestiacp.changeMailAccountPassword(
+      service.hestia_username,
+      domain,
+      emailLocal,
+      password
+    );
+
+    if (!result.success) {
+      throw new AppError(result.error || 'Failed to change email password', 502);
+    }
+
+    res.json({
+      success: true,
+      message: 'Email password changed successfully'
+    });
+  })
+);
+
+/**
+ * Quota email účtu
+ * GET /api/hosting-services/:serviceId/emails/:emailId/quota
+ */
+app.get('/api/hosting-services/:serviceId/emails/:emailId/quota',
+  authenticateUser,
+  fileOpsLimiter,
+  asyncHandler(async (req, res) => {
+    const service = await resolveServiceForFiles(req);
+    const emailId = decodeURIComponent(req.params.emailId);
+
+    if (!service.hestia_username || !service.hestia_created) {
+      throw new AppError('HestiaCP account not yet created', 400);
+    }
+
+    // Parse email
+    const emailParts = emailId.includes('@') ? emailId.split('@') : [emailId, ''];
+    const emailLocal = emailParts[0];
+    const domain = emailParts[1] || service.hestia_domain;
+
+    if (!domain) {
+      throw new AppError('Domain is required', 400);
+    }
+
+    const result = await hestiacp.getMailAccountQuota(
+      service.hestia_username,
+      domain,
+      emailLocal
+    );
+
+    if (!result.success) {
+      throw new AppError(result.error || 'Failed to get email quota', 502);
+    }
+
+    res.json({
+      success: true,
+      quota: result.quota
+    });
+  })
+);
+
+/**
+ * ============================================
+ * DOMAIN MANAGEMENT
+ * ============================================
+ */
+
+/**
+ * Seznam všech web domén pro službu
+ * GET /api/hosting-services/:serviceId/domains
+ */
+app.get('/api/hosting-services/:serviceId/domains',
+  authenticateUser,
+  fileOpsLimiter,
+  asyncHandler(async (req, res) => {
+    const service = await resolveServiceForFiles(req);
+
+    if (!service.hestia_username || !service.hestia_created) {
+      return res.json({
+        success: true,
+        domains: [],
+        message: 'HestiaCP account not yet created'
+      });
+    }
+
+    const result = await hestiacp.listWebDomains(service.hestia_username);
+
+    if (!result.success) {
+      throw new AppError(result.error || 'Failed to list domains', 502);
+    }
+
+    res.json({
+      success: true,
+      domains: result.domains || []
+    });
+  })
+);
+
+/**
+ * Informace o konkrétní doméně
+ * GET /api/hosting-services/:serviceId/domains/:domain
+ */
+app.get('/api/hosting-services/:serviceId/domains/:domain',
+  authenticateUser,
+  fileOpsLimiter,
+  asyncHandler(async (req, res) => {
+    const service = await resolveServiceForFiles(req);
+    const domain = decodeURIComponent(req.params.domain);
+
+    if (!service.hestia_username || !service.hestia_created) {
+      throw new AppError('HestiaCP account not yet created', 400);
+    }
+
+    const result = await hestiacp.getWebDomainInfo(service.hestia_username, domain);
+
+    if (!result.success) {
+      throw new AppError(result.error || 'Failed to get domain info', 502);
+    }
+
+    res.json({
+      success: true,
+      domain: result.domain
+    });
+  })
+);
+
+/**
+ * ============================================
+ * DATABASE MANAGEMENT
+ * ============================================
+ */
+
+/**
+ * Seznam všech databází pro službu
+ * GET /api/hosting-services/:serviceId/databases
+ */
+app.get('/api/hosting-services/:serviceId/databases',
+  authenticateUser,
+  fileOpsLimiter,
+  asyncHandler(async (req, res) => {
+    const service = await resolveServiceForFiles(req);
+
+    if (!service.hestia_username || !service.hestia_created) {
+      return res.json({
+        success: true,
+        databases: [],
+        message: 'HestiaCP account not yet created'
+      });
+    }
+
+    const result = await hestiacp.listDatabases(service.hestia_username);
+
+    if (!result.success) {
+      throw new AppError(result.error || 'Failed to list databases', 502);
+    }
+
+    res.json({
+      success: true,
+      databases: result.databases || []
+    });
+  })
+);
+
+/**
+ * Vytvoření nové databáze
+ * POST /api/hosting-services/:serviceId/databases
+ */
+app.post('/api/hosting-services/:serviceId/databases',
+  authenticateUser,
+  fileOpsLimiter,
+  asyncHandler(async (req, res) => {
+    const service = await resolveServiceForFiles(req);
+    const { database, dbuser, password } = req.body || {};
+
+    if (!service.hestia_username || !service.hestia_created) {
+      throw new AppError('HestiaCP account not yet created', 400);
+    }
+
+    // Validace
+    if (!database || typeof database !== 'string') {
+      throw new AppError('Database name is required', 400);
+    }
+    if (!dbuser || typeof dbuser !== 'string') {
+      throw new AppError('Database user is required', 400);
+    }
+    if (!password || typeof password !== 'string' || password.length < 8) {
+      throw new AppError('Password is required and must be at least 8 characters', 400);
+    }
+
+    // Validace názvu databáze (pouze alfanumerické znaky a podtržítka)
+    if (!/^[a-zA-Z0-9_]+$/.test(database)) {
+      throw new AppError('Database name can only contain letters, numbers and underscores', 400);
+    }
+
+    const result = await hestiacp.createDatabase(
+      service.hestia_username,
+      database,
+      dbuser,
+      password
+    );
+
+    if (!result.success) {
+      throw new AppError(result.error || 'Failed to create database', 502);
+    }
+
+    res.json({
+      success: true,
+      message: 'Database created successfully'
+    });
+  })
+);
+
+/**
+ * Smazání databáze
+ * DELETE /api/hosting-services/:serviceId/databases/:database
+ */
+app.delete('/api/hosting-services/:serviceId/databases/:database',
+  authenticateUser,
+  fileOpsLimiter,
+  asyncHandler(async (req, res) => {
+    const service = await resolveServiceForFiles(req);
+    const database = decodeURIComponent(req.params.database);
+
+    if (!service.hestia_username || !service.hestia_created) {
+      throw new AppError('HestiaCP account not yet created', 400);
+    }
+
+    const result = await hestiacp.deleteDatabase(service.hestia_username, database);
+
+    if (!result.success) {
+      throw new AppError(result.error || 'Failed to delete database', 502);
+    }
+
+    res.json({
+      success: true,
+      message: 'Database deleted successfully'
+    });
+  })
+);
+
+// ============================================
+// DNS Management API Endpoints
+// ============================================
+
+/**
+ * Seznam DNS domén pro službu
+ * GET /api/hosting-services/:serviceId/dns/domains
+ */
+app.get('/api/hosting-services/:serviceId/dns/domains',
+  authenticateUser,
+  fileOpsLimiter,
+  asyncHandler(async (req, res) => {
+    const service = await resolveServiceForFiles(req);
+
+    if (!service.hestia_username || !service.hestia_created) {
+      return res.json({ success: true, domains: [] });
+    }
+
+    const result = await hestiacp.listDnsDomains(service.hestia_username);
+
+    if (!result.success) {
+      throw new AppError(result.error || 'Failed to list DNS domains', 502);
+    }
+
+    res.json({
+      success: true,
+      domains: result.domains || []
+    });
+  })
+);
+
+/**
+ * Seznam DNS záznamů pro doménu
+ * GET /api/hosting-services/:serviceId/dns/domains/:domain/records
+ */
+app.get('/api/hosting-services/:serviceId/dns/domains/:domain/records',
+  authenticateUser,
+  fileOpsLimiter,
+  asyncHandler(async (req, res) => {
+    const service = await resolveServiceForFiles(req);
+    const domain = decodeURIComponent(req.params.domain);
+
+    if (!service.hestia_username || !service.hestia_created) {
+      throw new AppError('HestiaCP account not yet created', 400);
+    }
+
+    const result = await hestiacp.listDnsRecords(service.hestia_username, domain);
+
+    if (!result.success) {
+      throw new AppError(result.error || 'Failed to list DNS records', 502);
+    }
+
+    res.json({
+      success: true,
+      records: result.records || []
+    });
+  })
+);
+
+/**
+ * Přidání DNS záznamu
+ * POST /api/hosting-services/:serviceId/dns/domains/:domain/records
+ */
+app.post('/api/hosting-services/:serviceId/dns/domains/:domain/records',
+  authenticateUser,
+  requireCsrfGuard,
+  fileOpsLimiter,
+  asyncHandler(async (req, res) => {
+    const service = await resolveServiceForFiles(req);
+    const domain = decodeURIComponent(req.params.domain);
+    const { name, type, value, priority, ttl } = req.body;
+
+    if (!service.hestia_username || !service.hestia_created) {
+      throw new AppError('HestiaCP account not yet created', 400);
+    }
+
+    if (!name || !type || !value) {
+      throw new AppError('Name, type and value are required', 400);
+    }
+
+    // Validace typu DNS záznamu
+    const validTypes = ['A', 'AAAA', 'CNAME', 'MX', 'TXT', 'NS', 'SRV', 'CAA'];
+    if (!validTypes.includes(type.toUpperCase())) {
+      throw new AppError(`Invalid DNS record type. Valid types: ${validTypes.join(', ')}`, 400);
+    }
+
+    const result = await hestiacp.addDnsRecord(
+      service.hestia_username,
+      domain,
+      name,
+      type.toUpperCase(),
+      value,
+      priority || null,
+      ttl || null
+    );
+
+    if (!result.success) {
+      throw new AppError(result.error || 'Failed to add DNS record', 502);
+    }
+
+    res.json({
+      success: true,
+      message: 'DNS record added successfully'
+    });
+  })
+);
+
+/**
+ * Smazání DNS záznamu
+ * DELETE /api/hosting-services/:serviceId/dns/domains/:domain/records/:recordId
+ */
+app.delete('/api/hosting-services/:serviceId/dns/domains/:domain/records/:recordId',
+  authenticateUser,
+  requireCsrfGuard,
+  fileOpsLimiter,
+  asyncHandler(async (req, res) => {
+    const service = await resolveServiceForFiles(req);
+    const domain = decodeURIComponent(req.params.domain);
+    const recordId = decodeURIComponent(req.params.recordId);
+
+    if (!service.hestia_username || !service.hestia_created) {
+      throw new AppError('HestiaCP account not yet created', 400);
+    }
+
+    const result = await hestiacp.deleteDnsRecord(service.hestia_username, domain, recordId);
+
+    if (!result.success) {
+      throw new AppError(result.error || 'Failed to delete DNS record', 502);
+    }
+
+    res.json({
+      success: true,
+      message: 'DNS record deleted successfully'
+    });
+  })
+);
+
+/**
+ * Přidání DNS domény
+ * POST /api/hosting-services/:serviceId/dns/domains
+ */
+app.post('/api/hosting-services/:serviceId/dns/domains',
+  authenticateUser,
+  requireCsrfGuard,
+  fileOpsLimiter,
+  asyncHandler(async (req, res) => {
+    const service = await resolveServiceForFiles(req);
+    const { domain, ip } = req.body;
+
+    if (!service.hestia_username || !service.hestia_created) {
+      throw new AppError('HestiaCP account not yet created', 400);
+    }
+
+    if (!domain) {
+      throw new AppError('Domain is required', 400);
+    }
+
+    const result = await hestiacp.addDnsDomain(service.hestia_username, domain, ip || null);
+
+    if (!result.success) {
+      throw new AppError(result.error || 'Failed to add DNS domain', 502);
+    }
+
+    res.json({
+      success: true,
+      message: 'DNS domain added successfully'
+    });
+  })
+);
+
+/**
+ * Smazání DNS domény
+ * DELETE /api/hosting-services/:serviceId/dns/domains/:domain
+ */
+app.delete('/api/hosting-services/:serviceId/dns/domains/:domain',
+  authenticateUser,
+  requireCsrfGuard,
+  fileOpsLimiter,
+  asyncHandler(async (req, res) => {
+    const service = await resolveServiceForFiles(req);
+    const domain = decodeURIComponent(req.params.domain);
+
+    if (!service.hestia_username || !service.hestia_created) {
+      throw new AppError('HestiaCP account not yet created', 400);
+    }
+
+    const result = await hestiacp.deleteDnsDomain(service.hestia_username, domain);
+
+    if (!result.success) {
+      throw new AppError(result.error || 'Failed to delete DNS domain', 502);
+    }
+
+    res.json({
+      success: true,
+      message: 'DNS domain deleted successfully'
+    });
+  })
+);
+
+// ============================================
+// FTP Management API Endpoints
+// ============================================
+
+/**
+ * Seznam FTP účtů pro službu (pro vybranou web doménu)
+ * GET /api/hosting-services/:serviceId/ftp?domain=example.com
+ */
+app.get('/api/hosting-services/:serviceId/ftp',
+  authenticateUser,
+  fileOpsLimiter,
+  asyncHandler(async (req, res) => {
+    const service = await resolveServiceForFiles(req);
+    const domain = req.query.domain || service.hestia_domain;
+
+    if (!service.hestia_username || !service.hestia_created) {
+      return res.json({ success: true, accounts: [] });
+    }
+
+    if (!domain) {
+      return res.json({ success: true, accounts: [] });
+    }
+
+    const result = await hestiacp.listWebDomainFtp(service.hestia_username, domain);
+
+    if (!result.success) {
+      throw new AppError(result.error || 'Failed to list FTP accounts', 502);
+    }
+
+    res.json({
+      success: true,
+      domain,
+      accounts: result.accounts || []
+    });
+  })
+);
+
+/**
+ * Přidání FTP účtu
+ * POST /api/hosting-services/:serviceId/ftp
+ */
+app.post('/api/hosting-services/:serviceId/ftp',
+  authenticateUser,
+  requireCsrfGuard,
+  fileOpsLimiter,
+  asyncHandler(async (req, res) => {
+    const service = await resolveServiceForFiles(req);
+    const { domain, username, password, path } = req.body;
+
+    if (!service.hestia_username || !service.hestia_created) {
+      throw new AppError('HestiaCP account not yet created', 400);
+    }
+
+    const useDomain = domain || service.hestia_domain;
+    if (!useDomain) {
+      throw new AppError('Domain is required', 400);
+    }
+
+    if (!username || !password) {
+      throw new AppError('Username and password are required', 400);
+    }
+
+    if (password.length < 8) {
+      throw new AppError('Password must be at least 8 characters', 400);
+    }
+
+    const result = await hestiacp.addWebDomainFtp(
+      service.hestia_username,
+      useDomain,
+      username,
+      password,
+      path || 'public_html'
+    );
+
+    if (!result.success) {
+      throw new AppError(result.error || 'Failed to add FTP account', 502);
+    }
+
+    res.json({
+      success: true,
+      message: 'FTP account created successfully'
+    });
+  })
+);
+
+/**
+ * Smazání FTP účtu
+ * DELETE /api/hosting-services/:serviceId/ftp/:domain/:ftpId
+ */
+app.delete('/api/hosting-services/:serviceId/ftp/:domain/:ftpId',
+  authenticateUser,
+  requireCsrfGuard,
+  fileOpsLimiter,
+  asyncHandler(async (req, res) => {
+    const service = await resolveServiceForFiles(req);
+    const domain = decodeURIComponent(req.params.domain);
+    const ftpId = decodeURIComponent(req.params.ftpId);
+
+    if (!service.hestia_username || !service.hestia_created) {
+      throw new AppError('HestiaCP account not yet created', 400);
+    }
+
+    const result = await hestiacp.deleteWebDomainFtp(service.hestia_username, domain, ftpId);
+
+    if (!result.success) {
+      throw new AppError(result.error || 'Failed to delete FTP account', 502);
+    }
+
+    res.json({
+      success: true,
+      message: 'FTP account deleted successfully'
+    });
+  })
+);
+
+/**
+ * Změna hesla FTP účtu
+ * PUT /api/hosting-services/:serviceId/ftp/:domain/:ftpId/password
+ */
+app.put('/api/hosting-services/:serviceId/ftp/:domain/:ftpId/password',
+  authenticateUser,
+  requireCsrfGuard,
+  fileOpsLimiter,
+  asyncHandler(async (req, res) => {
+    const service = await resolveServiceForFiles(req);
+    const domain = decodeURIComponent(req.params.domain);
+    const ftpId = decodeURIComponent(req.params.ftpId);
+    const { password } = req.body;
+
+    if (!service.hestia_username || !service.hestia_created) {
+      throw new AppError('HestiaCP account not yet created', 400);
+    }
+
+    if (!password || password.length < 8) {
+      throw new AppError('Password must be at least 8 characters', 400);
+    }
+
+    const result = await hestiacp.changeWebDomainFtpPassword(
+      service.hestia_username,
+      domain,
+      ftpId,
+      password
+    );
+
+    if (!result.success) {
+      throw new AppError(result.error || 'Failed to change FTP password', 502);
+    }
+
+    res.json({
+      success: true,
+      message: 'FTP password changed successfully'
+    });
+  })
+);
+
+// ============================================
+// Backup Management API Endpoints
+// ============================================
+
+/**
+ * Seznam záloh pro službu
+ * GET /api/hosting-services/:serviceId/backups
+ */
+app.get('/api/hosting-services/:serviceId/backups',
+  authenticateUser,
+  fileOpsLimiter,
+  asyncHandler(async (req, res) => {
+    const service = await resolveServiceForFiles(req);
+
+    if (!service.hestia_username || !service.hestia_created) {
+      return res.json({ success: true, backups: [] });
+    }
+
+    const result = await hestiacp.listBackups(service.hestia_username);
+
+    if (!result.success) {
+      throw new AppError(result.error || 'Failed to list backups', 502);
+    }
+
+    res.json({
+      success: true,
+      backups: result.backups || []
+    });
+  })
+);
+
+/**
+ * Vytvoření zálohy
+ * POST /api/hosting-services/:serviceId/backups/create
+ */
+app.post('/api/hosting-services/:serviceId/backups/create',
+  authenticateUser,
+  requireCsrfGuard,
+  fileOpsLimiter,
+  asyncHandler(async (req, res) => {
+    const service = await resolveServiceForFiles(req);
+    const { notify } = req.body;
+
+    if (!service.hestia_username || !service.hestia_created) {
+      throw new AppError('HestiaCP account not yet created', 400);
+    }
+
+    const result = await hestiacp.createBackup(service.hestia_username, notify || false);
+
+    if (!result.success) {
+      throw new AppError(result.error || 'Failed to create backup', 502);
+    }
+
+    res.json({
+      success: true,
+      message: 'Backup creation started successfully'
+    });
+  })
+);
+
+/**
+ * Obnovení zálohy
+ * POST /api/hosting-services/:serviceId/backups/:backupId/restore
+ */
+app.post('/api/hosting-services/:serviceId/backups/:backupId/restore',
+  authenticateUser,
+  requireCsrfGuard,
+  fileOpsLimiter,
+  asyncHandler(async (req, res) => {
+    const service = await resolveServiceForFiles(req);
+    const backupId = decodeURIComponent(req.params.backupId);
+
+    if (!service.hestia_username || !service.hestia_created) {
+      throw new AppError('HestiaCP account not yet created', 400);
+    }
+
+    const result = await hestiacp.restoreBackup(service.hestia_username, backupId);
+
+    if (!result.success) {
+      throw new AppError(result.error || 'Failed to restore backup', 502);
+    }
+
+    res.json({
+      success: true,
+      message: 'Backup restoration started successfully'
+    });
+  })
+);
+
+/**
+ * Smazání zálohy
+ * DELETE /api/hosting-services/:serviceId/backups/:backupId
+ */
+app.delete('/api/hosting-services/:serviceId/backups/:backupId',
+  authenticateUser,
+  requireCsrfGuard,
+  fileOpsLimiter,
+  asyncHandler(async (req, res) => {
+    const service = await resolveServiceForFiles(req);
+    const backupId = decodeURIComponent(req.params.backupId);
+
+    if (!service.hestia_username || !service.hestia_created) {
+      throw new AppError('HestiaCP account not yet created', 400);
+    }
+
+    const result = await hestiacp.deleteBackup(service.hestia_username, backupId);
+
+    if (!result.success) {
+      throw new AppError(result.error || 'Failed to delete backup', 502);
+    }
+
+    res.json({
+      success: true,
+      message: 'Backup deleted successfully'
+    });
+  })
+);
+
+// ============================================
+// Cron Jobs Management API Endpoints
+// ============================================
+
+/**
+ * Seznam cron jobů pro službu
+ * GET /api/hosting-services/:serviceId/cron
+ */
+app.get('/api/hosting-services/:serviceId/cron',
+  authenticateUser,
+  fileOpsLimiter,
+  asyncHandler(async (req, res) => {
+    const service = await resolveServiceForFiles(req);
+
+    if (!service.hestia_username || !service.hestia_created) {
+      return res.json({ success: true, cronJobs: [] });
+    }
+
+    const result = await hestiacp.listCronJobs(service.hestia_username);
+
+    if (!result.success) {
+      throw new AppError(result.error || 'Failed to list cron jobs', 502);
+    }
+
+    res.json({
+      success: true,
+      cronJobs: result.cronJobs || []
+    });
+  })
+);
+
+/**
+ * Vytvoření cron jobu
+ * POST /api/hosting-services/:serviceId/cron
+ */
+app.post('/api/hosting-services/:serviceId/cron',
+  authenticateUser,
+  requireCsrfGuard,
+  fileOpsLimiter,
+  asyncHandler(async (req, res) => {
+    const service = await resolveServiceForFiles(req);
+    const { min, hour, day, month, weekday, command } = req.body;
+
+    if (!service.hestia_username || !service.hestia_created) {
+      throw new AppError('HestiaCP account not yet created', 400);
+    }
+
+    if (!min || !hour || !day || !month || !weekday || !command) {
+      throw new AppError('Missing required fields: min, hour, day, month, weekday, command', 400);
+    }
+
+    const result = await hestiacp.addCronJob(
+      service.hestia_username,
+      min,
+      hour,
+      day,
+      month,
+      weekday,
+      command
+    );
+
+    if (!result.success) {
+      throw new AppError(result.error || 'Failed to create cron job', 502);
+    }
+
+    res.json({
+      success: true,
+      message: 'Cron job created successfully'
+    });
+  })
+);
+
+/**
+ * Smazání cron jobu
+ * DELETE /api/hosting-services/:serviceId/cron/:jobId
+ */
+app.delete('/api/hosting-services/:serviceId/cron/:jobId',
+  authenticateUser,
+  requireCsrfGuard,
+  fileOpsLimiter,
+  asyncHandler(async (req, res) => {
+    const service = await resolveServiceForFiles(req);
+    const jobId = decodeURIComponent(req.params.jobId);
+
+    if (!service.hestia_username || !service.hestia_created) {
+      throw new AppError('HestiaCP account not yet created', 400);
+    }
+
+    const result = await hestiacp.deleteCronJob(service.hestia_username, jobId);
+
+    if (!result.success) {
+      throw new AppError(result.error || 'Failed to delete cron job', 502);
+    }
+
+    res.json({
+      success: true,
+      message: 'Cron job deleted successfully'
+    });
+  })
+);
+
+/**
+ * Pozastavení/obnovení cron jobu
+ * PUT /api/hosting-services/:serviceId/cron/:jobId/suspend
+ */
+app.put('/api/hosting-services/:serviceId/cron/:jobId/suspend',
+  authenticateUser,
+  requireCsrfGuard,
+  fileOpsLimiter,
+  asyncHandler(async (req, res) => {
+    const service = await resolveServiceForFiles(req);
+    const jobId = decodeURIComponent(req.params.jobId);
+    const { suspend } = req.body;
+
+    if (!service.hestia_username || !service.hestia_created) {
+      throw new AppError('HestiaCP account not yet created', 400);
+    }
+
+    if (typeof suspend !== 'boolean') {
+      throw new AppError('Missing or invalid suspend parameter', 400);
+    }
+
+    const result = await hestiacp.suspendCronJob(service.hestia_username, jobId, suspend);
+
+    if (!result.success) {
+      throw new AppError(result.error || `Failed to ${suspend ? 'suspend' : 'unsuspend'} cron job`, 502);
+    }
+
+    res.json({
+      success: true,
+      message: `Cron job ${suspend ? 'suspended' : 'unsuspended'} successfully`
+    });
+  })
+);
+
+/**
  * Admin: seznam HestiaCP balíčků (pro výběr při vytváření webu)
  * GET /api/admin/hestiacp-packages
  */
@@ -4177,6 +5361,36 @@ app.get('/health', asyncHandler(async (req, res) => {
   res.status(httpStatus).json(healthResponse);
 }));
 
+/**
+ * Liveness probe – proces běží (bez kontroly DB).
+ * Pro Kubernetes/Docker: GET /health/live
+ */
+app.get('/health/live', (req, res) => {
+  res.status(200).json({ status: 'ok' });
+});
+
+/**
+ * Readiness probe – aplikace je připravena přijímat traffic (kontrola DB).
+ * Pro Kubernetes/Docker: GET /health/ready
+ */
+app.get('/health/ready', asyncHandler(async (req, res) => {
+  let mysqlStatus = 'unknown';
+  let mysqlError = null;
+  try {
+    await db.query('SELECT 1 as test');
+    mysqlStatus = 'connected';
+  } catch (error) {
+    mysqlStatus = 'error';
+    mysqlError = error.message;
+    logger.error('MySQL readiness check failed', { requestId: req.id, error: error.message });
+  }
+  const ok = mysqlStatus === 'connected';
+  const httpStatus = ok ? 200 : 503;
+  const body = { status: ok ? 'ok' : 'error', database: { mysql: mysqlStatus } };
+  if (process.env.NODE_ENV !== 'production' && mysqlError) body.database.mysql_error = mysqlError;
+  res.status(httpStatus).json(body);
+}));
+
 // ============================================
 // Serve React Build (Production)
 // MUST BE LAST - after all API routes
@@ -4258,6 +5472,8 @@ const server = app.listen(PORT, async () => {
   console.log('');
   console.log('Other:');
   console.log(`  GET  /health`);
+  console.log(`  GET  /health/live`);
+  console.log(`  GET  /health/ready`);
   console.log('');
   console.log('HestiaCP Status:', process.env.HESTIACP_URL ? '✅ Configured' : '❌ Not configured');
   console.log('================================================');

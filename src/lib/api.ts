@@ -164,7 +164,7 @@ export const signInWithOAuth = async (provider: OAuthProvider) => {
 // AUTH FUNCTIONS (re-export z auth.ts)
 // ============================================
 
-export { getCurrentUser, signOut, onAuthStateChange } from './auth';
+export { getCurrentUser, signOut, signOutAllDevices, onAuthStateChange } from './auth';
 
 export const signInWithEmail = async (email: string, password: string) => {
   const { signIn } = await import('./auth');

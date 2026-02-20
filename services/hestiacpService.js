@@ -869,6 +869,775 @@ class HestiaCP {
       };
     }
   }
+
+  // ============================================
+  // EMAIL MANAGEMENT
+  // ============================================
+
+  /**
+   * Seznam email domén pro uživatele
+   * @param {string} username - HestiaCP username
+   * @returns {Promise<{success: boolean, domains?: string[], error?: string}>}
+   */
+  async listMailDomains(username) {
+    try {
+      const result = await this.callAPI('v-list-mail-domains', [username, 'json'], { returnCode: false });
+      if (result.success && result.data && typeof result.data === 'object') {
+        const domains = Object.keys(result.data).filter(Boolean).sort();
+        return { success: true, domains };
+      }
+      // Fallback
+      const raw = await this._callAPIRaw('v-list-mail-domains', [username, 'json'], false);
+      if (raw.ok && raw.body) {
+        const trimmed = String(raw.body).trim();
+        const jsonStr = trimmed.startsWith('0\n') ? trimmed.slice(2).trim() : (trimmed === '0' ? '' : trimmed);
+        if (jsonStr) {
+          try {
+            const data = JSON.parse(jsonStr);
+            const domains = Object.keys(data).filter(Boolean).sort();
+            return { success: true, domains };
+          } catch { /* ignore */ }
+        }
+      }
+      return { success: false, error: 'Failed to list mail domains' };
+    } catch (error) {
+      console.error('[HestiaCP] Error listing mail domains:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
+   * Seznam email účtů pro doménu
+   * @param {string} username - HestiaCP username
+   * @param {string} domain - Email doména
+   * @returns {Promise<{success: boolean, accounts?: Array, error?: string}>}
+   */
+  async listMailAccounts(username, domain) {
+    try {
+      const result = await this.callAPI('v-list-mail-accounts', [username, domain, 'json'], { returnCode: false });
+      if (result.success && result.data && typeof result.data === 'object') {
+        const accounts = Object.entries(result.data).map(([email, info]) => ({
+          email: email.includes('@') ? email : `${email}@${domain}`,
+          quota_used: parseInt(info.U_DISK || '0', 10),
+          quota_limit: parseInt(info.QUOTA || '0', 10),
+          suspended: info.SUSPENDED === 'yes',
+        }));
+        return { success: true, accounts };
+      }
+      // Fallback
+      const raw = await this._callAPIRaw('v-list-mail-accounts', [username, domain, 'json'], false);
+      if (raw.ok && raw.body) {
+        const trimmed = String(raw.body).trim();
+        const jsonStr = trimmed.startsWith('0\n') ? trimmed.slice(2).trim() : (trimmed === '0' ? '' : trimmed);
+        if (jsonStr) {
+          try {
+            const data = JSON.parse(jsonStr);
+            const accounts = Object.entries(data).map(([email, info]) => ({
+              email: email.includes('@') ? email : `${email}@${domain}`,
+              quota_used: parseInt(info.U_DISK || '0', 10),
+              quota_limit: parseInt(info.QUOTA || '0', 10),
+              suspended: info.SUSPENDED === 'yes',
+            }));
+            return { success: true, accounts };
+          } catch { /* ignore */ }
+        }
+      }
+      return { success: false, error: 'Failed to list mail accounts' };
+    } catch (error) {
+      console.error('[HestiaCP] Error listing mail accounts:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
+   * Vytvoření email účtu
+   * @param {string} username - HestiaCP username
+   * @param {string} domain - Email doména
+   * @param {string} email - Email adresa (bez @domain)
+   * @param {string} password - Heslo
+   * @returns {Promise<{success: boolean, error?: string}>}
+   */
+  async createMailAccount(username, domain, email, password) {
+    try {
+      // Odstraň @domain pokud je v emailu
+      const emailLocal = email.includes('@') ? email.split('@')[0] : email;
+      
+      const result = await this.callAPI('v-add-mail-account', [username, domain, emailLocal, password]);
+      return result;
+    } catch (error) {
+      console.error('[HestiaCP] Error creating mail account:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
+   * Smazání email účtu
+   * @param {string} username - HestiaCP username
+   * @param {string} domain - Email doména
+   * @param {string} email - Email adresa (bez @domain)
+   * @returns {Promise<{success: boolean, error?: string}>}
+   */
+  async deleteMailAccount(username, domain, email) {
+    try {
+      // Odstraň @domain pokud je v emailu
+      const emailLocal = email.includes('@') ? email.split('@')[0] : email;
+      
+      const result = await this.callAPI('v-delete-mail-account', [username, domain, emailLocal]);
+      return result;
+    } catch (error) {
+      console.error('[HestiaCP] Error deleting mail account:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
+   * Změna hesla email účtu
+   * @param {string} username - HestiaCP username
+   * @param {string} domain - Email doména
+   * @param {string} email - Email adresa (bez @domain)
+   * @param {string} password - Nové heslo
+   * @returns {Promise<{success: boolean, error?: string}>}
+   */
+  async changeMailAccountPassword(username, domain, email, password) {
+    try {
+      // Odstraň @domain pokud je v emailu
+      const emailLocal = email.includes('@') ? email.split('@')[0] : email;
+      
+      const result = await this.callAPI('v-change-mail-account-password', [username, domain, emailLocal, password]);
+      return result;
+    } catch (error) {
+      console.error('[HestiaCP] Error changing mail account password:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
+   * Quota email účtu
+   * @param {string} username - HestiaCP username
+   * @param {string} domain - Email doména
+   * @param {string} email - Email adresa (bez @domain)
+   * @returns {Promise<{success: boolean, quota?: Object, error?: string}>}
+   */
+  async getMailAccountQuota(username, domain, email) {
+    try {
+      const emailLocal = email.includes('@') ? email.split('@')[0] : email;
+      
+      const result = await this.callAPI('v-list-mail-account-quota', [username, domain, emailLocal, 'json'], { returnCode: false });
+      if (result.success && result.data) {
+        return {
+          success: true,
+          quota: {
+            used: parseInt(result.data.U_DISK || '0', 10),
+            limit: parseInt(result.data.QUOTA || '0', 10),
+          }
+        };
+      }
+      return { success: false, error: 'Failed to get mail account quota' };
+    } catch (error) {
+      console.error('[HestiaCP] Error getting mail account quota:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  // ============================================
+  // DOMAIN MANAGEMENT
+  // ============================================
+
+  /**
+   * Seznam web domén pro uživatele
+   * @param {string} username - HestiaCP username
+   * @returns {Promise<{success: boolean, domains?: Array, error?: string}>}
+   */
+  async listWebDomains(username) {
+    try {
+      const result = await this.callAPI('v-list-web-domains', [username, 'json'], { returnCode: false });
+      if (result.success && result.data && typeof result.data === 'object') {
+        const domains = Object.entries(result.data).map(([domain, info]) => ({
+          domain,
+          ip: info.IP || '',
+          ssl: info.SSL === 'yes',
+          ssl_cert: info.SSL_CERT || '',
+          ssl_key: info.SSL_KEY || '',
+          ssl_ca: info.SSL_CA || '',
+          aliases: info.ALIAS || '',
+          document_root: info.DOCUMENT_ROOT || '',
+          suspended: info.SUSPENDED === 'yes',
+        }));
+        return { success: true, domains };
+      }
+      // Fallback
+      const raw = await this._callAPIRaw('v-list-web-domains', [username, 'json'], false);
+      if (raw.ok && raw.body) {
+        const trimmed = String(raw.body).trim();
+        const jsonStr = trimmed.startsWith('0\n') ? trimmed.slice(2).trim() : (trimmed === '0' ? '' : trimmed);
+        if (jsonStr) {
+          try {
+            const data = JSON.parse(jsonStr);
+            const domains = Object.entries(data).map(([domain, info]) => ({
+              domain,
+              ip: info.IP || '',
+              ssl: info.SSL === 'yes',
+              ssl_cert: info.SSL_CERT || '',
+              ssl_key: info.SSL_KEY || '',
+              ssl_ca: info.SSL_CA || '',
+              aliases: info.ALIAS || '',
+              document_root: info.DOCUMENT_ROOT || '',
+              suspended: info.SUSPENDED === 'yes',
+            }));
+            return { success: true, domains };
+          } catch { /* ignore */ }
+        }
+      }
+      return { success: false, error: 'Failed to list web domains' };
+    } catch (error) {
+      console.error('[HestiaCP] Error listing web domains:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
+   * Informace o web doméně
+   * @param {string} username - HestiaCP username
+   * @param {string} domain - Doména
+   * @returns {Promise<{success: boolean, domain?: Object, error?: string}>}
+   */
+  async getWebDomainInfo(username, domain) {
+    try {
+      const result = await this.callAPI('v-list-web-domain', [username, domain, 'json'], { returnCode: false });
+      if (result.success && result.data && typeof result.data === 'object') {
+        const domainData = result.data[domain] || Object.values(result.data)[0];
+        if (domainData) {
+          return {
+            success: true,
+            domain: {
+              domain,
+              ip: domainData.IP || '',
+              ssl: domainData.SSL === 'yes',
+              ssl_cert: domainData.SSL_CERT || '',
+              ssl_key: domainData.SSL_KEY || '',
+              ssl_ca: domainData.SSL_CA || '',
+              aliases: domainData.ALIAS || '',
+              document_root: domainData.DOCUMENT_ROOT || '',
+              suspended: domainData.SUSPENDED === 'yes',
+            }
+          };
+        }
+      }
+      return { success: false, error: 'Failed to get web domain info' };
+    } catch (error) {
+      console.error('[HestiaCP] Error getting web domain info:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  // ============================================
+  // DATABASE MANAGEMENT
+  // ============================================
+
+  /**
+   * Seznam databází pro uživatele
+   * @param {string} username - HestiaCP username
+   * @returns {Promise<{success: boolean, databases?: Array, error?: string}>}
+   */
+  async listDatabases(username) {
+    try {
+      const result = await this.callAPI('v-list-database', [username, 'json'], { returnCode: false });
+      if (result.success && result.data && typeof result.data === 'object') {
+        const databases = Object.entries(result.data).map(([dbname, info]) => ({
+          name: dbname,
+          type: info.TYPE || 'mysql',
+          host: info.HOST || 'localhost',
+          charset: info.CHARSET || 'utf8mb4',
+          users: info.USER || [],
+        }));
+        return { success: true, databases };
+      }
+      // Fallback
+      const raw = await this._callAPIRaw('v-list-database', [username, 'json'], false);
+      if (raw.ok && raw.body) {
+        const trimmed = String(raw.body).trim();
+        const jsonStr = trimmed.startsWith('0\n') ? trimmed.slice(2).trim() : (trimmed === '0' ? '' : trimmed);
+        if (jsonStr) {
+          try {
+            const data = JSON.parse(jsonStr);
+            const databases = Object.entries(data).map(([dbname, info]) => ({
+              name: dbname,
+              type: info.TYPE || 'mysql',
+              host: info.HOST || 'localhost',
+              charset: info.CHARSET || 'utf8mb4',
+              users: info.USER || [],
+            }));
+            return { success: true, databases };
+          } catch { /* ignore */ }
+        }
+      }
+      return { success: false, error: 'Failed to list databases' };
+    } catch (error) {
+      console.error('[HestiaCP] Error listing databases:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
+   * Vytvoření databáze
+   * @param {string} username - HestiaCP username
+   * @param {string} database - Název databáze
+   * @param {string} dbuser - DB uživatel
+   * @param {string} password - Heslo
+   * @returns {Promise<{success: boolean, error?: string}>}
+   */
+  async createDatabase(username, database, dbuser, password) {
+    try {
+      const result = await this.callAPI('v-add-database', [username, database, dbuser, password]);
+      return result;
+    } catch (error) {
+      console.error('[HestiaCP] Error creating database:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
+   * Smazání databáze
+   * @param {string} username - HestiaCP username
+   * @param {string} database - Název databáze
+   * @returns {Promise<{success: boolean, error?: string}>}
+   */
+  async deleteDatabase(username, database) {
+    try {
+      const result = await this.callAPI('v-delete-database', [username, database]);
+      return result;
+    } catch (error) {
+      console.error('[HestiaCP] Error deleting database:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  // ============================================
+  // DNS Management
+  // ============================================
+
+  /**
+   * Seznam DNS domén pro uživatele
+   * @param {string} username - HestiaCP username
+   * @returns {Promise<{success: boolean, domains?: string[], error?: string}>}
+   */
+  async listDnsDomains(username) {
+    try {
+      const result = await this.callAPI('v-list-dns-domains', [username, 'json'], { returnCode: false });
+      
+      if (!result.success) {
+        return { success: false, error: result.error };
+      }
+
+      // Parsování JSON odpovědi
+      let domains = [];
+      try {
+        const data = JSON.parse(result.data);
+        if (data && typeof data === 'object') {
+          domains = Object.keys(data);
+        }
+      } catch (parseError) {
+        console.error('[HestiaCP] Error parsing DNS domains:', parseError);
+        return { success: false, error: 'Failed to parse DNS domains response' };
+      }
+
+      return { success: true, domains };
+    } catch (error) {
+      console.error('[HestiaCP] Error listing DNS domains:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
+   * Seznam DNS záznamů pro doménu
+   * @param {string} username - HestiaCP username
+   * @param {string} domain - DNS doména
+   * @returns {Promise<{success: boolean, records?: Array, error?: string}>}
+   */
+  async listDnsRecords(username, domain) {
+    try {
+      const result = await this.callAPI('v-list-dns-records', [username, domain, 'json'], { returnCode: false });
+      
+      if (!result.success) {
+        return { success: false, error: result.error };
+      }
+
+      // Parsování JSON odpovědi
+      let records = [];
+      try {
+        const data = JSON.parse(result.data);
+        if (data && typeof data === 'object') {
+          // HestiaCP vrací objekt s ID jako klíče
+          records = Object.values(data).map((record, index) => ({
+            id: Object.keys(data)[index],
+            ...record
+          }));
+        }
+      } catch (parseError) {
+        console.error('[HestiaCP] Error parsing DNS records:', parseError);
+        return { success: false, error: 'Failed to parse DNS records response' };
+      }
+
+      return { success: true, records };
+    } catch (error) {
+      console.error('[HestiaCP] Error listing DNS records:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
+   * Přidání DNS záznamu
+   * @param {string} username - HestiaCP username
+   * @param {string} domain - DNS doména
+   * @param {string} name - Název záznamu (např. 'www', '@', 'mail')
+   * @param {string} type - Typ záznamu (A, AAAA, CNAME, MX, TXT, NS, etc.)
+   * @param {string} value - Hodnota záznamu
+   * @param {number} priority - Priorita (pro MX záznamy)
+   * @param {number} ttl - TTL v sekundách (volitelné)
+   * @returns {Promise<{success: boolean, error?: string}>}
+   */
+  async addDnsRecord(username, domain, name, type, value, priority = null, ttl = null) {
+    try {
+      const args = [username, domain, name, type, value];
+      if (priority !== null) args.push(priority);
+      if (ttl !== null) args.push(ttl);
+      
+      const result = await this.callAPI('v-add-dns-record', args);
+      return result;
+    } catch (error) {
+      console.error('[HestiaCP] Error adding DNS record:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
+   * Smazání DNS záznamu
+   * @param {string} username - HestiaCP username
+   * @param {string} domain - DNS doména
+   * @param {string} recordId - ID záznamu
+   * @returns {Promise<{success: boolean, error?: string}>}
+   */
+  async deleteDnsRecord(username, domain, recordId) {
+    try {
+      const result = await this.callAPI('v-delete-dns-record', [username, domain, recordId]);
+      return result;
+    } catch (error) {
+      console.error('[HestiaCP] Error deleting DNS record:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
+   * Přidání DNS domény
+   * @param {string} username - HestiaCP username
+   * @param {string} domain - DNS doména
+   * @param {string} ip - IP adresa (volitelné)
+   * @returns {Promise<{success: boolean, error?: string}>}
+   */
+  async addDnsDomain(username, domain, ip = null) {
+    try {
+      const args = [username, domain];
+      if (ip) args.push(ip);
+      
+      const result = await this.callAPI('v-add-dns-domain', args);
+      return result;
+    } catch (error) {
+      console.error('[HestiaCP] Error adding DNS domain:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
+   * Smazání DNS domény
+   * @param {string} username - HestiaCP username
+   * @param {string} domain - DNS doména
+   * @returns {Promise<{success: boolean, error?: string}>}
+   */
+  async deleteDnsDomain(username, domain) {
+    try {
+      const result = await this.callAPI('v-delete-dns-domain', [username, domain]);
+      return result;
+    } catch (error) {
+      console.error('[HestiaCP] Error deleting DNS domain:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  // ============================================
+  // FTP Management
+  // ============================================
+
+  /**
+   * Seznam FTP účtů pro web doménu
+   * @param {string} username - HestiaCP username
+   * @param {string} domain - Web doména
+   * @returns {Promise<{success: boolean, accounts?: Array, error?: string}>}
+   */
+  async listWebDomainFtp(username, domain) {
+    try {
+      const result = await this.callAPI('v-list-web-domain-ftp', [username, domain, 'json'], { returnCode: false });
+      if (!result.success) {
+        return { success: false, error: result.error };
+      }
+      let accounts = [];
+      try {
+        const data = typeof result.data === 'string' ? JSON.parse(result.data) : result.data;
+        if (data && typeof data === 'object') {
+          accounts = Object.entries(data).map(([ftpUser, info]) => ({
+            id: ftpUser,
+            username: ftpUser,
+            path: (info && info.PATH) ? info.PATH : '',
+            suspended: (info && info.SUSPENDED) === 'yes',
+          }));
+        }
+      } catch (parseError) {
+        console.error('[HestiaCP] Error parsing FTP list:', parseError);
+        return { success: false, error: 'Failed to parse FTP accounts response' };
+      }
+      return { success: true, accounts };
+    } catch (error) {
+      console.error('[HestiaCP] Error listing FTP accounts:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
+   * Přidání FTP účtu k web doméně
+   * @param {string} username - HestiaCP username
+   * @param {string} domain - Web doména
+   * @param {string} ftpUser - FTP uživatelské jméno
+   * @param {string} ftpPass - Heslo
+   * @param {string} path - Cesta (např. public_html)
+   * @returns {Promise<{success: boolean, error?: string}>}
+   */
+  async addWebDomainFtp(username, domain, ftpUser, ftpPass, path) {
+    try {
+      const args = [username, domain, ftpUser, ftpPass];
+      if (path) args.push(path);
+      const result = await this.callAPI('v-add-web-domain-ftp', args);
+      return result;
+    } catch (error) {
+      console.error('[HestiaCP] Error adding FTP account:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
+   * Smazání FTP účtu
+   * @param {string} username - HestiaCP username
+   * @param {string} domain - Web doména
+   * @param {string} ftpUser - FTP uživatelské jméno
+   * @returns {Promise<{success: boolean, error?: string}>}
+   */
+  async deleteWebDomainFtp(username, domain, ftpUser) {
+    try {
+      const result = await this.callAPI('v-delete-web-domain-ftp', [username, domain, ftpUser]);
+      return result;
+    } catch (error) {
+      console.error('[HestiaCP] Error deleting FTP account:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
+   * Změna hesla FTP účtu
+   * @param {string} username - HestiaCP username
+   * @param {string} domain - Web doména
+   * @param {string} ftpUser - FTP uživatelské jméno
+   * @param {string} ftpPass - Nové heslo
+   * @returns {Promise<{success: boolean, error?: string}>}
+   */
+  async changeWebDomainFtpPassword(username, domain, ftpUser, ftpPass) {
+    try {
+      const result = await this.callAPI('v-change-web-domain-ftp-password', [username, domain, ftpUser, ftpPass]);
+      return result;
+    } catch (error) {
+      console.error('[HestiaCP] Error changing FTP password:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  // ============================================
+  // Backup Management
+  // ============================================
+
+  /**
+   * Seznam záloh pro uživatele
+   * @param {string} username - HestiaCP username
+   * @returns {Promise<{success: boolean, backups?: Array, error?: string}>}
+   */
+  async listBackups(username) {
+    try {
+      const result = await this.callAPI('v-list-user-backups', [username, 'json'], { returnCode: false });
+      if (!result.success) {
+        return { success: false, error: result.error };
+      }
+      let backups = [];
+      try {
+        const data = typeof result.data === 'string' ? JSON.parse(result.data) : result.data;
+        if (data && typeof data === 'object') {
+          backups = Object.entries(data).map(([backupId, info]) => ({
+            id: backupId,
+            date: (info && info.DATE) ? info.DATE : '',
+            size: (info && info.SIZE) ? parseInt(info.SIZE) : 0,
+            status: (info && info.STATUS) ? info.STATUS : 'unknown',
+          }));
+        }
+      } catch (parseError) {
+        console.error('[HestiaCP] Error parsing backups list:', parseError);
+        return { success: false, error: 'Failed to parse backups response' };
+      }
+      return { success: true, backups };
+    } catch (error) {
+      console.error('[HestiaCP] Error listing backups:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
+   * Vytvoření zálohy uživatele
+   * @param {string} username - HestiaCP username
+   * @param {boolean} notify - Poslat notifikaci (volitelné)
+   * @returns {Promise<{success: boolean, error?: string}>}
+   */
+  async createBackup(username, notify = false) {
+    try {
+      const args = [username];
+      if (notify) args.push('notify');
+      const result = await this.callAPI('v-backup-user', args);
+      return result;
+    } catch (error) {
+      console.error('[HestiaCP] Error creating backup:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
+   * Obnovení zálohy
+   * @param {string} username - HestiaCP username
+   * @param {string} backupId - ID zálohy
+   * @returns {Promise<{success: boolean, error?: string}>}
+   */
+  async restoreBackup(username, backupId) {
+    try {
+      const result = await this.callAPI('v-restore-user-backup', [username, backupId]);
+      return result;
+    } catch (error) {
+      console.error('[HestiaCP] Error restoring backup:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
+   * Smazání zálohy
+   * @param {string} username - HestiaCP username
+   * @param {string} backupId - ID zálohy
+   * @returns {Promise<{success: boolean, error?: string}>}
+   */
+  async deleteBackup(username, backupId) {
+    try {
+      const result = await this.callAPI('v-delete-user-backup', [username, backupId]);
+      return result;
+    } catch (error) {
+      console.error('[HestiaCP] Error deleting backup:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  // ============================================
+  // Cron Jobs Management
+  // ============================================
+
+  /**
+   * Seznam cron jobů pro uživatele
+   * @param {string} username - HestiaCP username
+   * @returns {Promise<{success: boolean, cronJobs?: Array, error?: string}>}
+   */
+  async listCronJobs(username) {
+    try {
+      const result = await this.callAPI('v-list-cron-job', [username, 'json'], { returnCode: false });
+      if (!result.success) {
+        return { success: false, error: result.error };
+      }
+      let cronJobs = [];
+      try {
+        const data = typeof result.data === 'string' ? JSON.parse(result.data) : result.data;
+        if (data && typeof data === 'object') {
+          cronJobs = Object.entries(data).map(([jobId, info]) => ({
+            id: jobId,
+            min: (info && info.MIN) ? info.MIN : '*',
+            hour: (info && info.HOUR) ? info.HOUR : '*',
+            day: (info && info.DAY) ? info.DAY : '*',
+            month: (info && info.MONTH) ? info.MONTH : '*',
+            weekday: (info && info.WEEKDAY) ? info.WEEKDAY : '*',
+            command: (info && info.CMD) ? info.CMD : '',
+            suspended: (info && info.SUSPENDED) ? info.SUSPENDED === 'yes' : false,
+          }));
+        }
+      } catch (parseError) {
+        console.error('[HestiaCP] Error parsing cron jobs list:', parseError);
+        return { success: false, error: 'Failed to parse cron jobs response' };
+      }
+      return { success: true, cronJobs };
+    } catch (error) {
+      console.error('[HestiaCP] Error listing cron jobs:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
+   * Přidání cron jobu
+   * @param {string} username - HestiaCP username
+   * @param {string} min - Minuta (0-59 nebo *)
+   * @param {string} hour - Hodina (0-23 nebo *)
+   * @param {string} day - Den v měsíci (1-31 nebo *)
+   * @param {string} month - Měsíc (1-12 nebo *)
+   * @param {string} weekday - Den v týdnu (0-7 nebo *)
+   * @param {string} command - Příkaz k provedení
+   * @returns {Promise<{success: boolean, error?: string}>}
+   */
+  async addCronJob(username, min, hour, day, month, weekday, command) {
+    try {
+      const result = await this.callAPI('v-add-cron-job', [username, min, hour, day, month, weekday, command]);
+      return result;
+    } catch (error) {
+      console.error('[HestiaCP] Error adding cron job:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
+   * Smazání cron jobu
+   * @param {string} username - HestiaCP username
+   * @param {string} jobId - ID cron jobu
+   * @returns {Promise<{success: boolean, error?: string}>}
+   */
+  async deleteCronJob(username, jobId) {
+    try {
+      const result = await this.callAPI('v-delete-cron-job', [username, jobId]);
+      return result;
+    } catch (error) {
+      console.error('[HestiaCP] Error deleting cron job:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
+   * Pozastavení/obnovení cron jobu
+   * @param {string} username - HestiaCP username
+   * @param {string} jobId - ID cron jobu
+   * @param {boolean} suspend - true pro pozastavení, false pro obnovení
+   * @returns {Promise<{success: boolean, error?: string}>}
+   */
+  async suspendCronJob(username, jobId, suspend) {
+    try {
+      const result = await this.callAPI(suspend ? 'v-suspend-cron-job' : 'v-unsuspend-cron-job', [username, jobId]);
+      return result;
+    } catch (error) {
+      console.error('[HestiaCP] Error suspending/unsuspending cron job:', error);
+      return { success: false, error: error.message };
+    }
+  }
 }
 
 // Singleton instance

@@ -75,6 +75,7 @@ export interface AuthContextType extends AuthState {
   signIn: (data: LoginData) => Promise<AuthResult>;
   signInWithOAuth: (provider: OAuthProvider) => Promise<void>;
   signOut: () => Promise<void>;
+  signOutAllDevices: () => Promise<{ success: boolean; error?: string }>;
   updateProfile: (updates: Partial<UserProfile>) => Promise<AuthResult>;
   resetPassword: (email: string) => Promise<AuthResult>;
 }

@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faEnvelope, faPhone, faMapMarkerAlt, faGlobe } from '@fortawesome/free-solid-svg-icons';
@@ -37,6 +38,10 @@ const Footer: React.FC = () => {
                   src="/alatyrlogo-removebg-preview.png"
                   alt="Alatyr Hosting"
                   className="footer-logo-image"
+                  loading="lazy"
+                  decoding="async"
+                  width="160"
+                  height="40"
                 />
               </motion.div>
               <p className="footer-description">
@@ -74,30 +79,18 @@ const Footer: React.FC = () => {
               <div className="footer-column">
                 <h4 className="footer-title">{t('footer.services')}</h4>
                 <ul className="footer-list">
-                  <li><a href="#hosting" className="footer-link">{t('nav.hosting')}</a></li>
-                  <li><a href="#domains" className="footer-link">{t('nav.domains')}</a></li>
-                  <li><a href="#ssl" className="footer-link">{t('footer.ssl')}</a></li>
-                  <li><a href="#backup" className="footer-link">{t('footer.backup')}</a></li>
-                </ul>
-              </div>
-
-              <div className="footer-column">
-                <h4 className="footer-title">{t('footer.support')}</h4>
-                <ul className="footer-list">
-                  <li><a href="#docs" className="footer-link">{t('footer.documentation')}</a></li>
-                  <li><a href="#faq" className="footer-link">{t('footer.faq')}</a></li>
-                  <li><a href="#support" className="footer-link">{t('footer.liveSupport')}</a></li>
-                  <li><a href="#status" className="footer-link">{t('footer.status')}</a></li>
+                  <li><Link to="/hosting" className="footer-link">{t('nav.hosting')}</Link></li>
+                  <li><Link to="/domains" className="footer-link">{t('nav.domains')}</Link></li>
+                  <li><Link to="/support" className="footer-link">{t('footer.liveSupport')}</Link></li>
                 </ul>
               </div>
 
               <div className="footer-column">
                 <h4 className="footer-title">{t('footer.company')}</h4>
                 <ul className="footer-list">
-                  <li><a href="#about" className="footer-link">{t('nav.about')}</a></li>
-                  <li><a href="#careers" className="footer-link">{t('footer.careers')}</a></li>
-                  <li><a href="#privacy" className="footer-link">{t('footer.privacy')}</a></li>
-                  <li><a href="#terms" className="footer-link">{t('footer.terms')}</a></li>
+                  <li><Link to="/about" className="footer-link">{t('nav.about')}</Link></li>
+                  <li><Link to="/contact" className="footer-link">{t('footer.contact')}</Link></li>
+                  <li><Link to="/privacy" className="footer-link">{t('footer.privacy')}</Link></li>
                 </ul>
               </div>
 
@@ -138,9 +131,9 @@ const Footer: React.FC = () => {
               &copy; 2024 Alatyr Hosting. {t('footer.rights')}
             </p>
             <div className="footer-bottom-links">
-              <a href="#privacy" className="footer-bottom-link">{t('footer.privacy')}</a>
+              <Link to="/privacy" className="footer-bottom-link">{t('footer.privacy')}</Link>
               <span className="footer-divider">|</span>
-              <a href="#terms" className="footer-bottom-link">{t('footer.terms')}</a>
+              <Link to="/contact" className="footer-bottom-link">{t('footer.contact')}</Link>
               <span className="footer-divider">|</span>
               <a href="#cookies" className="footer-bottom-link">{t('footer.cookies')}</a>
             </div>

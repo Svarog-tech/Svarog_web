@@ -14,7 +14,8 @@ import {
   faKey,
   faCopy,
   faMapMarkerAlt,
-  faLock
+  faLock,
+  faSignOutAlt
 } from '@fortawesome/free-solid-svg-icons';
 import { QRCodeSVG } from 'qrcode.react';
 import { useAuth } from '../contexts/AuthContext';
@@ -25,7 +26,7 @@ import { getAuthHeader } from '../lib/auth';
 import { useToast } from '../components/Toast';
 
 const Profile: React.FC = () => {
-  const { user, profile, updateProfile } = useAuth();
+  const { user, profile, updateProfile, signOutAllDevices } = useAuth();
   const { t } = useLanguage();
   const [formData, setFormData] = useState({
     firstName: '',
@@ -56,6 +57,7 @@ const Profile: React.FC = () => {
   // Password change state
   const [passwordData, setPasswordData] = useState({ oldPassword: '', newPassword: '', confirmPassword: '' });
   const [changingPassword, setChangingPassword] = useState(false);
+  const [loggingOutAll, setLoggingOutAll] = useState(false);
 
   useEffect(() => {
     if (profile || user) {
@@ -691,6 +693,29 @@ const Profile: React.FC = () => {
                  profile?.provider === 'github' ? 'GitHub' : 'Email'}
               </span>
             </div>
+          </div>
+          <div className="logout-all-section">
+            <p className="logout-all-description">
+              Odhlásíte se ze všech zařízení (telefon, tablet, jiný počítač). Budete muset se znovu přihlásit všude.
+            </p>
+            <button
+              type="button"
+              className="logout-all-btn"
+              onClick={async () => {
+                setLoggingOutAll(true);
+                const result = await signOutAllDevices();
+                setLoggingOutAll(false);
+                if (result.success) {
+                  showSuccess('Byli jste odhlášeni ze všech zařízení.');
+                } else {
+                  showError(result.error || 'Odhlášení se nezdařilo.');
+                }
+              }}
+              disabled={loggingOutAll}
+            >
+              <FontAwesomeIcon icon={faSignOutAlt} />
+              {loggingOutAll ? 'Odhlášení...' : 'Odhlásit ze všech zařízení'}
+            </button>
           </div>
         </motion.div>
 

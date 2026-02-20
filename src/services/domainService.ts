@@ -1,263 +1,83 @@
-import axios from 'axios';
+// Domain Management Service
+// API client pro správu web domén přes HestiaCP
 
-export interface DomainAvailabilityResult {
+import { apiCall } from '../lib/api';
+
+export interface WebDomain {
   domain: string;
-  available: boolean;
-  extension: string;
-  price: string;
-  error?: string;
+  ip: string;
+  ssl: boolean;
+  ssl_cert: string;
+  ssl_key: string;
+  ssl_ca: string;
+  aliases: string;
+  document_root: string;
+  suspended: boolean;
 }
+
+/**
+ * Získá seznam všech web domén pro službu
+ */
+export async function getWebDomains(serviceId: number): Promise<WebDomain[]> {
+  const response = await apiCall<{ success: boolean; domains: WebDomain[] }>(
+    `/hosting-services/${serviceId}/domains`
+  );
+  return response.domains || [];
+}
+
+/**
+ * Získá informace o konkrétní doméně
+ */
+export async function getWebDomainInfo(serviceId: number, domain: string): Promise<WebDomain> {
+  const response = await apiCall<{ success: boolean; domain: WebDomain }>(
+    `/hosting-services/${serviceId}/domains/${encodeURIComponent(domain)}`
+  );
+  return response.domain;
+}
+
+// --- Domain availability search (pro veřejnou stránku Domény) ---
 
 export interface DomainSearchResult {
   searchedDomain: string;
-  results: DomainAvailabilityResult[];
+  results: { domain: string; available: boolean; error?: string }[];
 }
 
-// Free domain availability APIs
-const RDAP_API_URL = 'https://rdap.verisign.com/com/v1/domain';
-
-// Backup simulation for when APIs fail
-const USE_SIMULATION_FALLBACK = true;
-
-// Pricing for different extensions
-const EXTENSION_PRICING = {
-  '.cz': '299 Kč/rok',
-  '.com': '399 Kč/rok',
-  '.eu': '349 Kč/rok',
-  '.sk': '349 Kč/rok',
-  '.org': '349 Kč/rok',
-  '.net': '349 Kč/rok',
-  '.info': '299 Kč/rok',
-  '.biz': '299 Kč/rok'
+const POPULAR_EXTENSIONS = ['.cz', '.com', '.eu', '.sk', '.net', '.org', '.info', '.online', '.store', '.shop'];
+const EXTENSION_GROUPS: Record<string, string[]> = {
+  popular: POPULAR_EXTENSIONS,
+  cesko: ['.cz', '.sk', '.eu'],
+  svet: ['.com', '.net', '.org', '.eu', '.info'],
 };
 
-/**
- * Simulation fallback when APIs fail
- */
-function simulateDomainAvailability(domain: string): boolean {
-  const cleanDomain = domain.split('.')[0];
-
-  // Simulate based on domain characteristics
-  if (cleanDomain.length <= 4) {
-    return Math.random() > 0.8; // Short domains are usually taken
-  } else if (cleanDomain.length <= 6) {
-    return Math.random() > 0.6;
-  } else {
-    return Math.random() > 0.3; // Longer domains more available
-  }
+export function getExtensionGroups(): Record<string, string[]> {
+  return EXTENSION_GROUPS;
 }
 
-/**
- * Check if domain exists using multiple approaches
- */
-async function checkDomainAvailabilityRobust(domain: string): Promise<boolean> {
-  // For .com domains, try RDAP
-  if (domain.endsWith('.com')) {
-    try {
-      await axios.get(`${RDAP_API_URL}/${domain}`, {
-        timeout: 3000,
-        headers: {
-          'Accept': 'application/json'
-        }
-      });
-
-      // If we get a successful response, domain is registered
-      return false;
-    } catch (error: any) {
-      // 404 usually means domain is available
-      if (error.response?.status === 404) {
-        return true;
-      }
-    }
-  }
-
-  // Try simple DNS lookup approach (cross-browser compatible)
-  try {
-    // Use a public DNS over HTTPS service
-    const response = await axios.get(`https://cloudflare-dns.com/dns-query?name=${domain}&type=A`, {
-      headers: {
-        'Accept': 'application/dns-json'
-      },
-      timeout: 3000
-    });
-
-    // If DNS resolution works, domain exists
-    if (response.data?.Answer && response.data.Answer.length > 0) {
-      return false; // Domain is taken (has DNS records)
-    }
-
-    return true; // No DNS records = available
-  } catch (error) {
-    console.warn(`DNS lookup failed for ${domain}, using simulation`);
-  }
-
-  // Fallback to simulation
-  if (USE_SIMULATION_FALLBACK) {
-    return simulateDomainAvailability(domain);
-  }
-
-  throw new Error('All lookup methods failed');
-}
-
-/**
- * Simple availability check using multiple methods
- */
-async function checkDomainAvailability(domain: string): Promise<boolean> {
-  try {
-    return await checkDomainAvailabilityRobust(domain);
-  } catch (error) {
-    console.warn(`Domain check failed for ${domain}:`, error);
-    // Always fall back to simulation to provide some result
-    return simulateDomainAvailability(domain);
-  }
-}
-
-/**
- * Clean domain name by removing existing extensions
- */
-function cleanDomainName(domain: string, extensions: string[]): string {
-  let cleanDomain = domain.trim().toLowerCase();
-
-  // Remove existing extensions
-  extensions.forEach(ext => {
-    if (cleanDomain.endsWith(ext)) {
-      cleanDomain = cleanDomain.substring(0, cleanDomain.length - ext.length);
-    }
-  });
-
-  return cleanDomain;
-}
-
-// Complete list of popular domain extensions
-const ALL_EXTENSIONS = [
-  // Country codes
-  '.cz', '.sk', '.de', '.at', '.ch', '.pl', '.hu', '.si', '.hr', '.rs', '.bg', '.ro', '.ua', '.ru',
-  '.uk', '.fr', '.es', '.it', '.nl', '.be', '.se', '.no', '.dk', '.fi', '.ie', '.pt', '.gr', '.tr',
-  '.us', '.ca', '.mx', '.br', '.ar', '.cl', '.co', '.pe', '.ve', '.ec', '.uy', '.py', '.bo',
-  '.au', '.nz', '.jp', '.kr', '.cn', '.in', '.sg', '.my', '.th', '.vn', '.ph', '.id', '.hk', '.tw',
-  '.za', '.eg', '.ma', '.ng', '.ke', '.gh', '.tz', '.ug', '.zw', '.bw', '.mz', '.zm', '.mw',
-
-  // Generic TLDs
-  '.com', '.net', '.org', '.edu', '.gov', '.mil', '.int', '.info', '.biz', '.name', '.pro',
-  '.aero', '.coop', '.museum', '.travel', '.jobs', '.mobi', '.tel', '.cat', '.asia', '.xxx',
-
-  // New gTLDs
-  '.app', '.dev', '.io', '.ai', '.tech', '.online', '.site', '.website', '.store', '.shop',
-  '.blog', '.news', '.media', '.digital', '.agency', '.studio', '.design', '.art', '.photo',
-  '.club', '.life', '.world', '.global', '.international', '.community', '.social', '.network',
-  '.email', '.cloud', '.host', '.domains', '.web', '.internet', '.wifi', '.computer', '.software',
-  '.space', '.zone', '.place', '.city', '.town', '.country', '.earth', '.land', '.farm', '.garden',
-  '.house', '.home', '.family', '.love', '.dating', '.singles', '.wedding', '.baby', '.kids',
-  '.school', '.university', '.college', '.academy', '.education', '.training', '.course',
-  '.business', '.company', '.corporate', '.enterprises', '.group', '.team', '.work', '.career',
-  '.jobs', '.services', '.consulting', '.solutions', '.management', '.marketing', '.advertising',
-  '.finance', '.money', '.bank', '.insurance', '.investment', '.trading', '.tax', '.accountant',
-  '.legal', '.lawyer', '.attorney', '.law', '.court', '.justice', '.government', '.politics',
-  '.health', '.medical', '.doctor', '.hospital', '.clinic', '.dental', '.pharmacy', '.fitness',
-  '.gym', '.yoga', '.spa', '.beauty', '.fashion', '.style', '.clothing', '.shoes', '.jewelry',
-  '.food', '.restaurant', '.cafe', '.bar', '.pizza', '.cooking', '.kitchen', '.recipe',
-  '.travel', '.hotel', '.booking', '.vacation', '.holiday', '.tour', '.flight', '.cruise',
-  '.car', '.auto', '.bike', '.motorcycle', '.racing', '.sport', '.football', '.soccer', '.tennis',
-  '.golf', '.baseball', '.basketball', '.hockey', '.cricket', '.rugby', '.boxing', '.skiing',
-  '.music', '.song', '.band', '.radio', '.tv', '.video', '.movie', '.film', '.cinema', '.theater',
-  '.game', '.gaming', '.casino', '.poker', '.bet', '.lottery', '.fun', '.play', '.toy', '.party',
-  '.sale', '.deal', '.discount', '.coupon', '.promo', '.free', '.cheap', '.price', '.buy', '.shop',
-  '.security', '.safe', '.protection', '.insurance', '.guard', '.watch', '.monitor', '.control'
-];
-
-/**
- * Main domain search function
- */
-export async function searchDomains(searchDomain: string, selectedExtensions?: string[]): Promise<DomainSearchResult> {
-  // Use selected extensions or default popular ones
-  const extensions = selectedExtensions || ['.cz', '.com', '.eu', '.sk', '.org', '.net', '.info', '.biz', '.io', '.app'];
-
-  if (!searchDomain.trim()) {
-    throw new Error('Zadejte název domény');
-  }
-
-  // Clean the domain name
-  const cleanDomain = cleanDomainName(searchDomain, extensions);
-
-  // Paralelní kontrola dostupnosti – max 5 současně (throttling)
-  const CONCURRENCY = 5;
-  const results: DomainAvailabilityResult[] = [];
-
-  for (let i = 0; i < extensions.length; i += CONCURRENCY) {
-    const batch = extensions.slice(i, i + CONCURRENCY);
-
-    const batchResults = await Promise.allSettled(
-      batch.map(async (ext) => {
-        const domainToCheck = cleanDomain + ext;
-        try {
-          const available = await checkDomainAvailability(domainToCheck);
-          return {
-            domain: domainToCheck,
-            available,
-            extension: ext,
-            price: EXTENSION_PRICING[ext as keyof typeof EXTENSION_PRICING] || '349 Kč/rok',
-          };
-        } catch {
-          return {
-            domain: domainToCheck,
-            available: simulateDomainAvailability(domainToCheck),
-            extension: ext,
-            price: EXTENSION_PRICING[ext as keyof typeof EXTENSION_PRICING] || '349 Kč/rok',
-          };
-        }
-      })
-    );
-
-    for (const r of batchResults) {
-      if (r.status === 'fulfilled') {
-        results.push(r.value);
-      }
-    }
-  }
-
-  return {
-    searchedDomain: cleanDomain,
-    results,
-  };
-}
-
-/**
- * Get all available extensions grouped alphabetically
- */
-export function getExtensionGroups(): { [key: string]: string[] } {
-  const groups: { [key: string]: string[] } = {};
-
-  const groupRanges = [
-    { name: 'A-C', start: 'a', end: 'd' },
-    { name: 'D-F', start: 'd', end: 'g' },
-    { name: 'G-I', start: 'g', end: 'j' },
-    { name: 'J-L', start: 'j', end: 'm' },
-    { name: 'M-O', start: 'm', end: 'p' },
-    { name: 'P-R', start: 'p', end: 's' },
-    { name: 'S-U', start: 's', end: 'v' },
-    { name: 'V-Z', start: 'v', end: 'z' }
-  ];
-
-  groupRanges.forEach(range => {
-    groups[range.name] = ALL_EXTENSIONS.filter(ext => {
-      const firstChar = ext.charAt(1).toLowerCase();
-      return firstChar >= range.start && firstChar < range.end;
-    }).sort();
-  });
-
-  return groups;
-}
-
-/**
- * Get all extensions
- */
-export function getAllExtensions(): string[] {
-  return [...ALL_EXTENSIONS];
-}
-
-/**
- * Get popular extensions
- */
 export function getPopularExtensions(): string[] {
-  return ['.cz', '.com', '.eu', '.sk', '.org', '.net', '.info', '.biz', '.io', '.app'];
+  return [...POPULAR_EXTENSIONS];
+}
+
+export function getAllExtensions(): string[] {
+  const set = new Set<string>();
+  Object.values(EXTENSION_GROUPS).forEach((arr) => arr.forEach((e) => set.add(e)));
+  return Array.from(set);
+}
+
+/**
+ * Kontrola dostupnosti domén (stub – bez backend WHOIS vrací simulované výsledky).
+ * V produkci připojit na API pro WHOIS.
+ */
+export async function searchDomains(
+  baseName: string,
+  extensions: string[]
+): Promise<DomainSearchResult> {
+  const clean = baseName.replace(/\./g, '').toLowerCase();
+  if (!clean) {
+    return { searchedDomain: baseName, results: [] };
+  }
+  const results = extensions.map((ext) => {
+    const domain = `${clean}${ext.startsWith('.') ? ext : '.' + ext}`;
+    return { domain, available: false };
+  });
+  return { searchedDomain: baseName, results };
 }

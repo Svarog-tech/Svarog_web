@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSearch, faSpinner, faTimes, faCheckCircle, faExclamationTriangle } from '@fortawesome/free-solid-svg-icons';
 import { searchDomains, DomainSearchResult, getExtensionGroups, getPopularExtensions, getAllExtensions } from '../services/domainService';
+import PageMeta from '../components/PageMeta';
 
 const DomainsSimple: React.FC = () => {
   const [searchDomain, setSearchDomain] = useState('');
@@ -64,6 +65,11 @@ const DomainsSimple: React.FC = () => {
 
   return (
     <main className="domains-page">
+      <PageMeta
+        title="Domény – registrace a vyhledávání | Alatyr Hosting"
+        description="Vyhledejte a zaregistrujte doménu .cz, .eu, .com a další. Jednoduchá správa DNS a přenos domén u Alatyr Hosting."
+        path="/domains"
+      />
       <div className="domains-animated-bg" />
       <motion.section
         className="domains-hero"

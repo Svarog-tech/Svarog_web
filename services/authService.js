@@ -677,6 +677,22 @@ async function logout(refreshToken) {
 }
 
 /**
+ * Odhlášení ze všech zařízení (smaž všechny refresh tokeny uživatele)
+ */
+async function logoutAll(userId) {
+  try {
+    if (!userId) {
+      return { success: false, error: 'userId je povinný' };
+    }
+    const result = await db.execute('DELETE FROM refresh_tokens WHERE user_id = ?', [userId]);
+    return { success: true, deletedCount: result.affectedRows };
+  } catch (error) {
+    console.error('LogoutAll error:', error);
+    return { success: false, error: 'Odhlášení ze všech zařízení se nezdařilo' };
+  }
+}
+
+/**
  * Získání uživatele z tokenu
  */
 async function getUserFromToken(accessToken) {
@@ -1131,6 +1147,7 @@ module.exports = {
   login,
   refreshAccessToken,
   logout,
+  logoutAll,
   getUserFromToken,
   requestPasswordReset,
   resetPassword,

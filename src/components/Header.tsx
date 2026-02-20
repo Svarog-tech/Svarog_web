@@ -131,6 +131,9 @@ const Header: React.FC = () => {
                   src="/alatyrlogo-removebg-preview.png"
                   alt="Alatyr Hosting"
                   className="logo-image"
+                  fetchPriority="high"
+                  width="160"
+                  height="40"
                 />
               </Link>
             </motion.div>

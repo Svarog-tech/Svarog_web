@@ -5,6 +5,7 @@ import { faServer, faRocket, faShield, faBolt } from '@fortawesome/free-solid-sv
 import { useLanguage } from '../contexts/LanguageContext';
 import HostingPlansNew from '../components/HostingPlansNew';
 import TriangularBackground from '../components/TriangularBackground';
+import PageMeta from '../components/PageMeta';
 
 const Hosting: React.FC = () => {
   const { t } = useLanguage();
@@ -31,6 +32,11 @@ const Hosting: React.FC = () => {
 
   return (
     <>
+      <PageMeta
+        title={`${t('hosting.title')}${t('hosting.titleHighlight')} – Alatyr Hosting`}
+        description="Profesionální webhosting s HestiaCP, SSL zdarma a 24/7 podporou. Vyberte si plán Basic, Standard nebo Business."
+        path="/hosting"
+      />
       <TriangularBackground opacity={0.12} />
       <main className="hosting-page">
         <motion.section

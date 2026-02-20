@@ -23,7 +23,8 @@ import {
   faFolder,
   faShieldAlt,
   faExclamationTriangle,
-  faInfoCircle
+  faInfoCircle,
+  faCloudDownload
 } from '@fortawesome/free-solid-svg-icons';
 import { useAuth } from '../contexts/AuthContext';
 import { useCurrency } from '../contexts/CurrencyContext';
@@ -585,6 +586,62 @@ const ServiceDetail: React.FC = () => {
               >
                 <FontAwesomeIcon icon={faFolder} />
                 <span>Správce souborů</span>
+              </Link>
+
+              <Link
+                to={`/services/${id}/emails`}
+                className="sd-action-card"
+              >
+                <FontAwesomeIcon icon={faEnvelope} />
+                <span>Správa emailů</span>
+              </Link>
+
+              <Link
+                to={`/services/${id}/domains`}
+                className="sd-action-card"
+              >
+                <FontAwesomeIcon icon={faGlobe} />
+                <span>Správa domén</span>
+              </Link>
+
+              <Link
+                to={`/services/${id}/databases`}
+                className="sd-action-card"
+              >
+                <FontAwesomeIcon icon={faDatabase} />
+                <span>Správa databází</span>
+              </Link>
+
+              <Link
+                to={`/services/${id}/dns`}
+                className="sd-action-card"
+              >
+                <FontAwesomeIcon icon={faNetworkWired} />
+                <span>Správa DNS</span>
+              </Link>
+
+              <Link
+                to={`/services/${id}/ftp`}
+                className="sd-action-card"
+              >
+                <FontAwesomeIcon icon={faFolder} />
+                <span>Správa FTP</span>
+              </Link>
+
+              <Link
+                to={`/services/${id}/backups`}
+                className="sd-action-card"
+              >
+                <FontAwesomeIcon icon={faCloudDownload} />
+                <span>Správa Záloh</span>
+              </Link>
+
+              <Link
+                to={`/services/${id}/cron`}
+                className="sd-action-card"
+              >
+                <FontAwesomeIcon icon={faClock} />
+                <span>Správa Cron Jobs</span>
               </Link>
 
             </div>

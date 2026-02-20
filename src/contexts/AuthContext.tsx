@@ -14,6 +14,7 @@ import {
   signIn as authSignIn,
   signInWithOAuth as authSignInWithOAuth,
   signOut as authSignOut,
+  signOutAllDevices as authSignOutAllDevices,
   resetPassword as authResetPassword,
   updateProfile as authUpdateProfile,
   getCurrentUser,
@@ -243,6 +244,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   }, [updateState]);
 
+  // Sign out from all devices
+  const signOutAllDevices = useCallback(async (): Promise<{ success: boolean; error?: string }> => {
+    const result = await authSignOutAllDevices();
+    if (result.success) {
+      updateState({
+        user: null,
+        profile: null,
+        loading: false,
+      });
+    }
+    return result;
+  }, [updateState]);
+
   // Update profile function
   const updateProfile = useCallback(async (updates: Partial<UserProfile>): Promise<AuthResult> => {
     if (!state.user) {
@@ -292,6 +306,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     signIn,
     signInWithOAuth,
     signOut,
+    signOutAllDevices,
     updateProfile,
     resetPassword,
   };

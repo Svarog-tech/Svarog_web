@@ -367,6 +367,37 @@ export const signOut = async () => {
   }
 };
 
+/**
+ * Odhlášení ze všech zařízení (invalidace všech refresh tokenů uživatele)
+ */
+export const signOutAllDevices = async (): Promise<{ success: boolean; error?: string }> => {
+  try {
+    const token = getAccessToken();
+    const response = await fetch(`${API_BASE_URL}/auth/logout-all`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-Guard': '1',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      credentials: 'include',
+    });
+
+    const data = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      return { success: false, error: data.error || 'Odhlášení ze všech zařízení se nezdařilo' };
+    }
+
+    clearTokens();
+    return { success: true };
+  } catch (error: unknown) {
+    console.error('SignOutAll error:', error);
+    clearTokens();
+    return { success: false, error: 'Nastala chyba při odhlašování ze všech zařízení' };
+  }
+};
+
 // ==============================================
 // RESETOVÁNÍ HESLA
 // ==============================================
