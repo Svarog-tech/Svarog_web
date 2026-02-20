@@ -160,6 +160,7 @@ export const signUp = async (data: RegistrationData) => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'X-CSRF-Guard': '1',
       },
       credentials: 'include',
       body: JSON.stringify({
@@ -225,6 +226,7 @@ export const signIn = async (data: LoginData) => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'X-CSRF-Guard': '1',
       },
       credentials: 'include',
       body: JSON.stringify({
@@ -234,14 +236,37 @@ export const signIn = async (data: LoginData) => {
       }),
     });
 
-    // Bezpečné parsování odpovědi – pokud není JSON (např. HTML 404), nespadne to na SyntaxError
+    // Bezpečné parsování odpovědi – zkus JSON i při chybových status kódech
     let result: any = null;
     const contentType = response.headers.get('content-type') || '';
-    if (contentType.includes('application/json')) {
-      result = await response.json();
-    } else {
-      const text = await response.text();
-      result = { success: false, error: text || 'Neplatná odpověď serveru (neočekávaný obsah)' };
+    
+    try {
+      if (contentType.includes('application/json')) {
+        result = await response.json();
+      } else {
+        // Zkus parsovat jako JSON i když content-type není správný
+        const text = await response.text();
+        try {
+          result = JSON.parse(text);
+        } catch {
+          // Pokud to není JSON, použij text jako error message
+          result = { 
+            success: false, 
+            error: text || `Chyba serveru (${response.status} ${response.statusText})` 
+          };
+        }
+      }
+    } catch (parseError) {
+      // Pokud parsování selže úplně
+      result = { 
+        success: false, 
+        error: `Chyba při zpracování odpovědi serveru (${response.status})` 
+      };
+    }
+    
+    // Pokud server vrátil chybový status a result nemá error, přidej ho
+    if (!response.ok && !result.error) {
+      result.error = result.message || `Chyba serveru (${response.status})`;
     }
 
     if (result.success && result.accessToken) {
@@ -271,6 +296,15 @@ export const signIn = async (data: LoginData) => {
       };
     }
 
+    // Zpracuj chybovou odpověď
+    if (!response.ok || !result.success) {
+      return {
+        success: false,
+        error: result.error || result.message || `Chyba při přihlášení (${response.status})`,
+        mfaRequired: !!result.mfaRequired,
+      };
+    }
+
     return {
       success: false,
       error: result.error || 'Nesprávný email nebo heslo',
@@ -278,7 +312,10 @@ export const signIn = async (data: LoginData) => {
     };
   } catch (error: any) {
     console.error('Sign in error:', error);
-    return { success: false, error: 'Nastala neočekávaná chyba při přihlášení' };
+    return { 
+      success: false, 
+      error: error.message || 'Nastala neočekávaná chyba při přihlášení' 
+    };
   }
 };
 
@@ -345,6 +382,7 @@ export const resetPassword = async (email: string) => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'X-CSRF-Guard': '1',
       },
       body: JSON.stringify({ email }),
     });
@@ -387,6 +425,7 @@ export const updatePassword = async (newPassword: string, oldPassword: string) =
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'X-CSRF-Guard': '1',
         ...getAuthHeader(),
       },
       credentials: 'include',
@@ -569,6 +608,7 @@ export const updateProfile = async (userId: string, updates: Partial<UserProfile
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
+        'X-CSRF-Guard': '1',
         ...getAuthHeader(),
       },
       credentials: 'include',

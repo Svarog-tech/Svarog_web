@@ -88,8 +88,8 @@ function App() {
                     </Routes>
                   </Suspense>
                 </ErrorBoundary>
-                <Footer />
                 <CookieBanner />
+                <Footer />
               </div>
             </Router>
             </ToastProvider>

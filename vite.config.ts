@@ -3,6 +3,7 @@ import react from '@vitejs/plugin-react-swc';
 import path from 'path';
 
 export default defineConfig({
+  base: '/',
   plugins: [react()],
   resolve: {
     alias: {
@@ -29,10 +30,29 @@ export default defineConfig({
   },
   server: {
     port: 3000,
+    host: 'localhost',
+    strictPort: true,
+    origin: 'http://localhost:3000',
     proxy: {
       '/api': {
         target: 'http://localhost:3001',
         changeOrigin: true,
+        secure: false,
+        timeout: 30000,
+        configure: (proxy, _options) => {
+          proxy.on('error', (err, _req, res) => {
+            console.error('Proxy error:', err);
+            if (res && !res.headersSent) {
+              res.writeHead(500, {
+                'Content-Type': 'application/json',
+              });
+              res.end(JSON.stringify({
+                success: false,
+                error: 'Backend server není dostupný. Ujistěte se, že server běží na portu 3001.',
+              }));
+            }
+          });
+        },
       },
     },
   },

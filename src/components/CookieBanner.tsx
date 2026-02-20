@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCookie, faTimes, faCog } from '@fortawesome/free-solid-svg-icons';
@@ -105,7 +106,7 @@ const CookieBanner: React.FC = () => {
     setCookieConsent(preferences);
   };
 
-  return (
+  const bannerContent = (
     <AnimatePresence>
       {showBanner && (
         <motion.div
@@ -259,6 +260,13 @@ const CookieBanner: React.FC = () => {
       )}
     </AnimatePresence>
   );
+
+  // Render pomocí Portal přímo do body pro zajištění správného z-index
+  if (typeof document !== 'undefined') {
+    return createPortal(bannerContent, document.body);
+  }
+  
+  return bannerContent;
 };
 
 export default CookieBanner;

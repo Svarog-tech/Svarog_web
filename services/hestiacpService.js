@@ -118,6 +118,10 @@ class HestiaCP {
             return { success: true, data };
           }
         }
+        // Pokud je to surový výpis adresáře (formát d|755|...), vrať obecnější chybu
+        if (dataTrimmed && dataTrimmed.includes('|') && (dataTrimmed.startsWith('d|') || dataTrimmed.startsWith('f|'))) {
+          return { success: false, error: 'HestiaCP API vrátilo neočekávaný formát odpovědi' };
+        }
         return { success: false, error: dataTrimmed || data || 'Unknown error' };
       }
 
@@ -351,11 +355,13 @@ class HestiaCP {
       }));
       return { success: true, entries };
     }
-    // Fallback
+    // Fallback - zkus raw response
     const raw = await this._callAPIRaw('v-list-fs-directory', [username, dirPath, 'json'], false);
     if (raw.ok && raw.body) {
       const trimmed = String(raw.body).trim();
       const jsonStr = trimmed.startsWith('0\n') ? trimmed.slice(2).trim() : (trimmed === '0' ? '' : trimmed);
+      
+      // Zkus parsovat jako JSON
       if (jsonStr) {
         try {
           const data = JSON.parse(jsonStr);
@@ -369,10 +375,46 @@ class HestiaCP {
             modified: `${info.DATE || ''} ${info.TIME || ''}`.trim(),
           }));
           return { success: true, entries };
-        } catch { /* ignore */ }
+        } catch { /* ignore JSON parse error */ }
+      }
+      
+      // Pokud JSON selhal, zkus parsovat surový textový formát
+      // Formát: d|755|2026-02-10|22:10|owner|group|4096|filename
+      // nebo: f|644|2024-03-31|10:41|owner|group|3771|filename
+      if (trimmed && !trimmed.startsWith('{') && !trimmed.startsWith('[')) {
+        try {
+          const lines = trimmed.split(/\s+/).filter(line => line.trim());
+          const entries = [];
+          
+          for (const line of lines) {
+            const parts = line.split('|');
+            if (parts.length >= 8) {
+              const [typeChar, permissions, date, time, owner, group, sizeStr, ...nameParts] = parts;
+              const name = nameParts.join('|'); // Název může obsahovat |
+              
+              entries.push({
+                name: name || parts[parts.length - 1], // Fallback na poslední část
+                type: typeChar === 'd' ? 'directory' : 'file',
+                size: parseInt(sizeStr || '0', 10),
+                permissions: permissions || '0644',
+                owner: owner || username,
+                group: group || username,
+                modified: `${date || ''} ${time || ''}`.trim(),
+              });
+            }
+          }
+          
+          if (entries.length > 0) {
+            return { success: true, entries };
+          }
+        } catch (parseError) {
+          // Ignore parse error, fall through to error return
+        }
       }
     }
-    return { success: false, error: result.error || 'Failed to list directory' };
+    
+    // Pokud všechno selhalo, vrať chybu bez surového výpisu
+    return { success: false, error: 'Nepodařilo se načíst obsah adresáře' };
   }
 
   /**

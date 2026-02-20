@@ -333,6 +333,24 @@ const GOPAY_GO_ID = process.env.GOPAY_GO_ID;
 /**
  * SECURITY: Fetch s timeoutem - zabraňuje visícím requestům při nedostupnosti externích API
  */
+/**
+ * Retry wrapper pro async funkce s exponential backoff
+ */
+async function withRetry(fn, { retries = 2, delayMs = 3000, label = 'operation' } = {}) {
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      return await fn();
+    } catch (error) {
+      if (attempt === retries) throw error;
+      const wait = delayMs * Math.pow(2, attempt);
+      logger.warn(`${label} failed (attempt ${attempt + 1}/${retries + 1}), retrying in ${wait}ms`, {
+        error: error.message
+      });
+      await new Promise(resolve => setTimeout(resolve, wait));
+    }
+  }
+}
+
 async function fetchWithTimeout(url, options = {}, timeoutMs = 30000) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
@@ -681,6 +699,24 @@ app.post('/api/gopay/webhook',
     const paymentState = webhookData.state;
     const orderNumber = webhookData.order_number;
 
+    // SECURITY: Webhook idempotency — zabraní duplicitnímu zpracování
+    try {
+      await db.execute(
+        'INSERT INTO webhook_events (payment_id, event_type) VALUES (?, ?)',
+        [paymentId, paymentState]
+      );
+    } catch (dupError) {
+      // Pokud tabulka neexistuje, pokračuj (zpětná kompatibilita)
+      if (dupError.code === 'ER_DUP_ENTRY') {
+        logger.info('GoPay webhook duplicate ignored', { paymentId, paymentState });
+        return res.status(200).json({ success: true, message: 'Already processed' });
+      }
+      // ER_NO_SUCH_TABLE — tabulka ještě nebyla vytvořena, pokračuj normálně
+      if (dupError.code !== 'ER_NO_SUCH_TABLE') {
+        logger.warn('Webhook idempotency check failed', { error: dupError.message });
+      }
+    }
+
     // Najdi objednávku podle order_number nebo payment_id v MySQL (HestiaCP databáze)
     // BUG FIX: orderNumber z GoPay webhooku je ID objednávky (orderId), který jsme poslali jako order_number do GoPay
     // Při vytváření platby: order_number: paymentData.orderId.toString()
@@ -836,12 +872,15 @@ app.post('/api/gopay/webhook',
                     orderId: order.id
                   });
                 } else {
-                  const hestiaResult = await hestiacp.createHostingAccount({
-                    email: userEmail,
-                    domain: order.domain_name || `${order.id}.alatyr.cz`,
-                    package: order.plan_id,
-                    username: username
-                  });
+                  const hestiaResult = await withRetry(
+                    () => hestiacp.createHostingAccount({
+                      email: userEmail,
+                      domain: order.domain_name || `${order.id}.alatyr.cz`,
+                      package: order.plan_id,
+                      username: username
+                    }),
+                    { retries: 2, delayMs: 5000, label: `HestiaCP account creation (order ${order.id})` }
+                  );
 
                 if (hestiaResult.success) {
                   // Aktualizuj hosting službu s HestiaCP údaji
@@ -873,6 +912,20 @@ app.post('/api/gopay/webhook',
                     orderId: order.id,
                     username: hestiaResult.username
                   });
+
+                  // Notifikace o aktivaci služby
+                  if (userEmail) {
+                    const svc = await db.queryOne(
+                      'SELECT plan_name, hestia_domain, expires_at FROM user_hosting_services WHERE order_id = ?',
+                      [order.id]
+                    );
+                    sendServiceActivatedEmail(
+                      userEmail,
+                      svc?.plan_name || order.plan_name || 'Hosting',
+                      svc?.hestia_domain || order.domain_name,
+                      svc?.expires_at
+                    ).catch(err => logger.error('Service activated email failed', { error: err.message }));
+                  }
                 } else {
                   // Ulož chybu do databáze
                   await db.execute(
@@ -1265,7 +1318,7 @@ app.post('/api/hestiacp/delete-account',
 // Authentication Endpoints (MySQL-based)
 // ============================================
 const authService = require('./services/authService');
-const { sendPaymentConfirmationEmail, sendTicketNotificationEmail } = require('./services/emailService');
+const { sendPaymentConfirmationEmail, sendTicketNotificationEmail, sendServiceActivatedEmail, sendServiceExpiringEmail } = require('./services/emailService');
 
 /**
  * Registrace nového uživatele
@@ -3158,10 +3211,34 @@ app.post('/api/jobs/renew-services',
       });
     }
 
+    // Notifikace o blížící se expiraci pro služby BEZ auto-renewal
+    const expiringServices = await db.query(
+      `SELECT h.*, p.email AS user_email
+       FROM user_hosting_services h
+       JOIN profiles p ON p.id = h.user_id
+       WHERE h.auto_renewal = 0
+         AND h.status = 'active'
+         AND h.expires_at IS NOT NULL
+         AND h.expires_at <= DATE_ADD(NOW(), INTERVAL 7 DAY)
+         AND h.expires_at > NOW()`
+    );
+
+    for (const svc of expiringServices) {
+      if (svc.user_email) {
+        sendServiceExpiringEmail(
+          svc.user_email,
+          svc.plan_name || 'Hosting',
+          svc.hestia_domain,
+          svc.expires_at
+        ).catch(err => logger.error('Service expiring email failed', { error: err.message, serviceId: svc.id }));
+      }
+    }
+
     res.json({
       success: true,
       renewedCount: renewed.length,
       renewed,
+      expiringNotified: expiringServices.length,
     });
   })
 );
