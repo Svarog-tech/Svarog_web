@@ -14,5 +14,5 @@ Disallow: /forgot-password
 Disallow: /auth/
 Disallow: /payment/
 
-# Sitemap (testování na localhost; v produkci nahraďte např. https://alatyrhosting.eu/sitemap.xml)
-Sitemap: http://localhost:3000/sitemap.xml
+# Produkce: https://alatyrhosting.eu (větev deploydevpanel)
+Sitemap: https://alatyrhosting.eu/sitemap.xml

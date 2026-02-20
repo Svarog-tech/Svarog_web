@@ -34,27 +34,20 @@ const NotFound: React.FC = () => {
         {t('notFound.title') || 'Stránka nenalezena'}
       </h2>
       <p style={{
-        marginBottom: '2rem',
+        marginBottom: '1.5rem',
         color: 'var(--text-secondary, #666)',
         maxWidth: '450px',
       }}>
         {t('notFound.description') || 'Stránka, kterou hledáte, neexistuje nebo byla přesunuta.'}
       </p>
-      <Link
-        to="/"
-        style={{
-          padding: '0.75rem 2rem',
-          background: 'var(--primary-color, #e94560)',
-          color: '#fff',
-          border: 'none',
-          borderRadius: '8px',
-          textDecoration: 'none',
-          fontSize: '1rem',
-          transition: 'opacity 0.2s',
-        }}
-      >
-        {t('notFound.backHome') || 'Zpět na hlavní stránku'}
-      </Link>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', justifyContent: 'center', marginBottom: '1rem' }}>
+        <Link to="/" style={{ padding: '0.75rem 2rem', background: 'var(--primary-color, #e94560)', color: '#fff', borderRadius: '8px', textDecoration: 'none', fontSize: '1rem' }}>
+          {t('notFound.backHome') || 'Zpět na hlavní stránku'}
+        </Link>
+        <Link to="/hosting" style={{ padding: '0.75rem 1.5rem', background: 'var(--surface-alt)', color: 'var(--text-primary)', border: '1px solid var(--border-light)', borderRadius: '8px', textDecoration: 'none', fontSize: '1rem' }}>Webhosting</Link>
+        <Link to="/support" style={{ padding: '0.75rem 1.5rem', background: 'var(--surface-alt)', color: 'var(--text-primary)', border: '1px solid var(--border-light)', borderRadius: '8px', textDecoration: 'none', fontSize: '1rem' }}>Podpora</Link>
+        <Link to="/contact" style={{ padding: '0.75rem 1.5rem', background: 'var(--surface-alt)', color: 'var(--text-primary)', border: '1px solid var(--border-light)', borderRadius: '8px', textDecoration: 'none', fontSize: '1rem' }}>Kontakt</Link>
+      </div>
     </div>
   );
 };
