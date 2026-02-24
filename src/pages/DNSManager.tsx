@@ -304,7 +304,7 @@ const DNSManager: React.FC = () => {
                     </button>
                   </div>
                 ) : (
-                  <div className="dnsm-table-container">
+                  <div className="dnsm-table-container table-responsive">
                     <table className="dnsm-table">
                       <thead>
                         <tr>

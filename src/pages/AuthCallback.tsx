@@ -69,7 +69,7 @@ const AuthCallback: React.FC = () => {
           if (oauthUser && isMounted) {
             setStatus('success');
             timeoutId = setTimeout(() => {
-              window.location.href = '/dashboard';
+              navigate('/dashboard', { replace: true });
             }, 1000);
           } else if (isMounted) {
             setError('Nepodařilo se načíst profil po OAuth přihlášení.');

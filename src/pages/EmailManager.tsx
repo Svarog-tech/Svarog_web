@@ -275,7 +275,7 @@ const EmailManager: React.FC = () => {
             </button>
           </div>
         ) : (
-          <div className="em-table-container">
+          <div className="em-table-container table-responsive">
             <table className="em-table">
               <thead>
                 <tr>

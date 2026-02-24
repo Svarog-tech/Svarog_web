@@ -228,6 +228,12 @@ async function findOrCreateUser(provider, profile) {
   // Uživatel neexistuje – vytvoř nový
   const userId = uuidv4();
 
+  // Smaž osiřelé profiles pro tento email (např. z přerušeného OAuth flow) před vytvořením nového uživatele
+  await db.execute(
+    'DELETE p FROM profiles p LEFT JOIN users u ON u.id = p.id WHERE u.id IS NULL AND p.email = ?',
+    [profile.email]
+  );
+
   await db.transaction(async (connection) => {
     await connection.execute(
       `INSERT INTO users (id, email, password_hash, email_verified, provider)

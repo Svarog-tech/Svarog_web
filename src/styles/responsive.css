@@ -579,14 +579,14 @@
   }
 }
 
-/* Modern Hamburger Menu */
+/* Modern Hamburger Menu - min 44px touch target (WCAG) */
 .hamburger {
-  width: 40px !important;
-  height: 32px !important;
-  min-width: 40px !important;
-  min-height: 32px !important;
-  max-width: 40px !important;
-  max-height: 32px !important;
+  width: 44px !important;
+  height: 44px !important;
+  min-width: 44px !important;
+  min-height: 44px !important;
+  max-width: 44px !important;
+  max-height: 44px !important;
   background: transparent !important;
   border: none !important;
   cursor: pointer;
@@ -645,6 +645,13 @@
 
 [data-theme="dark"] .hamburger:hover span {
   background: var(--accent-color) !important;
+}
+
+/* Mobile nav links - touch-friendly */
+.nav-drawer .mobile-nav-link {
+  min-height: var(--touch-target-min);
+  display: flex;
+  align-items: center;
 }
 
 /* Mobile navigation drawer */
@@ -820,6 +827,25 @@
     display: none;
     content: none;
   }
+}
+
+/* ============================================
+   SAFE AREA & MOBILE ENHANCEMENTS
+   ============================================ */
+
+/* Safe area for notched phones (iPhone X+) */
+@supports (padding: env(safe-area-inset-top)) {
+  .nav-drawer .mobile-nav-content {
+    padding-top: max(6rem, calc(6rem + env(safe-area-inset-top)));
+    padding-left: max(1.5rem, env(safe-area-inset-left));
+    padding-right: max(1.5rem, env(safe-area-inset-right));
+  }
+}
+
+/* Fix 100vh on mobile (address bar) */
+.min-h-screen-mobile {
+  min-height: 100vh;
+  min-height: 100dvh;
 }
 
 /* ============================================

@@ -289,7 +289,7 @@ const FTPManager: React.FC = () => {
                     </button>
                   </div>
                 ) : (
-                  <div className="ftpm-table-container">
+                  <div className="ftpm-table-container table-responsive">
                     <table className="ftpm-table">
                       <thead>
                         <tr>
