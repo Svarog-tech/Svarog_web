@@ -348,7 +348,7 @@ const AdminTickets: React.FC = () => {
               <p>Žádné tickety</p>
             </div>
           ) : (
-            <div className="table-wrapper">
+            <div className="table-wrapper table-responsive">
               <table className="tickets-table">
                 <thead>
                   <tr>

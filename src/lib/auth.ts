@@ -485,10 +485,15 @@ export const updatePassword = async (newPassword: string, oldPassword: string) =
 
 export const getCurrentUser = async (): Promise<AppUser | null> => {
   try {
-    const token = getAccessToken();
+    let token = getAccessToken();
 
+    // Když není access token v paměti (např. po refreshi) – dříve: return null BEZ api volání; nyní zkus obnovit z refresh cookie
     if (!token) {
-      return null;
+      const refreshed = await refreshAccessToken();
+      if (!refreshed) {
+        return null;
+      }
+      token = getAccessToken();
     }
 
     // Zkus refresh token pokud je access token neplatný

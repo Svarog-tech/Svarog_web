@@ -257,7 +257,7 @@ const DatabaseManager: React.FC = () => {
             </button>
           </div>
         ) : (
-          <div className="dbm-table-container">
+          <div className="dbm-table-container table-responsive">
             <table className="dbm-table">
               <thead>
                 <tr>

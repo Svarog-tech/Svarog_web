@@ -550,7 +550,7 @@ const Admin: React.FC = () => {
               <p>Žádné objednávky</p>
             </div>
           ) : (
-            <div className="table-wrapper">
+            <div className="table-wrapper table-responsive">
               <table className="orders-table">
                 <thead>
                   <tr>
@@ -683,7 +683,7 @@ const Admin: React.FC = () => {
               <p>Žádné hostingové služby</p>
             </div>
           ) : (
-            <div className="table-wrapper">
+            <div className="table-wrapper table-responsive">
               <table className="orders-table services-table">
                 <thead>
                   <tr>

@@ -170,14 +170,9 @@ const allowedOrigins = process.env.SERVER_ALLOWED_ORIGINS
 
 app.use(cors({
   origin: function (origin, callback) {
-    // SECURITY: V produkci nepovoluj requesty bez origin
+    // Same-origin requesty často nemají Origin header – povolit
     if (!origin) {
-      // Povolit bez origin pouze když je explicitně development (ne undefined, test, atd.)
-      if (process.env.NODE_ENV === 'development') {
-        return callback(null, true);
-      }
-      // V produkci i při NODE_ENV !== 'development' (včetně undefined) zamítni
-      return callback(new Error('Origin required in production'));
+      return callback(null, true);
     }
 
     if (allowedOrigins.indexOf(origin) !== -1) {
@@ -1557,7 +1552,24 @@ app.get('/api/auth/oauth/:provider/callback',
     const stateData = state ? oauthStates.get(state) : null;
     const frontendRedirect = stateData?.frontendRedirect || '/auth/callback';
     const appUrl = process.env.APP_URL || 'http://localhost:3000';
-    const frontendUrl = `${appUrl.replace(/\/+$/, '')}${frontendRedirect.startsWith('/') ? frontendRedirect : '/' + frontendRedirect}`;
+    // Podporovat plnou URL (https://...) i relativní cestu
+    let frontendUrl;
+    if (/^https?:\/\//i.test(frontendRedirect)) {
+      // Frontend posílá celou URL – ověř že doména odpovídá APP_URL
+      try {
+        const redirectHost = new URL(frontendRedirect).hostname.replace(/^www\./, '');
+        const appHost = new URL(appUrl).hostname.replace(/^www\./, '');
+        if (redirectHost === appHost) {
+          frontendUrl = frontendRedirect;
+        } else {
+          frontendUrl = `${appUrl.replace(/\/+$/, '')}/auth/callback`;
+        }
+      } catch {
+        frontendUrl = `${appUrl.replace(/\/+$/, '')}/auth/callback`;
+      }
+    } else {
+      frontendUrl = `${appUrl.replace(/\/+$/, '')}${frontendRedirect.startsWith('/') ? frontendRedirect : '/' + frontendRedirect}`;
+    }
 
     // Vyčisti state
     if (state) {

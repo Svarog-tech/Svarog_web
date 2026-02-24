@@ -249,7 +249,7 @@ const BackupManager: React.FC = () => {
             </button>
           </div>
         ) : (
-          <div className="bkm-table-container">
+          <div className="bkm-table-container table-responsive">
             <table className="bkm-table">
               <thead>
                 <tr>

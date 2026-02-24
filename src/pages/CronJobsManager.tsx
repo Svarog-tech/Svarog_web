@@ -238,7 +238,7 @@ const CronJobsManager: React.FC = () => {
             </button>
           </div>
         ) : (
-          <div className="cjm-table-container">
+          <div className="cjm-table-container table-responsive">
             <table className="cjm-table">
               <thead>
                 <tr>

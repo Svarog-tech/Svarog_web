@@ -416,7 +416,7 @@ const AdminUsers: React.FC = () => {
               <p>Žádní uživatelé</p>
             </div>
           ) : (
-            <div className="table-wrapper">
+            <div className="table-wrapper table-responsive">
               <table className="users-table">
                 <thead>
                   <tr>
