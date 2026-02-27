@@ -2889,6 +2889,12 @@ app.get('/api/orders/:id/invoice',
       <div style="text-align:right">
         <div><strong>Alatyr Hosting</strong></div>
         <div class="muted">Dodavatel</div>
+        <div class="muted">Náves 73</div>
+        <div class="muted">664 08 Blažovice</div>
+        <div class="muted">Česká republika</div>
+        <div class="muted">IČO: 09992961</div>
+        <div class="muted">DIČ: CZ09992961</div>
+        <div class="muted">info@argonix.eu</div>
       </div>
     </div>
 
@@ -2897,7 +2903,13 @@ app.get('/api/orders/:id/invoice',
         <div class="section-title">Dodavatel</div>
         <div class="box">
           <div><strong>Alatyr Hosting</strong></div>
-          <div class="muted">Hostingové služby</div>
+          <div>Náves 73</div>
+          <div>664 08 Blažovice</div>
+          <div>Česká republika</div>
+          <div class="muted">IČO: 09992961</div>
+          <div class="muted">DIČ: CZ09992961</div>
+          <div class="muted">info@argonix.eu</div>
+          <div class="muted">Nejsme plátci DPH (Non-VAT payer)</div>
         </div>
       </div>
       <div class="party">
