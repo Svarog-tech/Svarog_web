@@ -28,7 +28,7 @@ const Contact: React.FC = () => {
             <div className="contact-card">
               <FontAwesomeIcon icon={faEnvelope} className="contact-card-icon" />
               <h2>E-mail</h2>
-              <a href="mailto:info@alatyr.cz">info@alatyr.cz</a>
+              <a href="mailto:info@alatyrhosting.eu">info@alatyrhosting.eu</a>
               <p>Obecné dotazy</p>
             </div>
             <div className="contact-card">
@@ -46,7 +46,7 @@ const Contact: React.FC = () => {
             <div className="contact-card">
               <FontAwesomeIcon icon={faMapMarkerAlt} className="contact-card-icon" />
               <h2>Sídlo</h2>
-              <span>Praha, Česká republika</span>
+              <span>Náves 73, 664 08 Blažovice, Česká republika</span>
             </div>
           </section>
 

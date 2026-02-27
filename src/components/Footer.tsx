@@ -90,7 +90,10 @@ const Footer: React.FC = () => {
                 <ul className="footer-list">
                   <li><Link to="/about" className="footer-link">{t('nav.about')}</Link></li>
                   <li><Link to="/contact" className="footer-link">{t('footer.contact')}</Link></li>
-                  <li><Link to="/privacy" className="footer-link">{t('footer.privacy')}</Link></li>
+                    <li><Link to="/privacy" className="footer-link">{t('footer.privacy')}</Link></li>
+                    <li><Link to="/terms" className="footer-link">{t('footer.terms')}</Link></li>
+                    <li><Link to="/aml" className="footer-link">{t('footer.aml')}</Link></li>
+                    <li><Link to="/security-incidents" className="footer-link">{t('footer.securityIncidents')}</Link></li>
                 </ul>
               </div>
 
@@ -99,7 +102,7 @@ const Footer: React.FC = () => {
                 <div className="footer-contact">
                   <div className="contact-item">
                     <FontAwesomeIcon icon={faEnvelope} className="contact-icon" />
-                    <a href="mailto:info@alatyr.cz" className="contact-link">info@alatyr.cz</a>
+                        <a href="mailto:info@alatyrhosting.eu" className="contact-link">info@alatyrhosting.eu</a>
                   </div>
                   <div className="contact-item">
                     <FontAwesomeIcon icon={faPhone} className="contact-icon" />
@@ -107,7 +110,7 @@ const Footer: React.FC = () => {
                   </div>
                   <div className="contact-item">
                     <FontAwesomeIcon icon={faMapMarkerAlt} className="contact-icon" />
-                    <span className="contact-text">Praha, Česká republika</span>
+                        <span className="contact-text">Náves 73, 664 08 Blažovice, Česká republika</span>
                   </div>
                   <div className="contact-item">
                     <FontAwesomeIcon icon={faGlobe} className="contact-icon" />
@@ -131,9 +134,11 @@ const Footer: React.FC = () => {
               &copy; 2024 Alatyr Hosting. {t('footer.rights')}
             </p>
             <div className="footer-bottom-links">
+              <Link to="/terms" className="footer-bottom-link">{t('footer.terms')}</Link>
+              <span className="footer-divider">|</span>
               <Link to="/privacy" className="footer-bottom-link">{t('footer.privacy')}</Link>
               <span className="footer-divider">|</span>
-              <Link to="/contact" className="footer-bottom-link">{t('footer.contact')}</Link>
+              <Link to="/security-incidents" className="footer-bottom-link">{t('footer.securityIncidents')}</Link>
               <span className="footer-divider">|</span>
               <a href="#cookies" className="footer-bottom-link">{t('footer.cookies')}</a>
             </div>

@@ -48,6 +48,9 @@ const VerifyEmail = lazy(() => import('./pages/VerifyEmail'));
 const NotFound = lazy(() => import('./pages/NotFound'));
 const Privacy = lazy(() => import('./pages/Privacy'));
 const Contact = lazy(() => import('./pages/Contact'));
+const Terms = lazy(() => import('./pages/Terms'));
+const AMLPolicy = lazy(() => import('./pages/AMLPolicy'));
+const SecurityIncidents = lazy(() => import('./pages/SecurityIncidents'));
 
 function App() {
   return (
@@ -73,6 +76,9 @@ function App() {
                       <Route path="/support" element={<Support />} />
                       <Route path="/about" element={<About />} />
                       <Route path="/privacy" element={<Privacy />} />
+                      <Route path="/terms" element={<Terms />} />
+                      <Route path="/aml" element={<AMLPolicy />} />
+                      <Route path="/security-incidents" element={<SecurityIncidents />} />
                       <Route path="/contact" element={<Contact />} />
                       <Route path="/register" element={<Register />} />
                       <Route path="/login" element={<Login />} />
