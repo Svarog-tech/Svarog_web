@@ -24,7 +24,8 @@ import {
   faShieldAlt,
   faExclamationTriangle,
   faInfoCircle,
-  faCloudDownload
+  faCloudDownload,
+  faClock
 } from '@fortawesome/free-solid-svg-icons';
 import { useAuth } from '../contexts/AuthContext';
 import { useCurrency } from '../contexts/CurrencyContext';
