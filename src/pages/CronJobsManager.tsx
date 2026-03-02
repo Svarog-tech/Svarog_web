@@ -3,7 +3,6 @@ import { useParams, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
-  faArrowLeft,
   faClock,
   faPlus,
   faTrash,
@@ -169,7 +168,7 @@ const CronJobsManager: React.FC = () => {
       <div className="cjm-loading">
         <FontAwesomeIcon icon={faExclamationTriangle} style={{ fontSize: '2rem', color: '#ef4444' }} />
         <p>{pageError || 'Služba nenalezena'}</p>
-        <Link to={`/services/${id}`} className="cjm-back-btn">
+        <Link to="/services" className="cjm-back-btn">
           Zpět na službu
         </Link>
       </div>
@@ -181,7 +180,7 @@ const CronJobsManager: React.FC = () => {
       <div className="cjm-loading">
         <FontAwesomeIcon icon={faServer} style={{ fontSize: '2rem', color: 'var(--text-secondary)' }} />
         <p>HestiaCP účet ještě nebyl vytvořen</p>
-        <Link to={`/services/${id}`} className="cjm-back-btn">
+        <Link to="/services" className="cjm-back-btn">
           Zpět na službu
         </Link>
       </div>
@@ -191,15 +190,7 @@ const CronJobsManager: React.FC = () => {
   return (
     <div className="cjm-page">
       <div className="cjm-topbar">
-        <div className="cjm-topbar-left">
-          <Link to={`/services/${id}`} className="cjm-back-btn">
-            <FontAwesomeIcon icon={faArrowLeft} />
-            Zpět
-          </Link>
-          <h1 className="cjm-topbar-title">
-            Správa Cron Jobs — {service.hestia_domain || service.plan_name}
-          </h1>
-        </div>
+        <h1 className="cjm-topbar-title">Správa Cron Jobs</h1>
         <div className="cjm-toolbar">
           <button
             className="cjm-toolbar-btn"

@@ -3,7 +3,6 @@ import { useParams, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
-  faArrowLeft,
   faCloudDownload,
   faPlus,
   faTrash,
@@ -179,7 +178,7 @@ const BackupManager: React.FC = () => {
       <div className="bkm-loading">
         <FontAwesomeIcon icon={faExclamationTriangle} style={{ fontSize: '2rem', color: '#ef4444' }} />
         <p>{pageError || 'Služba nenalezena'}</p>
-        <Link to={`/services/${id}`} className="bkm-back-btn">
+        <Link to="/services" className="bkm-back-btn">
           Zpět na službu
         </Link>
       </div>
@@ -191,7 +190,7 @@ const BackupManager: React.FC = () => {
       <div className="bkm-loading">
         <FontAwesomeIcon icon={faServer} style={{ fontSize: '2rem', color: 'var(--text-secondary)' }} />
         <p>HestiaCP účet ještě nebyl vytvořen</p>
-        <Link to={`/services/${id}`} className="bkm-back-btn">
+        <Link to="/services" className="bkm-back-btn">
           Zpět na službu
         </Link>
       </div>
@@ -201,15 +200,7 @@ const BackupManager: React.FC = () => {
   return (
     <div className="bkm-page">
       <div className="bkm-topbar">
-        <div className="bkm-topbar-left">
-          <Link to={`/services/${id}`} className="bkm-back-btn">
-            <FontAwesomeIcon icon={faArrowLeft} />
-            Zpět
-          </Link>
-          <h1 className="bkm-topbar-title">
-            Správa Záloh — {service.hestia_domain || service.plan_name}
-          </h1>
-        </div>
+        <h1 className="bkm-topbar-title">Správa Záloh</h1>
         <div className="bkm-toolbar">
           <button
             className="bkm-toolbar-btn"

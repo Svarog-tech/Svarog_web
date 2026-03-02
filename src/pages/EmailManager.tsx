@@ -3,7 +3,6 @@ import { useParams, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
-  faArrowLeft,
   faEnvelope,
   faPlus,
   faTrash,
@@ -196,7 +195,7 @@ const EmailManager: React.FC = () => {
       <div className="em-loading">
         <FontAwesomeIcon icon={faExclamationTriangle} style={{ fontSize: '2rem', color: '#ef4444' }} />
         <p>{pageError || 'Služba nenalezena'}</p>
-        <Link to={`/services/${id}`} className="em-back-btn">Zpět na službu</Link>
+        <Link to="/services" className="em-back-btn">Zpět na služby</Link>
       </div>
     );
   }
@@ -206,7 +205,7 @@ const EmailManager: React.FC = () => {
       <div className="em-loading">
         <FontAwesomeIcon icon={faServer} style={{ fontSize: '2rem', color: 'var(--text-secondary)' }} />
         <p>HestiaCP účet ještě nebyl vytvořen</p>
-        <Link to={`/services/${id}`} className="em-back-btn">Zpět na službu</Link>
+        <Link to="/services" className="em-back-btn">Zpět na služby</Link>
       </div>
     );
   }
@@ -218,16 +217,7 @@ const EmailManager: React.FC = () => {
     <div className="em-page">
       {/* Top Bar */}
       <div className="em-topbar">
-        <div className="em-topbar-left">
-          <Link to={`/services/${id}`} className="em-back-btn">
-            <FontAwesomeIcon icon={faArrowLeft} />
-            Zpět
-          </Link>
-          <h1 className="em-topbar-title">
-            Správa Emailů — {service.hestia_domain || service.plan_name}
-          </h1>
-        </div>
-
+        <h1 className="em-topbar-title">Správa Emailů</h1>
         <div className="em-toolbar">
           <button 
             className="em-toolbar-btn" 

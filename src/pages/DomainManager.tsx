@@ -3,7 +3,6 @@ import { useParams, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
-  faArrowLeft,
   faGlobe,
   faSync,
   faTimes,
@@ -97,7 +96,7 @@ const DomainManager: React.FC = () => {
       <div className="dm-loading">
         <FontAwesomeIcon icon={faExclamationTriangle} style={{ fontSize: '2rem', color: '#ef4444' }} />
         <p>{pageError || 'Služba nenalezena'}</p>
-        <Link to={`/services/${id}`} className="dm-back-btn">Zpět na službu</Link>
+        <Link to="/services" className="dm-back-btn">Zpět na službu</Link>
       </div>
     );
   }
@@ -107,7 +106,7 @@ const DomainManager: React.FC = () => {
       <div className="dm-loading">
         <FontAwesomeIcon icon={faServer} style={{ fontSize: '2rem', color: 'var(--text-secondary)' }} />
         <p>HestiaCP účet ještě nebyl vytvořen</p>
-        <Link to={`/services/${id}`} className="dm-back-btn">Zpět na službu</Link>
+        <Link to="/services" className="dm-back-btn">Zpět na službu</Link>
       </div>
     );
   }
@@ -116,16 +115,7 @@ const DomainManager: React.FC = () => {
     <div className="dm-page">
       {/* Top Bar */}
       <div className="dm-topbar">
-        <div className="dm-topbar-left">
-          <Link to={`/services/${id}`} className="dm-back-btn">
-            <FontAwesomeIcon icon={faArrowLeft} />
-            Zpět
-          </Link>
-          <h1 className="dm-topbar-title">
-            Správa Domén — {service.hestia_domain || service.plan_name}
-          </h1>
-        </div>
-
+        <h1 className="dm-topbar-title">Správa Domén</h1>
         <div className="dm-toolbar">
           <button className="dm-toolbar-btn" onClick={fetchDomains} title="Obnovit">
             <FontAwesomeIcon icon={faSync} />

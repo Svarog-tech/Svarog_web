@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
-  faArrowLeft, faFolder, faFolderOpen, faFile, faFileCode,
+  faFolder, faFolderOpen, faFile, faFileCode,
   faFileCsv, faFileImage, faFileArchive, faFilePdf,
   faPlus, faFolderPlus, faUpload, faDownload, faTrash,
   faSync, faCut, faCopy, faPaste, faEdit, faChevronRight,
@@ -173,7 +173,7 @@ const FileManager: React.FC = () => {
       <div className="fm-loading">
         <FontAwesomeIcon icon={faExclamationTriangle} style={{ fontSize: '2rem', color: '#ef4444' }} />
         <p>{pageError || 'Služba nenalezena'}</p>
-        <Link to={`/services/${id}`} className="fm-back-btn">Zpět na službu</Link>
+        <Link to="/services" className="fm-back-btn">Zpět na služby</Link>
       </div>
     );
   }
@@ -183,7 +183,7 @@ const FileManager: React.FC = () => {
       <div className="fm-loading">
         <FontAwesomeIcon icon={faServer} style={{ fontSize: '2rem', color: 'var(--text-secondary)' }} />
         <p>HestiaCP účet ještě nebyl vytvořen</p>
-        <Link to={`/services/${id}`} className="fm-back-btn">Zpět na službu</Link>
+        <Link to="/services" className="fm-back-btn">Zpět na služby</Link>
       </div>
     );
   }
@@ -193,10 +193,6 @@ const FileManager: React.FC = () => {
       {/* Top Bar */}
       <div className="fm-topbar">
         <div className="fm-topbar-left">
-          <Link to={`/services/${id}`} className="fm-back-btn">
-            <FontAwesomeIcon icon={faArrowLeft} />
-            Zpět
-          </Link>
           <h1 className="fm-topbar-title">
             Správce souborů — {service.hestia_domain || service.plan_name}
           </h1>

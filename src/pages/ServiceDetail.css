@@ -647,3 +647,50 @@
     grid-template-columns: repeat(2, 1fr);
   }
 }
+
+/* ServiceOverview extras */
+.so-page {
+  max-width: 1000px;
+}
+
+.so-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.25rem;
+}
+
+.so-section-header .sd-section-title {
+  margin-bottom: 0;
+}
+
+.so-refresh-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.so-refresh-btn:hover {
+  color: var(--primary-color);
+  border-color: var(--primary-color);
+}
+
+.so-external-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+}
+
+@media (max-width: 767px) {
+  .so-external-grid {
+    grid-template-columns: 1fr;
+  }
+}

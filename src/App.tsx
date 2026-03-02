@@ -28,7 +28,8 @@ const ResetPassword = lazy(() => import('./pages/ResetPassword'));
 const AuthCallback = lazy(() => import('./pages/AuthCallback'));
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Services = lazy(() => import('./pages/Services'));
-const ServiceDetail = lazy(() => import('./pages/ServiceDetail'));
+const ControlPanel = lazy(() => import('./components/ControlPanel'));
+const ServiceOverview = lazy(() => import('./components/ServiceOverview'));
 const FileManager = lazy(() => import('./pages/FileManager'));
 const EmailManager = lazy(() => import('./pages/EmailManager'));
 const DomainManager = lazy(() => import('./pages/DomainManager'));
@@ -91,15 +92,17 @@ function App() {
                       {/* Protected routes */}
                       <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
                       <Route path="/services" element={<ProtectedRoute><Services /></ProtectedRoute>} />
-                      <Route path="/services/:id" element={<ProtectedRoute><ServiceDetail /></ProtectedRoute>} />
-                      <Route path="/services/:id/files" element={<ProtectedRoute><FileManager /></ProtectedRoute>} />
-                      <Route path="/services/:id/emails" element={<ProtectedRoute><EmailManager /></ProtectedRoute>} />
-                      <Route path="/services/:id/domains" element={<ProtectedRoute><DomainManager /></ProtectedRoute>} />
-                      <Route path="/services/:id/databases" element={<ProtectedRoute><DatabaseManager /></ProtectedRoute>} />
-                      <Route path="/services/:id/dns" element={<ProtectedRoute><DNSManager /></ProtectedRoute>} />
-                      <Route path="/services/:id/ftp" element={<ProtectedRoute><FTPManager /></ProtectedRoute>} />
-                      <Route path="/services/:id/backups" element={<ProtectedRoute><BackupManager /></ProtectedRoute>} />
-                      <Route path="/services/:id/cron" element={<ProtectedRoute><CronJobsManager /></ProtectedRoute>} />
+                      <Route path="/services/:id" element={<ProtectedRoute><ControlPanel /></ProtectedRoute>}>
+                        <Route index element={<ServiceOverview />} />
+                        <Route path="files" element={<FileManager />} />
+                        <Route path="emails" element={<EmailManager />} />
+                        <Route path="domains" element={<DomainManager />} />
+                        <Route path="databases" element={<DatabaseManager />} />
+                        <Route path="dns" element={<DNSManager />} />
+                        <Route path="ftp" element={<FTPManager />} />
+                        <Route path="backups" element={<BackupManager />} />
+                        <Route path="cron" element={<CronJobsManager />} />
+                      </Route>
                       <Route path="/tickets" element={<ProtectedRoute><Tickets /></ProtectedRoute>} />
                       <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
                       <Route path="/configurator" element={<ProtectedRoute><Configurator /></ProtectedRoute>} />

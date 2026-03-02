@@ -3,7 +3,6 @@ import { useParams, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
-  faArrowLeft,
   faGlobe,
   faPlus,
   faTrash,
@@ -186,7 +185,7 @@ const DNSManager: React.FC = () => {
       <div className="dnsm-loading">
         <FontAwesomeIcon icon={faExclamationTriangle} style={{ fontSize: '2rem', color: '#ef4444' }} />
         <p>{pageError || 'Služba nenalezena'}</p>
-        <Link to={`/services/${id}`} className="dnsm-back-btn">Zpět na službu</Link>
+        <Link to="/services" className="dnsm-back-btn">Zpět na službu</Link>
       </div>
     );
   }
@@ -196,7 +195,7 @@ const DNSManager: React.FC = () => {
       <div className="dnsm-loading">
         <FontAwesomeIcon icon={faServer} style={{ fontSize: '2rem', color: 'var(--text-secondary)' }} />
         <p>HestiaCP účet ještě nebyl vytvořen</p>
-        <Link to={`/services/${id}`} className="dnsm-back-btn">Zpět na službu</Link>
+        <Link to="/services" className="dnsm-back-btn">Zpět na službu</Link>
       </div>
     );
   }
@@ -205,16 +204,7 @@ const DNSManager: React.FC = () => {
     <div className="dnsm-page">
       {/* Top Bar */}
       <div className="dnsm-topbar">
-        <div className="dnsm-topbar-left">
-          <Link to={`/services/${id}`} className="dnsm-back-btn">
-            <FontAwesomeIcon icon={faArrowLeft} />
-            Zpět
-          </Link>
-          <h1 className="dnsm-topbar-title">
-            Správa DNS — {service.hestia_domain || service.plan_name}
-          </h1>
-        </div>
-
+        <h1 className="dnsm-topbar-title">Správa DNS</h1>
         <div className="dnsm-toolbar">
           {selectedDomain && (
             <>

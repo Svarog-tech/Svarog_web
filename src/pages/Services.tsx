@@ -314,7 +314,10 @@ const Services: React.FC = () => {
                         {service.cpanel_url && (
                           <div className="hestiacp-detail">
                             <FontAwesomeIcon icon={faLink} />
-                            <a href={service.cpanel_url} target="_blank" rel="noopener noreferrer">
+                            <a
+                              href="#"
+                              onClick={(e) => { e.preventDefault(); navigate(`/services/${service.id}`); }}
+                            >
                               Control Panel
                             </a>
                           </div>
@@ -378,22 +381,13 @@ const Services: React.FC = () => {
                       Faktura
                     </button>
                   )}
-                  {service.cpanel_url ? (
-                    <a
-                      href={service.cpanel_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="service-action-btn primary"
-                    >
-                      <FontAwesomeIcon icon={faExternalLinkAlt} />
-                      Panel
-                    </a>
-                  ) : (
-                    <button className="service-action-btn primary" disabled>
-                      <FontAwesomeIcon icon={faExternalLinkAlt} />
-                      Panel
-                    </button>
-                  )}
+                  <button
+                    className="service-action-btn primary"
+                    onClick={() => navigate(`/services/${service.id}`)}
+                  >
+                    <FontAwesomeIcon icon={faExternalLinkAlt} />
+                    Panel
+                  </button>
                 </div>
               </motion.div>
             ))}

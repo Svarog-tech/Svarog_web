@@ -538,12 +538,12 @@ const ServiceDetail: React.FC = () => {
                   className="sd-action-card"
                 >
                   <FontAwesomeIcon icon={faExternalLinkAlt} />
-                  <span>Control Panel</span>
+                  <span>HestiaCP Admin</span>
                 </a>
               ) : (
                 <div className="sd-action-card disabled">
                   <FontAwesomeIcon icon={faExternalLinkAlt} />
-                  <span>Control Panel</span>
+                  <span>HestiaCP Admin</span>
                 </div>
               )}
 

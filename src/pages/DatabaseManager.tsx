@@ -3,7 +3,6 @@ import { useParams, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
-  faArrowLeft,
   faDatabase,
   faPlus,
   faTrash,
@@ -178,7 +177,7 @@ const DatabaseManager: React.FC = () => {
       <div className="dbm-loading">
         <FontAwesomeIcon icon={faExclamationTriangle} style={{ fontSize: '2rem', color: '#ef4444' }} />
         <p>{pageError || 'Služba nenalezena'}</p>
-        <Link to={`/services/${id}`} className="dbm-back-btn">Zpět na službu</Link>
+        <Link to="/services" className="dbm-back-btn">Zpět na služby</Link>
       </div>
     );
   }
@@ -188,7 +187,7 @@ const DatabaseManager: React.FC = () => {
       <div className="dbm-loading">
         <FontAwesomeIcon icon={faServer} style={{ fontSize: '2rem', color: 'var(--text-secondary)' }} />
         <p>HestiaCP účet ještě nebyl vytvořen</p>
-        <Link to={`/services/${id}`} className="dbm-back-btn">Zpět na službu</Link>
+        <Link to="/services" className="dbm-back-btn">Zpět na služby</Link>
       </div>
     );
   }
@@ -200,15 +199,7 @@ const DatabaseManager: React.FC = () => {
     <div className="dbm-page">
       {/* Top Bar */}
       <div className="dbm-topbar">
-        <div className="dbm-topbar-left">
-          <Link to={`/services/${id}`} className="dbm-back-btn">
-            <FontAwesomeIcon icon={faArrowLeft} />
-            Zpět
-          </Link>
-          <h1 className="dbm-topbar-title">
-            Správa Databází — {service.hestia_domain || service.plan_name}
-          </h1>
-        </div>
+        <h1 className="dbm-topbar-title">Správa Databází</h1>
 
         <div className="dbm-toolbar">
           <button 
