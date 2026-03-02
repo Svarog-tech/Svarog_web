@@ -8,6 +8,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { LoginData } from '../types/auth';
 import { validateEmail } from '../lib/auth';
+import PageMeta from '../components/PageMeta';
 import './Login.css';
 
 const Login: React.FC = () => {
@@ -126,6 +127,7 @@ const Login: React.FC = () => {
 
   return (
     <div className="login-page">
+      <PageMeta title={t('login.title')} description="Přihlaste se do svého účtu Alatyr Hosting." path="/login" noindex />
       <div className="login-container">
         <motion.div
           className="login-card"

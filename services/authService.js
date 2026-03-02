@@ -20,7 +20,7 @@ function hashRecoveryCode(code) {
 // V produkci musí být silné, náhodné řetězce (min. 32 znaků)
 const JWT_SECRET = process.env.JWT_SECRET;
 const JWT_REFRESH_SECRET = process.env.REFRESH_TOKEN_SECRET || process.env.JWT_REFRESH_SECRET;
-const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '24h';
+const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '15m'; // SECURITY: Short-lived access tokens (15 min default)
 const JWT_REFRESH_EXPIRES_IN = process.env.JWT_REFRESH_EXPIRES_IN || '7d';
 
 // Kritická kontrola - aplikace nesmí běžet bez secrets

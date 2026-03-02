@@ -16,6 +16,9 @@ function getCsrfHeaders(method?: string): Record<string, string> {
 
 // Helper pro API volání s automatickým refresh tokenu
 export async function apiCall<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 30000);
+
   let headers = {
     'Content-Type': 'application/json',
     ...getCsrfHeaders(options.method),
@@ -23,38 +26,42 @@ export async function apiCall<T>(endpoint: string, options: RequestInit = {}): P
     ...options.headers,
   };
 
-  // BUG FIX: credentials: 'include' je nutné pro odesílání httpOnly refresh token cookie
-  // Bez toho se cookie nepošle a refresh token nebude fungovat
-  let response = await fetch(`${API_BASE_URL}${endpoint}`, {
-    ...options,
-    headers,
-    credentials: 'include',
-  });
+  try {
+    let response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      ...options,
+      headers,
+      credentials: 'include',
+      signal: controller.signal,
+    });
 
-  // Pokud je token neplatný, zkus refresh
-  if (response.status === 401) {
-    const refreshed = await refreshAccessToken();
-    if (refreshed) {
-      headers = {
-        'Content-Type': 'application/json',
-        ...getCsrfHeaders(options.method),
-        ...getAuthHeader(),
-        ...options.headers,
-      };
-      response = await fetch(`${API_BASE_URL}${endpoint}`, {
-        ...options,
-        headers,
-        credentials: 'include',
-      });
+    // Pokud je token neplatný, zkus refresh
+    if (response.status === 401) {
+      const refreshed = await refreshAccessToken();
+      if (refreshed) {
+        headers = {
+          'Content-Type': 'application/json',
+          ...getCsrfHeaders(options.method),
+          ...getAuthHeader(),
+          ...options.headers,
+        };
+        response = await fetch(`${API_BASE_URL}${endpoint}`, {
+          ...options,
+          headers,
+          credentials: 'include',
+          signal: controller.signal,
+        });
+      }
     }
-  }
 
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({ error: 'Network error' }));
-    throw new Error(error.error || 'API request failed');
-  }
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ error: 'Network error' }));
+      throw new Error(error.error || 'API request failed');
+    }
 
-  return response.json();
+    return response.json();
+  } finally {
+    clearTimeout(timeoutId);
+  }
 }
 
 // ============================================

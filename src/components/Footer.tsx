@@ -13,16 +13,8 @@ const Footer: React.FC = () => {
   return (
     <footer className="modern-footer">
       <div className="footer-background">
-        <motion.div
-          className="footer-gradient-1"
-          animate={{ rotate: [0, 360] }}
-          transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
-        />
-        <motion.div
-          className="footer-gradient-2"
-          animate={{ rotate: [360, 0] }}
-          transition={{ duration: 40, repeat: Infinity, ease: "linear" }}
-        />
+        <div className="footer-gradient-1" />
+        <div className="footer-gradient-2" />
       </div>
 
       <div className="container">
@@ -51,6 +43,8 @@ const Footer: React.FC = () => {
                 <motion.a
                   href="#"
                   className="social-link"
+                  aria-label="Facebook"
+                  rel="noopener noreferrer"
                   whileHover={{ scale: 1.1, y: -2 }}
                   whileTap={{ scale: 0.95 }}
                 >
@@ -59,6 +53,8 @@ const Footer: React.FC = () => {
                 <motion.a
                   href="#"
                   className="social-link"
+                  aria-label="Twitter"
+                  rel="noopener noreferrer"
                   whileHover={{ scale: 1.1, y: -2 }}
                   whileTap={{ scale: 0.95 }}
                 >
@@ -67,6 +63,8 @@ const Footer: React.FC = () => {
                 <motion.a
                   href="#"
                   className="social-link"
+                  aria-label="LinkedIn"
+                  rel="noopener noreferrer"
                   whileHover={{ scale: 1.1, y: -2 }}
                   whileTap={{ scale: 0.95 }}
                 >
@@ -131,7 +129,7 @@ const Footer: React.FC = () => {
         >
           <div className="footer-bottom-content">
             <p className="footer-copyright">
-              &copy; 2024 Alatyr Hosting. {t('footer.rights')}
+              &copy; {new Date().getFullYear()} Alatyr Hosting. {t('footer.rights')}
             </p>
             <div className="footer-bottom-links">
               <Link to="/terms" className="footer-bottom-link">{t('footer.terms')}</Link>

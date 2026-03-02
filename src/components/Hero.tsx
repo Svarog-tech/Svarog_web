@@ -7,6 +7,25 @@ import { usePlanSelection } from '../hooks/usePlanSelection';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useCurrency } from '../contexts/CurrencyContext';
 
+const chartData: Record<string, { heights: string[], color: string }> = {
+  basic: {
+    heights: ['40%', '50%', '65%', '45%', '55%'],
+    color: '#6366F1'
+  },
+  standard: {
+    heights: ['70%', '85%', '90%', '75%', '80%'],
+    color: '#3B82F6'
+  },
+  pro: {
+    heights: ['85%', '92%', '95%', '88%', '90%'],
+    color: '#8B5CF6'
+  },
+  ultimate: {
+    heights: ['95%', '98%', '100%', '96%', '99%'],
+    color: '#F59E0B'
+  }
+};
+
 const Hero: React.FC = () => {
   const { plans, selectedPlan, selectPlan } = usePlanSelection();
   const { t } = useLanguage();
@@ -257,26 +276,6 @@ const Hero: React.FC = () => {
                   <div className="performance-chart">
                     {/* Dynamic chart bars with smooth transitions */}
                     {Array.from({ length: 5 }).map((_, index) => {
-                      // Chart data for all 4 plans
-                      const chartData: Record<string, { heights: string[], color: string }> = {
-                        basic: {
-                          heights: ['40%', '50%', '65%', '45%', '55%'],
-                          color: '#6366F1'
-                        },
-                        standard: {
-                          heights: ['70%', '85%', '90%', '75%', '80%'],
-                          color: '#3B82F6'
-                        },
-                        pro: {
-                          heights: ['85%', '92%', '95%', '88%', '90%'],
-                          color: '#8B5CF6'
-                        },
-                        ultimate: {
-                          heights: ['95%', '98%', '100%', '96%', '99%'],
-                          color: '#F59E0B'
-                        }
-                      };
-
                       const currentData = chartData[selectedPlan.id] || chartData.standard;
                       const height = currentData.heights[index];
                       const color = currentData.color;

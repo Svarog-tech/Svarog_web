@@ -168,11 +168,11 @@ const allowedOrigins = process.env.SERVER_ALLOWED_ORIGINS
   ? process.env.SERVER_ALLOWED_ORIGINS.split(',').map(origin => origin.trim())
   : ['http://localhost:3000'];
 
-app.use(cors({
+const corsMiddleware = cors({
   origin: function (origin, callback) {
-    // Same-origin requesty často nemají Origin header – povolit
+    // SECURITY: Reject requests without Origin header (prevents CSRF via tools like curl/Postman)
     if (!origin) {
-      return callback(null, true);
+      return callback(new Error('Not allowed by CORS'), false);
     }
 
     if (allowedOrigins.indexOf(origin) !== -1) {
@@ -182,13 +182,21 @@ app.use(cors({
     }
   },
   credentials: true
-}));
+});
+
+// SECURITY: Apply CORS to all routes except /health (monitoring tools need access without Origin)
+app.use((req, res, next) => {
+  if (req.path === '/health') {
+    return next();
+  }
+  corsMiddleware(req, res, next);
+});
 
 // ============================================
 // SECURITY: Request Body Size Limit
 // ============================================
-app.use(express.json({ limit: '10mb' })); // Omezení na 10MB
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(express.json({ limit: '1mb' })); // SECURITY: Default 1MB limit (DoS prevention)
+app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 app.use(cookieParser());
 
 // SECURITY: Helper pro nastavení httpOnly refresh token cookie
@@ -1934,6 +1942,14 @@ app.post('/api/tickets',
       throw new AppError('Subject and message are required and cannot be whitespace-only', 400);
     }
 
+    // SECURITY: Length validation to prevent oversized payloads hitting the database
+    if (subjectTrimmed.length > 200) {
+      throw new AppError('Subject too long (max 200 characters)', 400);
+    }
+    if (messageTrimmed.length > 10000) {
+      throw new AppError('Message too long (max 10000 characters)', 400);
+    }
+
     // Validate priority
     const validPriorities = ['low', 'medium', 'high', 'urgent'];
     const ticketPriority = priority && validPriorities.includes(priority) ? priority : 'medium';
@@ -2159,6 +2175,11 @@ app.post('/api/tickets/:id/messages',
     const { message, is_admin_reply } = req.body || {};
 
     if (typeof message !== 'string' || !message.trim()) throw new AppError('Message is required', 400);
+
+    // SECURITY: Length validation for ticket reply messages
+    if (message.trim().length > 10000) {
+      throw new AppError('Message too long (max 10000 characters)', 400);
+    }
 
     const ticket = await db.queryOne(
       `SELECT t.id, t.user_id, t.subject, p.email AS user_email
@@ -3601,6 +3622,10 @@ function sanitizeFilePath(requestedPath, hestiaUsername) {
   if (requestedPath.includes('\0')) {
     throw new AppError('Invalid path', 400);
   }
+  // SECURITY: Reject control characters (newlines, tabs, etc.) that could break shell quoting
+  if (/[\x00-\x1f\x7f]/.test(requestedPath)) {
+    throw new AppError('Invalid path: control characters not allowed', 400);
+  }
   // SECURITY: Max length check
   if (requestedPath.length > 4096) {
     throw new AppError('Path too long', 400);
@@ -3766,11 +3791,15 @@ app.get('/api/hosting-services/:serviceId/files/download',
   })
 );
 
+// SECURITY: Route-specific larger body limit for file upload/save (base64-encoded files need >1MB)
+const largeBodyParser = express.json({ limit: '10mb' });
+
 /**
  * Save file content (create or overwrite)
  * POST /api/hosting-services/:serviceId/files/save
  */
 app.post('/api/hosting-services/:serviceId/files/save',
+  largeBodyParser,
   authenticateUser,
   fileOpsLimiter,
   asyncHandler(async (req, res) => {
@@ -3835,6 +3864,7 @@ app.post('/api/hosting-services/:serviceId/files/save',
  * POST /api/hosting-services/:serviceId/files/upload
  */
 app.post('/api/hosting-services/:serviceId/files/upload',
+  largeBodyParser,
   authenticateUser,
   fileOpsLimiter,
   asyncHandler(async (req, res) => {

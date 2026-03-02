@@ -353,3 +353,23 @@
     height: 60px;
   }
 }
+
+@keyframes footer-rotate-cw {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes footer-rotate-ccw {
+  from { transform: rotate(360deg); }
+  to { transform: rotate(0deg); }
+}
+
+.footer-gradient-1 {
+  animation: footer-rotate-cw 30s linear infinite;
+  will-change: transform;
+}
+
+.footer-gradient-2 {
+  animation: footer-rotate-ccw 40s linear infinite;
+  will-change: transform;
+}

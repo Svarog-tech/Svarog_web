@@ -13,6 +13,7 @@ Disallow: /reset-password
 Disallow: /forgot-password
 Disallow: /auth/
 Disallow: /payment/
+Disallow: /configurator
+Disallow: /verify-email
 
-# Sitemap (testování na localhost; v produkci nahraďte např. https://alatyrhosting.eu/sitemap.xml)
-Sitemap: http://localhost:3000/sitemap.xml
+Sitemap: https://alatyrhosting.eu/sitemap.xml

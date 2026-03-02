@@ -8,6 +8,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { RegistrationData, OAuthProvider } from '../types/auth';
 import { validateRegistrationData } from '../lib/auth';
+import PageMeta from '../components/PageMeta';
 import './Register.css';
 
 const Register: React.FC = () => {
@@ -141,6 +142,7 @@ const Register: React.FC = () => {
 
   return (
     <div className="register-page">
+      <PageMeta title={t('register.title')} description="Vytvořte si účet u Alatyr Hosting." path="/register" noindex />
       <div className="register-container">
         <motion.div
           className="register-card"

@@ -51,6 +51,18 @@ const Header: React.FC = () => {
     };
   }, [isMobileMenuOpen]);
 
+  // Close profile dropdown and mobile menu on Escape key
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setIsProfileOpen(false);
+        setIsMobileMenuOpen(false);
+      }
+    };
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, []);
+
   // Get user initials for avatar fallback
   const getUserInitials = () => {
     const firstName = profile?.first_name || user?.user_metadata?.first_name;
@@ -87,7 +99,9 @@ const Header: React.FC = () => {
       return;
     }
 
-    const updatePosition = () => {
+    let rafId: number | null = null;
+
+    const computePosition = () => {
       if (!profileButtonRef.current) return;
       const rect = profileButtonRef.current.getBoundingClientRect();
       const menuWidth = 200;
@@ -105,10 +119,19 @@ const Header: React.FC = () => {
       setProfileMenuPositionReady(true);
     };
 
-    updatePosition();
+    const updatePosition = () => {
+      if (rafId) cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(() => {
+        computePosition();
+      });
+    };
+
+    // Initial position computed synchronously (useLayoutEffect, before paint)
+    computePosition();
     window.addEventListener('resize', updatePosition);
     window.addEventListener('scroll', updatePosition, { passive: true });
     return () => {
+      if (rafId) cancelAnimationFrame(rafId);
       window.removeEventListener('resize', updatePosition);
       window.removeEventListener('scroll', updatePosition);
     };
@@ -167,6 +190,8 @@ const Header: React.FC = () => {
                         ref={profileButtonRef}
                         className="profile-button"
                         onClick={() => setIsProfileOpen(!isProfileOpen)}
+                        aria-expanded={isProfileOpen}
+                        aria-haspopup="true"
                       >
                         <div className="profile-avatar">
                           {profile?.avatar_url ? (

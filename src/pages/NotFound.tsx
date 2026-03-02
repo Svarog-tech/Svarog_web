@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useLanguage } from '../contexts/LanguageContext';
+import PageMeta from '../components/PageMeta';
 
 const NotFound: React.FC = () => {
   const { t } = useLanguage();
@@ -15,6 +16,7 @@ const NotFound: React.FC = () => {
       padding: '2rem',
       textAlign: 'center',
     }}>
+      <PageMeta title="404 - Stránka nenalezena" description="Tato stránka neexistuje." path="/404" noindex />
       <h1 style={{
         fontSize: '6rem',
         fontWeight: 800,

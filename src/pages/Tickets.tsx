@@ -14,7 +14,6 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { useToast } from '../components/Toast';
 import { createSupportTicket, API_BASE_URL } from '../lib/api';
 import { getAuthHeader } from '../lib/auth';
-import TriangularBackground from '../components/TriangularBackground';
 import { SkeletonList } from '../components/Skeleton';
 import './Tickets.css';
 
@@ -171,7 +170,6 @@ const Tickets: React.FC = () => {
 
   return (
     <>
-      <TriangularBackground opacity={0.12} />
       <main className="tickets-page">
         {/* Hero Section */}
         <motion.section

@@ -4,7 +4,6 @@ import { useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faHeadset, faClock, faEnvelope, faTicket, faSearch, faChevronDown } from '@fortawesome/free-solid-svg-icons';
 import { useLanguage } from '../contexts/LanguageContext';
-import TriangularBackground from '../components/TriangularBackground';
 import PageMeta from '../components/PageMeta';
 
 const Support: React.FC = () => {
@@ -67,7 +66,6 @@ const Support: React.FC = () => {
         description="Technická podpora, tickety a FAQ. Jsme tu pro vás 24/7. Kontaktujte nás e-mailem nebo vytvořte ticket."
         path="/support"
       />
-      <TriangularBackground opacity={0.12} />
       <main className="support-page">
       <motion.section
         className="support-hero"

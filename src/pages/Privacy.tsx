@@ -27,9 +27,6 @@ const Privacy: React.FC = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          <h1>Ochrana soukromí</h1>
-          <p className="privacy-updated">Naposledy aktualizováno: únor 2026</p>
-
           {isCs ? (
             <>
               <h1>Zásady ochrany soukromí</h1>

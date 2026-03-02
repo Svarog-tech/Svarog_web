@@ -92,10 +92,16 @@ const SectionTriangularBackground: React.FC<SectionTriangularBackgroundProps> = 
     };
 
     resizeCanvas();
-    window.addEventListener('resize', resizeCanvas);
+    let rafId: number | null = null;
+    const debouncedResize = () => {
+      if (rafId) cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(resizeCanvas);
+    };
+    window.addEventListener('resize', debouncedResize);
 
     return () => {
-      window.removeEventListener('resize', resizeCanvas);
+      window.removeEventListener('resize', debouncedResize);
+      if (rafId) cancelAnimationFrame(rafId);
     };
   }, [theme, opacity]);
 

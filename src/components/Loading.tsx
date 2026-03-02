@@ -11,7 +11,7 @@ interface LoadingProps {
 }
 
 const Loading: React.FC<LoadingProps> = ({ message, minHeight = '40vh', className = '' }) => (
-  <div className={`loading-page ${className}`.trim()} style={{ minHeight }}>
+  <div className={`loading-page ${className}`.trim()} style={{ minHeight }} role="status" aria-label="Načítání">
     <div className="loading-spinner" aria-hidden="true" />
     {message && <p className="loading-message">{message}</p>}
   </div>

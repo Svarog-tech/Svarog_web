@@ -14,8 +14,8 @@ const AMLPolicy: React.FC = () => {
       <PageMeta
         title={
           isCs
-            ? 'ANTI-MONEY LAUNDERING POLICY (AML) – Alatyr Hosting'
-            : 'ANTI-MONEY LAUNDERING POLICY (AML) – Alatyr Hosting'
+            ? 'Zásady proti praní špinavých peněz (AML) – Alatyr Hosting'
+            : 'Anti-Money Laundering Policy (AML) – Alatyr Hosting'
         }
         description={
           isCs

@@ -44,18 +44,18 @@ interface DashboardStats {
 }
 
 // DEV MODE: mock data jen v development, v produkci vždy skutečná data
-const DEV_MODE = process.env.NODE_ENV === 'development';
+const DEV_MODE = import.meta.env.DEV;
 
-const mockProfile = {
+const mockProfile = DEV_MODE ? {
   first_name: 'Jan',
   created_at: '2023-01-15'
-};
+} : null;
 
-const mockOrders: Order[] = [
+const mockOrders: Order[] = DEV_MODE ? [
   { id: 1, plan_name: 'Starter Hosting', price: 99, currency: 'CZK', status: 'active', payment_status: 'paid', domain_name: 'example.cz', created_at: '2024-01-15' },
   { id: 2, plan_name: 'Business Hosting', price: 299, currency: 'CZK', status: 'pending', payment_status: 'pending', domain_name: 'test-site.cz', created_at: '2024-02-10' },
   { id: 3, plan_name: 'Premium Hosting', price: 599, currency: 'CZK', status: 'active', payment_status: 'paid', domain_name: 'mywebsite.cz', created_at: '2024-03-01' },
-];
+] : [];
 
 const Dashboard: React.FC = () => {
   const { user, profile: authProfile } = useAuth();

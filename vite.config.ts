@@ -18,7 +18,8 @@ export default defineConfig({
       output: {
         manualChunks(id) {
           if (id.includes('node_modules')) {
-            if (id.includes('react-dom') || id.includes('react-router')) return 'vendor';
+            if (id.includes('react-dom')) return 'vendor';
+            if (id.includes('react-router')) return 'router';
             if (id.includes('framer-motion')) return 'ui';
             if (id.includes('@fortawesome')) return 'icons';
             if (id.includes('monaco-editor')) return 'editor';
