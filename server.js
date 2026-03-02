@@ -168,11 +168,12 @@ const allowedOrigins = process.env.SERVER_ALLOWED_ORIGINS
   ? process.env.SERVER_ALLOWED_ORIGINS.split(',').map(origin => origin.trim())
   : ['http://localhost:3000'];
 
-const corsMiddleware = cors({
+app.use(cors({
   origin: function (origin, callback) {
-    // SECURITY: Reject requests without Origin header (prevents CSRF via tools like curl/Postman)
+    // Requests without Origin: same-origin, server-to-server proxies (nginx), Vite proxy
+    // CSRF protection is handled by X-CSRF-Guard header on mutation endpoints
     if (!origin) {
-      return callback(new Error('Not allowed by CORS'), false);
+      return callback(null, true);
     }
 
     if (allowedOrigins.indexOf(origin) !== -1) {
@@ -182,15 +183,7 @@ const corsMiddleware = cors({
     }
   },
   credentials: true
-});
-
-// SECURITY: Apply CORS to all routes except /health (monitoring tools need access without Origin)
-app.use((req, res, next) => {
-  if (req.path === '/health') {
-    return next();
-  }
-  corsMiddleware(req, res, next);
-});
+}));
 
 // ============================================
 // SECURITY: Request Body Size Limit

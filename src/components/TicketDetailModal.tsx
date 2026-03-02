@@ -93,7 +93,8 @@ const TicketDetailModal: React.FC<TicketDetailModalProps> = ({ ticket, isOpen, o
         headers: {
           'Content-Type': 'application/json',
           ...getAuthHeader()
-        }
+        },
+        credentials: 'include'
       });
 
       if (!response.ok) {
@@ -117,7 +118,8 @@ const TicketDetailModal: React.FC<TicketDetailModalProps> = ({ ticket, isOpen, o
         headers: {
           'Content-Type': 'application/json',
           ...getAuthHeader()
-        }
+        },
+        credentials: 'include'
       });
 
       if (!response.ok) {
@@ -159,6 +161,7 @@ const TicketDetailModal: React.FC<TicketDetailModalProps> = ({ ticket, isOpen, o
           'Content-Type': 'application/json',
           ...getAuthHeader()
         },
+        credentials: 'include',
         body: JSON.stringify({
           status,
           priority,
@@ -198,6 +201,7 @@ const TicketDetailModal: React.FC<TicketDetailModalProps> = ({ ticket, isOpen, o
           'Content-Type': 'application/json',
           ...getAuthHeader()
         },
+        credentials: 'include',
         body: JSON.stringify({
           message: newMessage,
           is_admin_reply: profile?.is_admin || false,

@@ -12,9 +12,9 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useToast } from '../components/Toast';
-import { createSupportTicket, API_BASE_URL } from '../lib/api';
-import { getAuthHeader } from '../lib/auth';
+import { createSupportTicket, apiCall } from '../lib/api';
 import { SkeletonList } from '../components/Skeleton';
+import TicketDetailModal from '../components/TicketDetailModal';
 import './Tickets.css';
 
 interface Ticket {
@@ -28,7 +28,7 @@ interface Ticket {
 }
 
 const Tickets: React.FC = () => {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const { t } = useLanguage();
   const { showError } = useToast();
   const [tickets, setTickets] = useState<Ticket[]>([]);
@@ -42,6 +42,8 @@ const Tickets: React.FC = () => {
   });
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
     fetchTickets();
@@ -52,18 +54,7 @@ const Tickets: React.FC = () => {
 
     try {
       setLoading(true);
-      const response = await fetch(`${API_BASE_URL}/tickets`, {
-        method: 'GET',
-        headers: {
-          ...getAuthHeader()
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch tickets');
-      }
-
-      const result = await response.json();
+      const result = await apiCall<{ success: boolean; tickets: Ticket[] }>('/tickets');
       if (result.success && result.tickets) {
         setTickets(result.tickets);
       }
@@ -275,7 +266,10 @@ const Tickets: React.FC = () => {
                   </div>
                 </div>
                 <p className="ticket-message">{ticket.message}</p>
-                <button className="view-ticket-btn">
+                <button className="view-ticket-btn" onClick={() => {
+                  setSelectedTicket(ticket);
+                  setIsModalOpen(true);
+                }}>
                   Zobrazit detail
                 </button>
               </motion.div>
@@ -399,6 +393,17 @@ const Tickets: React.FC = () => {
           </div>
         </section>
       </main>
+      <TicketDetailModal
+        ticket={selectedTicket ? { ...selectedTicket, user_id: user?.id || '', user_name: profile?.first_name || '' } : null}
+        isOpen={isModalOpen}
+        onClose={() => {
+          setIsModalOpen(false);
+          setSelectedTicket(null);
+        }}
+        onUpdate={() => {
+          fetchTickets();
+        }}
+      />
     </>
   );
 };

@@ -168,7 +168,7 @@ const Dashboard: React.FC = () => {
             </div>
             <div className="stat-content">
               <h3 className="stat-number">{stats.totalOrders}</h3>
-              <p className="stat-label">Celkem objednávek</p>
+              <p className="stat-label">{t('dashboard.totalOrders')}</p>
             </div>
           </div>
 
@@ -178,7 +178,7 @@ const Dashboard: React.FC = () => {
             </div>
             <div className="stat-content">
               <h3 className="stat-number">{formatPrice(stats.totalSpent)}</h3>
-              <p className="stat-label">Celkem utraceno</p>
+              <p className="stat-label">{t('dashboard.totalSpent')}</p>
             </div>
           </div>
 
@@ -188,9 +188,9 @@ const Dashboard: React.FC = () => {
             </div>
             <div className="stat-content">
               <h3 className="stat-number">
-                {profile?.created_at ? new Date(profile.created_at).getFullYear() : '2024'}
+                {profile?.created_at ? new Date(profile.created_at).getFullYear() : new Date().getFullYear().toString()}
               </h3>
-              <p className="stat-label">Zákazník od roku</p>
+              <p className="stat-label">{t('dashboard.customerSince')}</p>
             </div>
           </div>
         </motion.div>
@@ -202,23 +202,23 @@ const Dashboard: React.FC = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.4 }}
         >
-          <h2 className="section-title">Rychlé akce</h2>
+          <h2 className="section-title">{t('dashboard.quickActions')}</h2>
           <div className="actions-grid">
             <button className="action-card" onClick={() => navigate('/hosting')}>
               <FontAwesomeIcon icon={faServer} />
-              <span>Nový hosting</span>
+              <span>{t('dashboard.newHosting')}</span>
             </button>
             <button className="action-card" onClick={() => navigate('/domains')}>
               <FontAwesomeIcon icon={faGlobe} />
-              <span>Registrovat doménu</span>
+              <span>{t('dashboard.registerDomain')}</span>
             </button>
             <button className="action-card" onClick={() => navigate('/tickets')}>
               <FontAwesomeIcon icon={faTicket} />
-              <span>Vytvořit tiket</span>
+              <span>{t('dashboard.createTicket')}</span>
             </button>
             <button className="action-card" onClick={() => navigate('/profile')}>
               <FontAwesomeIcon icon={faUser} />
-              <span>Upravit profil</span>
+              <span>{t('dashboard.editProfile')}</span>
             </button>
           </div>
         </motion.div>
@@ -231,9 +231,9 @@ const Dashboard: React.FC = () => {
           transition={{ duration: 0.6, delay: 0.6 }}
         >
           <div className="section-header">
-            <h2 className="section-title">Nedávné objednávky</h2>
+            <h2 className="section-title">{t('dashboard.recentOrders')}</h2>
             <button className="view-all-btn" onClick={() => navigate('/services')}>
-              Zobrazit vše
+              {t('dashboard.viewAll')}
               <FontAwesomeIcon icon={faExternalLinkAlt} />
             </button>
           </div>
@@ -241,11 +241,11 @@ const Dashboard: React.FC = () => {
           {orders.length === 0 ? (
             <div className="empty-state">
               <FontAwesomeIcon icon={faServer} />
-              <h3>Žádné objednávky</h3>
-              <p>Zatím nemáš žádné hosting služby. Začni první objednávkou!</p>
+              <h3>{t('dashboard.noOrders')}</h3>
+              <p>{t('dashboard.noOrdersDescription')}</p>
               <button className="cta-button" onClick={() => navigate('/hosting')}>
                 <FontAwesomeIcon icon={faPlus} />
-                Objednat hosting
+                {t('dashboard.orderHosting')}
               </button>
             </div>
           ) : (
@@ -255,7 +255,7 @@ const Dashboard: React.FC = () => {
                   <div className="order-info">
                     <h4 className="order-title">{order.plan_name}</h4>
                     <p className="order-domain">
-                      {order.hestia_domain || order.domain_name || 'Bez domény'}
+                      {order.hestia_domain || order.domain_name || t('dashboard.noDomain')}
                     </p>
                     {order.hestia_created && order.hestia_username && (
                       <p className="order-hestia">
@@ -266,9 +266,9 @@ const Dashboard: React.FC = () => {
 
                   <div className="order-meta">
                     <span className={`status-badge status-${order.status}`}>
-                      {order.status === 'active' ? 'Aktivní' :
-                       order.status === 'pending' ? 'Čeká' :
-                       order.status === 'cancelled' ? 'Zrušeno' : order.status}
+                      {order.status === 'active' ? t('dashboard.status.active') :
+                       order.status === 'pending' ? t('dashboard.status.pending') :
+                       order.status === 'cancelled' ? t('dashboard.status.cancelled') : order.status}
                     </span>
                     <span className="order-price">
                       {formatPrice(order.price)}
