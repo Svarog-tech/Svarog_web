@@ -116,6 +116,35 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     let mounted = true;
 
     const initializeAuth = async () => {
+      // DEV BYPASS - fake user for testing
+      const DEV_BYPASS_AUTH = true;
+      if (DEV_BYPASS_AUTH) {
+        const fakeUser: AppUser = {
+          id: 'test-user-id-123',
+          email: 'test@test.com',
+          user_metadata: { first_name: 'Test', last_name: 'User' },
+        };
+        const fakeProfile: UserProfile = {
+          id: 'test-user-id-123',
+          email: 'test@test.com',
+          first_name: 'Test',
+          last_name: 'User',
+          is_admin: false,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+        if (mounted) {
+          updateState({
+            user: fakeUser,
+            profile: fakeProfile,
+            loading: false,
+            initialized: true,
+          });
+        }
+        return;
+      }
+      // END DEV BYPASS
+
       try {
         // Get current user
         const user = await getCurrentUser();
@@ -143,8 +172,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     };
   }, [handleAuthStateChange, updateState]);
 
-  // Listen to auth changes
+  // Listen to auth changes (disabled in dev bypass mode)
   useEffect(() => {
+    const DEV_BYPASS_AUTH = true;
+    if (DEV_BYPASS_AUTH) return; // Skip auth listener in dev mode
+
     const { data: { subscription } } = onAuthStateChange(handleAuthStateChange);
 
     return () => {

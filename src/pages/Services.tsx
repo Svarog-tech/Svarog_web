@@ -12,12 +12,12 @@ import {
   faMoneyBill,
   faSync,
   faUser,
-  faKey,
   faLink,
   faCheckCircle,
   faTimesCircle,
   faToggleOn,
   faToggleOff,
+  faLayerGroup,
 } from '@fortawesome/free-solid-svg-icons';
 import { useAuth } from '../contexts/AuthContext';
 import { useCurrency } from '../contexts/CurrencyContext';
@@ -169,41 +169,94 @@ const Services: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="services-page">
-        <div className="services-container">
-          <div className="services-header" style={{ marginBottom: '1.5rem' }}>
-            <div>
-              <h1 className="services-title">Moje služby</h1>
-              <p className="services-subtitle">Načítání...</p>
+      <main className="services-page">
+        <motion.section
+          className="services-hero"
+          initial={{ opacity: 0, y: 50 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8 }}
+        >
+          <div className="container">
+            <div className="services-hero-content">
+              <motion.h1
+                className="services-title"
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.2 }}
+              >
+                Moje <span className="gradient-text">služby</span>
+              </motion.h1>
+              <motion.p
+                className="services-description"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.4 }}
+              >
+                Načítání...
+              </motion.p>
             </div>
           </div>
-          <SkeletonList count={3} type="card" />
-        </div>
-      </div>
+        </motion.section>
+        <section className="services-content">
+          <div className="container">
+            <SkeletonList count={3} type="card" />
+          </div>
+        </section>
+      </main>
     );
   }
 
   return (
-    <div className="services-page">
-      <div className="services-container">
-        {/* Header */}
-        <motion.div
-          className="services-header"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-        >
-          <div>
-            <h1 className="services-title">Moje služby</h1>
-            <p className="services-subtitle">
+    <main className="services-page">
+      {/* Hero Section */}
+      <motion.section
+        className="services-hero"
+        initial={{ opacity: 0, y: 50 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.8 }}
+      >
+        <div className="container">
+          <div className="services-hero-content">
+            <motion.h1
+              className="services-title"
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+            >
+              Moje <span className="gradient-text">služby</span>
+            </motion.h1>
+            <motion.p
+              className="services-description"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.4 }}
+            >
               Správa všech tvých hosting služeb na jednom místě
-            </p>
+            </motion.p>
           </div>
-          <button className="refresh-btn" onClick={fetchServices}>
-            <FontAwesomeIcon icon={faSync} />
-            Obnovit
-          </button>
-        </motion.div>
+        </div>
+      </motion.section>
+
+      {/* Services Content */}
+      <section className="services-content">
+        <div className="container">
+          {/* Header with refresh */}
+          <motion.div
+            className="services-header"
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            viewport={{ once: true }}
+          >
+            <div className="services-header-icon">
+              <FontAwesomeIcon icon={faLayerGroup} />
+            </div>
+            <h2 className="services-section-title">Přehled služeb</h2>
+            <button className="refresh-btn" onClick={fetchServices}>
+              <FontAwesomeIcon icon={faSync} />
+              Obnovit
+            </button>
+          </motion.div>
 
         {/* Filter Tabs */}
         <motion.div
@@ -393,8 +446,9 @@ const Services: React.FC = () => {
             ))}
           </motion.div>
         )}
-      </div>
-    </div>
+        </div>
+      </section>
+    </main>
   );
 };
 
