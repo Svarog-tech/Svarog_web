@@ -604,7 +604,7 @@
   }
 
   .plans-grid-new.grid-4 {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(4, 1fr);
     gap: 24px;
   }
 
@@ -682,7 +682,7 @@
   }
 
   .plans-grid-new.grid-4 {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(4, 1fr);
   }
 }
 
@@ -722,7 +722,9 @@
   }
 
   @container plans-container (min-width: 900px) {
-    .plans-grid-new.grid-4,
+    .plans-grid-new.grid-4 {
+      grid-template-columns: repeat(4, 1fr);
+    }
     .plans-grid-new.grid-2 {
       grid-template-columns: repeat(2, 1fr);
     }
@@ -732,18 +734,13 @@
     .plans-grid-new {
       gap: 24px;
     }
-
-    .plans-grid-new.grid-4 {
-      grid-template-columns: repeat(3, 1fr);
-    }
   }
 
   @container plans-container (min-width: 1600px) {
-    .plans-grid-new.grid-4 {
-      grid-template-columns: repeat(4, 1fr);
+    .popular-stamp {
+      top: 8px;
+      left: 8px;
     }
-    top: 8px;
-    left: 8px;
   }
 
   .popular-stamp svg {
