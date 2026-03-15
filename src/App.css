@@ -187,14 +187,6 @@ body {
 /* Hamburger button - ensure it's visible on mobile */
 .hamburger {
   display: flex !important;
-  flex-direction: column !important;
-}
-
-.hamburger span {
-  display: block !important;
-  width: 40px !important;
-  height: 4px !important;
-  background: var(--text-primary) !important;
 }
 
 .nav-links {
@@ -367,10 +359,73 @@ body {
 
 /* Mobile nav content wrapper */
 .mobile-nav-content {
-  padding: 6rem 1.5rem 1.5rem;
+  padding: 1rem 1.5rem 2rem;
   min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
+}
+
+/* Mobile drawer header */
+.mobile-drawer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 1.5rem;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.mobile-drawer-logo {
+  display: flex;
+  align-items: center;
+}
+
+.mobile-logo-image {
+  height: 32px;
+  width: auto;
+  object-fit: contain;
+}
+
+/* Mobile close button - X style */
+.mobile-close-btn {
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface-alt);
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  position: relative;
+  transition: background 0.2s ease, transform 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.mobile-close-btn:hover {
+  background: var(--border);
+  transform: rotate(90deg);
+}
+
+.mobile-close-btn:active {
+  transform: scale(0.95) rotate(90deg);
+}
+
+.mobile-close-btn span {
+  position: absolute;
+  width: 20px;
+  height: 2px;
+  background: var(--text-primary);
+  border-radius: 1px;
+}
+
+.mobile-close-btn span:first-child {
+  transform: rotate(45deg);
+}
+
+.mobile-close-btn span:last-child {
+  transform: rotate(-45deg);
 }
 
 /* Mobile profile section */

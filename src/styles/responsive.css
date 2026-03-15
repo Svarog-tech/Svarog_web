@@ -592,55 +592,74 @@
   cursor: pointer;
   display: flex !important;
   flex-direction: column !important;
-  justify-content: space-between !important;
-  align-items: stretch !important;
-  padding: 6px 0 !important;
+  justify-content: center !important;
+  align-items: center !important;
+  gap: 6px !important;
+  padding: 0 !important;
   margin: 0 !important;
   position: relative;
   z-index: 101;
   flex-shrink: 0 !important;
-  transition: all 0.3s ease;
+  -webkit-tap-highlight-color: transparent;
 }
 
-.hamburger:hover {
-  opacity: 0.7;
+.hamburger:focus {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.hamburger:focus:not(:focus-visible) {
+  outline: none;
 }
 
 .hamburger span {
   display: block !important;
-  width: 40px !important;
-  height: 4px !important;
-  min-width: 40px !important;
-  min-height: 4px !important;
+  width: 26px !important;
+  height: 3px !important;
   background: var(--text-primary) !important;
-  border-radius: 3px;
-  transition: all 0.3s cubic-bezier(0.645, 0.045, 0.355, 1);
+  border-radius: 2px;
+  transition: transform 0.4s cubic-bezier(0.23, 1, 0.32, 1),
+              opacity 0.3s cubic-bezier(0.23, 1, 0.32, 1),
+              width 0.3s cubic-bezier(0.23, 1, 0.32, 1);
   transform-origin: center;
   pointer-events: none;
 }
 
-/* Dark mode */
-[data-theme="dark"] .hamburger span {
-  background: var(--text-primary) !important;
+/* Middle bar slightly shorter for style */
+.hamburger span:nth-child(2) {
+  width: 20px !important;
+}
+
+/* Hover effect - bars expand */
+.hamburger:hover span {
+  background: var(--primary-color) !important;
+}
+
+.hamburger:hover span:nth-child(2) {
+  width: 26px !important;
 }
 
 /* Animated X when open */
 .hamburger.open span:nth-child(1) {
-  transform: translateY(14px) rotate(45deg);
+  transform: translateY(9px) rotate(45deg);
+  width: 26px !important;
 }
 
 .hamburger.open span:nth-child(2) {
   opacity: 0;
   transform: scaleX(0);
+  width: 0 !important;
 }
 
 .hamburger.open span:nth-child(3) {
-  transform: translateY(-14px) rotate(-45deg);
+  transform: translateY(-9px) rotate(-45deg);
+  width: 26px !important;
 }
 
-/* Hover effect - slight color change */
-.hamburger:hover span {
-  background: var(--primary-color) !important;
+/* Dark mode */
+[data-theme="dark"] .hamburger span {
+  background: var(--text-primary) !important;
 }
 
 [data-theme="dark"] .hamburger:hover span {

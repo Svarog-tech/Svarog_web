@@ -4,16 +4,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
-  faUser,
   faChevronDown,
   faDashboard,
   faCog,
   faSignOutAlt,
   faServer,
   faTicket,
-  faUserShield,
-  faBars,
-  faTimes
+  faUserShield
 } from '@fortawesome/free-solid-svg-icons';
 import LanguageSwitcher from './LanguageSwitcher';
 import CurrencySwitcher from './CurrencySwitcher';
@@ -165,9 +162,12 @@ const Header: React.FC = () => {
             <button
               className={`hamburger mobile-nav ${isMobileMenuOpen ? 'open' : ''}`}
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              aria-label="Toggle menu"
+              aria-label={isMobileMenuOpen ? 'Close menu' : 'Open menu'}
+              aria-expanded={isMobileMenuOpen}
             >
-              <FontAwesomeIcon icon={isMobileMenuOpen ? faTimes : faBars} />
+              <span></span>
+              <span></span>
+              <span></span>
             </button>
 
             {/* Desktop menu */}
@@ -265,6 +265,27 @@ const Header: React.FC = () => {
             transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
           >
             <div className="mobile-nav-content">
+              {/* Mobile drawer header with close button */}
+              <div className="mobile-drawer-header">
+                <Link to="/" className="mobile-drawer-logo" onClick={() => setIsMobileMenuOpen(false)}>
+                  <img
+                    src="/alatyrlogo-removebg-preview.png"
+                    alt="Alatyr Hosting"
+                    className="mobile-logo-image"
+                    width="120"
+                    height="30"
+                  />
+                </Link>
+                <button
+                  className="mobile-close-btn"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  aria-label="Close menu"
+                >
+                  <span></span>
+                  <span></span>
+                </button>
+              </div>
+
               {/* User profile section in mobile menu */}
               {user && (
                 <div className="mobile-profile-section">
