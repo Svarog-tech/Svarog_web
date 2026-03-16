@@ -493,7 +493,74 @@ const translations = {
     'validation.password.digit': 'Heslo musí obsahovat alespoň jednu číslici',
     'validation.email.invalid': 'Zadejte platnou emailovou adresu',
     'validation.firstName.min2': 'Jméno musí mít alespoň 2 znaky',
-    'validation.lastName.min2': 'Příjmení musí mít alespoň 2 znaky'
+    'validation.lastName.min2': 'Příjmení musí mít alespoň 2 znaky',
+
+    // Landing page - Hero
+    'landing.hero.badge': 'Nová generace hostingu',
+    'landing.hero.title': 'Profesionální hosting pro váš ',
+    'landing.hero.titleHighlight': 'úspěch',
+    'landing.hero.description': 'Získejte spolehlivý webhosting s 99.9% dostupností, bleskurychlými SSD servery a nepřetržitou podporou. Začněte svůj úspěšný online projekt ještě dnes.',
+    'landing.hero.feature1': 'SSL certifikát zdarma',
+    'landing.hero.feature2': 'Denní zálohy dat',
+    'landing.hero.feature3': 'Podpora v češtině 24/7',
+    'landing.hero.cta': 'Vybrat plán',
+    'landing.hero.ctaSecondary': 'Kontaktovat prodej',
+
+    // Landing page - Preview
+    'landing.preview.server': 'Server',
+    'landing.preview.online': 'Online',
+    'landing.preview.uptime': 'Dostupnost',
+    'landing.preview.secure': 'Zabezpečeno',
+    'landing.preview.response': 'Odezva',
+    'landing.preview.performance': 'Výkon',
+
+    // Landing page - Floating badges
+    'landing.floatingBadge.secure': 'Zabezpečeno',
+    'landing.floatingBadge.fast': 'Rychlý',
+
+    // Landing page - Stats
+    'landing.stats.uptime': 'Dostupnost',
+    'landing.stats.customers': 'Spokojených zákazníků',
+    'landing.stats.support': 'Podpora',
+    'landing.stats.years': 'Let zkušeností',
+
+    // Landing page - Features
+    'landing.features.badge': 'Funkce',
+    'landing.features.title': 'Proč si vybrat ',
+    'landing.features.titleHighlight': 'náš hosting?',
+    'landing.features.description': 'Poskytujeme kompletní hosting řešení s pokročilými funkcemi pro vaše webové projekty.',
+    'landing.features.speed.title': 'Bleskurychlý výkon',
+    'landing.features.speed.description': 'SSD NVMe disky a optimalizované servery pro maximální rychlost načítání vašich stránek.',
+    'landing.features.security.title': 'Pokročilá bezpečnost',
+    'landing.features.security.description': 'Firewall, ochrana proti DDoS útokům a pravidelné bezpečnostní aktualizace.',
+    'landing.features.support.title': '24/7 Podpora',
+    'landing.features.support.description': 'Náš expertní tým je připraven pomoci kdykoliv prostřednictvím chatu, emailu nebo telefonu.',
+    'landing.features.backup.title': 'Automatické zálohy',
+    'landing.features.backup.description': 'Denní zálohy vašich dat s možností snadné obnovy jedním kliknutím.',
+    'landing.features.scalability.title': 'Škálovatelnost',
+    'landing.features.scalability.description': 'Snadno upgradujte svůj plán podle potřeby bez výpadku služeb.',
+    'landing.features.global.title': 'Globální dostupnost',
+    'landing.features.global.description': 'Datacentra v Evropě zajišťují rychlé načítání pro vaše návštěvníky.',
+
+    // Landing page - Testimonials
+    'landing.testimonials.badge': 'Reference',
+    'landing.testimonials.title': 'Co říkají naši ',
+    'landing.testimonials.titleHighlight': 'zákazníci',
+    'landing.testimonials.role1': 'Majitel e-shopu',
+    'landing.testimonials.content1': 'Přechod na Alatyr byl nejlepší rozhodnutí. Rychlost webu se zdvojnásobila a podpora je vždy připravena pomoci.',
+    'landing.testimonials.role2': 'Webová vývojářka',
+    'landing.testimonials.content2': 'Používám Alatyr pro všechny své klienty. Spolehlivost a technická podpora jsou na nejvyšší úrovni.',
+    'landing.testimonials.role3': 'Blogger',
+    'landing.testimonials.content3': 'Jednoduchá správa, skvělá cena a žádné problémy. Přesně to, co jsem hledal pro svůj blog.',
+
+    // Landing page - CTA
+    'landing.cta.title': 'Připraveni začít?',
+    'landing.cta.description': 'Připojte se k tisícům spokojených zákazníků a získejte hosting, na který se můžete spolehnout.',
+    'landing.cta.feature1': '14-denní záruka vrácení peněz',
+    'landing.cta.feature2': 'Bez dlouhodobých závazků',
+    'landing.cta.feature3': 'Aktivace během minut',
+    'landing.cta.button': 'Začít nyní',
+    'landing.cta.guarantee': '14-denní záruka vrácení peněz'
   },
   en: {
     // Navigation
@@ -976,7 +1043,74 @@ const translations = {
     'validation.password.digit': 'Password must contain at least one digit',
     'validation.email.invalid': 'Please enter a valid email address',
     'validation.firstName.min2': 'First name must be at least 2 characters',
-    'validation.lastName.min2': 'Last name must be at least 2 characters'
+    'validation.lastName.min2': 'Last name must be at least 2 characters',
+
+    // Landing page - Hero
+    'landing.hero.badge': 'Next Generation Hosting',
+    'landing.hero.title': 'Professional hosting for your ',
+    'landing.hero.titleHighlight': 'success',
+    'landing.hero.description': 'Get reliable web hosting with 99.9% uptime, blazing-fast SSD servers, and round-the-clock support. Start your successful online project today.',
+    'landing.hero.feature1': 'Free SSL certificate',
+    'landing.hero.feature2': 'Daily data backups',
+    'landing.hero.feature3': '24/7 customer support',
+    'landing.hero.cta': 'Choose a plan',
+    'landing.hero.ctaSecondary': 'Contact sales',
+
+    // Landing page - Preview
+    'landing.preview.server': 'Server',
+    'landing.preview.online': 'Online',
+    'landing.preview.uptime': 'Uptime',
+    'landing.preview.secure': 'Secured',
+    'landing.preview.response': 'Response',
+    'landing.preview.performance': 'Performance',
+
+    // Landing page - Floating badges
+    'landing.floatingBadge.secure': 'Secured',
+    'landing.floatingBadge.fast': 'Fast',
+
+    // Landing page - Stats
+    'landing.stats.uptime': 'Uptime',
+    'landing.stats.customers': 'Happy customers',
+    'landing.stats.support': 'Support',
+    'landing.stats.years': 'Years of experience',
+
+    // Landing page - Features
+    'landing.features.badge': 'Features',
+    'landing.features.title': 'Why choose ',
+    'landing.features.titleHighlight': 'our hosting?',
+    'landing.features.description': 'We provide complete hosting solutions with advanced features for your web projects.',
+    'landing.features.speed.title': 'Lightning-fast Performance',
+    'landing.features.speed.description': 'NVMe SSD drives and optimized servers for maximum page loading speed.',
+    'landing.features.security.title': 'Advanced Security',
+    'landing.features.security.description': 'Firewall, DDoS protection, and regular security updates to keep you safe.',
+    'landing.features.support.title': '24/7 Support',
+    'landing.features.support.description': 'Our expert team is ready to help anytime via chat, email, or phone.',
+    'landing.features.backup.title': 'Automatic Backups',
+    'landing.features.backup.description': 'Daily backups of your data with easy one-click restoration.',
+    'landing.features.scalability.title': 'Scalability',
+    'landing.features.scalability.description': 'Easily upgrade your plan as needed without any service interruption.',
+    'landing.features.global.title': 'Global Availability',
+    'landing.features.global.description': 'European data centers ensure fast loading times for your visitors.',
+
+    // Landing page - Testimonials
+    'landing.testimonials.badge': 'Testimonials',
+    'landing.testimonials.title': 'What our ',
+    'landing.testimonials.titleHighlight': 'customers say',
+    'landing.testimonials.role1': 'E-shop owner',
+    'landing.testimonials.content1': 'Switching to Alatyr was the best decision. Website speed doubled and support is always ready to help.',
+    'landing.testimonials.role2': 'Web developer',
+    'landing.testimonials.content2': 'I use Alatyr for all my clients. Reliability and technical support are top-notch.',
+    'landing.testimonials.role3': 'Blogger',
+    'landing.testimonials.content3': 'Simple management, great price, and no issues. Exactly what I was looking for my blog.',
+
+    // Landing page - CTA
+    'landing.cta.title': 'Ready to get started?',
+    'landing.cta.description': 'Join thousands of satisfied customers and get hosting you can rely on.',
+    'landing.cta.feature1': '14-day money-back guarantee',
+    'landing.cta.feature2': 'No long-term commitments',
+    'landing.cta.feature3': 'Activation within minutes',
+    'landing.cta.button': 'Get started now',
+    'landing.cta.guarantee': '14-day money-back guarantee'
   }
 };
 
