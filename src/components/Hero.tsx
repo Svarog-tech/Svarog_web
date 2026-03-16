@@ -67,23 +67,11 @@ const Hero: React.FC = () => {
       <div className="container">
         <div className="hero-content">
           <div className="hero-left">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-              className="hero-badge-button"
-            >
-              <div className="hero-badge-blob1"></div>
-              <div className="hero-badge-inner">
-                {t('hero.badge')}
-              </div>
-            </motion.div>
-
             <motion.h1
               className="hero-title"
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.3 }}
+              transition={{ duration: 0.8, delay: 0.2 }}
             >
               {t('hero.title')}
               <span className="highlight">{t('hero.titleHighlight')}</span>
