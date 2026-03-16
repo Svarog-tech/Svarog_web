@@ -15,7 +15,10 @@ import {
   faCopy,
   faMapMarkerAlt,
   faLock,
-  faSignOutAlt
+  faSignOutAlt,
+  faInfoCircle,
+  faCheckCircle,
+  faExclamationCircle
 } from '@fortawesome/free-solid-svg-icons';
 import { QRCodeSVG } from 'qrcode.react';
 import { useAuth } from '../contexts/AuthContext';
@@ -25,9 +28,18 @@ import { API_BASE_URL } from '../lib/api';
 import { getAuthHeader } from '../lib/auth';
 import { useToast } from '../components/Toast';
 
+type TabId = 'personal' | 'security' | 'account';
+
+interface Tab {
+  id: TabId;
+  label: string;
+  icon: typeof faUser;
+}
+
 const Profile: React.FC = () => {
   const { user, profile, updateProfile, signOutAllDevices } = useAuth();
   const { t } = useLanguage();
+  const [activeTab, setActiveTab] = useState<TabId>('personal');
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -48,7 +60,6 @@ const Profile: React.FC = () => {
   const [qrCode, setQrCode] = useState('');
   const [totpSecret, setTotpSecret] = useState('');
   const [verificationCode, setVerificationCode] = useState('');
-  const [factorId, setFactorId] = useState('');
   const [recoveryCodes, setRecoveryCodes] = useState<string[]>([]);
   const [showRecoveryCodes, setShowRecoveryCodes] = useState(false);
   const [enrolling, setEnrolling] = useState(false);
@@ -58,6 +69,12 @@ const Profile: React.FC = () => {
   const [passwordData, setPasswordData] = useState({ oldPassword: '', newPassword: '', confirmPassword: '' });
   const [changingPassword, setChangingPassword] = useState(false);
   const [loggingOutAll, setLoggingOutAll] = useState(false);
+
+  const tabs: Tab[] = [
+    { id: 'personal', label: 'Osobní údaje', icon: faUser },
+    { id: 'security', label: 'Zabezpečení', icon: faShieldAlt },
+    { id: 'account', label: 'Účet', icon: faInfoCircle }
+  ];
 
   useEffect(() => {
     if (profile || user) {
@@ -74,7 +91,6 @@ const Profile: React.FC = () => {
     }
   }, [profile, user]);
 
-  // Check 2FA status podle profilu
   useEffect(() => {
     if (profile && typeof profile.two_factor_enabled === 'boolean') {
       setMfaEnabled(profile.two_factor_enabled);
@@ -215,9 +231,9 @@ const Profile: React.FC = () => {
     }
   };
 
-  // Copy to clipboard
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
+    showSuccess('Zkopírováno do schránky');
   };
 
   const handleResendVerification = async () => {
@@ -282,7 +298,6 @@ const Profile: React.FC = () => {
     }
   };
 
-  // Get user initials for avatar
   const getUserInitials = () => {
     const firstName = formData.firstName || profile?.first_name || user?.user_metadata?.first_name;
     const lastName = formData.lastName || profile?.last_name || user?.user_metadata?.last_name;
@@ -298,529 +313,683 @@ const Profile: React.FC = () => {
     return 'U';
   };
 
+  const getProviderLabel = () => {
+    if (profile?.provider === 'google') return 'Google';
+    if (profile?.provider === 'github') return 'GitHub';
+    return 'Email';
+  };
+
+  const renderPersonalTab = () => (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -10 }}
+      transition={{ duration: 0.2 }}
+    >
+      <form onSubmit={handleSubmit} className="profile-form">
+        {success && (
+          <div className="profile-alert profile-alert--success" role="alert">
+            <FontAwesomeIcon icon={faCheckCircle} />
+            <span>Profil byl úspěšně aktualizován!</span>
+          </div>
+        )}
+
+        {error && (
+          <div className="profile-alert profile-alert--error" role="alert">
+            <FontAwesomeIcon icon={faExclamationCircle} />
+            <span>{error}</span>
+          </div>
+        )}
+
+        <section className="profile-section">
+          <h3 className="profile-section__title">Základní údaje</h3>
+
+          <div className="profile-form__row">
+            <div className="profile-form__group">
+              <label htmlFor="firstName" className="profile-form__label">
+                <FontAwesomeIcon icon={faUser} aria-hidden="true" />
+                <span>Křestní jméno</span>
+              </label>
+              <input
+                id="firstName"
+                type="text"
+                className="profile-form__input"
+                value={formData.firstName}
+                onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                placeholder="Tvoje křestní jméno"
+              />
+            </div>
+
+            <div className="profile-form__group">
+              <label htmlFor="lastName" className="profile-form__label">
+                <FontAwesomeIcon icon={faUser} aria-hidden="true" />
+                <span>Příjmení</span>
+              </label>
+              <input
+                id="lastName"
+                type="text"
+                className="profile-form__input"
+                value={formData.lastName}
+                onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                placeholder="Tvoje příjmení"
+              />
+            </div>
+          </div>
+
+          <div className="profile-form__group">
+            <label htmlFor="email" className="profile-form__label">
+              <FontAwesomeIcon icon={faEnvelope} aria-hidden="true" />
+              <span>Email</span>
+            </label>
+            <input
+              id="email"
+              type="email"
+              className="profile-form__input profile-form__input--disabled"
+              value={formData.email}
+              disabled
+              aria-describedby="email-hint"
+            />
+            <small id="email-hint" className="profile-form__hint">Email nelze změnit</small>
+          </div>
+
+          <div className="profile-form__row">
+            <div className="profile-form__group">
+              <label htmlFor="phone" className="profile-form__label">
+                <FontAwesomeIcon icon={faPhone} aria-hidden="true" />
+                <span>Telefon</span>
+              </label>
+              <input
+                id="phone"
+                type="tel"
+                className="profile-form__input"
+                value={formData.phone}
+                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                placeholder="+420 123 456 789"
+              />
+            </div>
+
+            <div className="profile-form__group">
+              <label htmlFor="company" className="profile-form__label">
+                <FontAwesomeIcon icon={faBuilding} aria-hidden="true" />
+                <span>Firma (volitelné)</span>
+              </label>
+              <input
+                id="company"
+                type="text"
+                className="profile-form__input"
+                value={formData.company}
+                onChange={(e) => setFormData({ ...formData, company: e.target.value })}
+                placeholder="Název firmy"
+              />
+            </div>
+          </div>
+
+          <div className="profile-form__group">
+            <label htmlFor="address" className="profile-form__label">
+              <FontAwesomeIcon icon={faMapMarkerAlt} aria-hidden="true" />
+              <span>Adresa</span>
+            </label>
+            <input
+              id="address"
+              type="text"
+              className="profile-form__input"
+              value={formData.address}
+              onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+              placeholder="Ulice a číslo popisné, PSČ Město"
+            />
+          </div>
+        </section>
+
+        <section className="profile-section">
+          <h3 className="profile-section__title">Fakturační údaje</h3>
+
+          <div className="profile-form__row">
+            <div className="profile-form__group">
+              <label htmlFor="ico" className="profile-form__label">
+                <FontAwesomeIcon icon={faBuilding} aria-hidden="true" />
+                <span>IČO (volitelné)</span>
+              </label>
+              <input
+                id="ico"
+                type="text"
+                className="profile-form__input"
+                value={formData.ico}
+                onChange={(e) => setFormData({ ...formData, ico: e.target.value })}
+                placeholder="12345678"
+                maxLength={20}
+              />
+            </div>
+
+            <div className="profile-form__group">
+              <label htmlFor="dic" className="profile-form__label">
+                <FontAwesomeIcon icon={faBuilding} aria-hidden="true" />
+                <span>DIČ (volitelné)</span>
+              </label>
+              <input
+                id="dic"
+                type="text"
+                className="profile-form__input"
+                value={formData.dic}
+                onChange={(e) => setFormData({ ...formData, dic: e.target.value })}
+                placeholder="CZ12345678"
+                maxLength={20}
+              />
+            </div>
+          </div>
+        </section>
+
+        <div className="profile-form__actions">
+          <button
+            type="submit"
+            className="profile-btn profile-btn--primary"
+            disabled={saving}
+          >
+            <FontAwesomeIcon icon={faSave} aria-hidden="true" />
+            <span>{saving ? 'Ukládám...' : 'Uložit změny'}</span>
+          </button>
+        </div>
+      </form>
+    </motion.div>
+  );
+
+  const renderSecurityTab = () => (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -10 }}
+      transition={{ duration: 0.2 }}
+      className="profile-security"
+    >
+      {/* 2FA Section */}
+      <section className="profile-card">
+        <div className="profile-card__header">
+          <div className="profile-card__icon">
+            <FontAwesomeIcon icon={faShieldAlt} />
+          </div>
+          <div className="profile-card__info">
+            <h3 className="profile-card__title">Dvoufaktorové ověření (2FA)</h3>
+            <p className="profile-card__description">
+              {mfaEnabled
+                ? 'Tvůj účet je zabezpečený pomocí 2FA'
+                : 'Přidej extra vrstvu zabezpečení k tvému účtu'}
+            </p>
+          </div>
+          <div className="profile-card__status">
+            {mfaEnabled ? (
+              <span className="profile-badge profile-badge--success">Aktivní</span>
+            ) : (
+              <span className="profile-badge profile-badge--neutral">Neaktivní</span>
+            )}
+          </div>
+        </div>
+
+        <div className="profile-card__actions">
+          {mfaEnabled ? (
+            <button
+              type="button"
+              className="profile-btn profile-btn--danger"
+              onClick={disable2FA}
+              disabled={enrolling}
+            >
+              Vypnout 2FA
+            </button>
+          ) : (
+            <button
+              type="button"
+              className="profile-btn profile-btn--primary"
+              onClick={enable2FA}
+              disabled={enrolling}
+            >
+              <FontAwesomeIcon icon={faShieldAlt} aria-hidden="true" />
+              <span>Zapnout 2FA</span>
+            </button>
+          )}
+        </div>
+
+        {mfaEnabled && recoveryCodes.length > 0 && (
+          <div className="profile-recovery">
+            <div className="profile-recovery__header">
+              <h4 className="profile-recovery__title">
+                <FontAwesomeIcon icon={faKey} aria-hidden="true" />
+                <span>Záložní kódy</span>
+              </h4>
+              <button
+                type="button"
+                className="profile-btn profile-btn--ghost"
+                onClick={() => setShowRecoveryCodes(!showRecoveryCodes)}
+              >
+                {showRecoveryCodes ? 'Skrýt' : 'Zobrazit'}
+              </button>
+            </div>
+
+            <AnimatePresence>
+              {showRecoveryCodes && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <p className="profile-recovery__hint">
+                    Ulož si tyto kódy na bezpečné místo. Použij je pokud ztratíš přístup k authenticator aplikaci.
+                  </p>
+                  <div className="profile-recovery__grid">
+                    {recoveryCodes.map((code, index) => (
+                      <div key={index} className="profile-recovery__code">
+                        <code>{code}</code>
+                        <button
+                          type="button"
+                          className="profile-btn profile-btn--icon"
+                          onClick={() => copyToClipboard(code)}
+                          aria-label="Kopírovat kód"
+                        >
+                          <FontAwesomeIcon icon={faCopy} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        )}
+      </section>
+
+      {/* Password Change Section */}
+      {profile?.provider !== 'google' && profile?.provider !== 'github' && (
+        <section className="profile-card">
+          <div className="profile-card__header">
+            <div className="profile-card__icon">
+              <FontAwesomeIcon icon={faLock} />
+            </div>
+            <div className="profile-card__info">
+              <h3 className="profile-card__title">Změna hesla</h3>
+              <p className="profile-card__description">
+                Pravidelná změna hesla zvyšuje zabezpečení účtu
+              </p>
+            </div>
+          </div>
+
+          <div className="profile-password">
+            <div className="profile-form__group">
+              <label htmlFor="oldPassword" className="profile-form__label">
+                Staré heslo
+              </label>
+              <input
+                id="oldPassword"
+                type="password"
+                className="profile-form__input"
+                value={passwordData.oldPassword}
+                onChange={(e) => setPasswordData({ ...passwordData, oldPassword: e.target.value })}
+                placeholder="Zadej současné heslo"
+                autoComplete="current-password"
+              />
+            </div>
+
+            <div className="profile-form__row">
+              <div className="profile-form__group">
+                <label htmlFor="newPassword" className="profile-form__label">
+                  Nové heslo
+                </label>
+                <input
+                  id="newPassword"
+                  type="password"
+                  className="profile-form__input"
+                  value={passwordData.newPassword}
+                  onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
+                  placeholder="Min. 8 znaků"
+                  autoComplete="new-password"
+                />
+              </div>
+
+              <div className="profile-form__group">
+                <label htmlFor="confirmPassword" className="profile-form__label">
+                  Potvrzení hesla
+                </label>
+                <input
+                  id="confirmPassword"
+                  type="password"
+                  className="profile-form__input"
+                  value={passwordData.confirmPassword}
+                  onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
+                  placeholder="Zopakuj nové heslo"
+                  autoComplete="new-password"
+                />
+              </div>
+            </div>
+
+            <button
+              type="button"
+              className="profile-btn profile-btn--primary"
+              onClick={handleChangePassword}
+              disabled={changingPassword || !passwordData.oldPassword || !passwordData.newPassword}
+            >
+              <FontAwesomeIcon icon={faLock} aria-hidden="true" />
+              <span>{changingPassword ? 'Měním heslo...' : 'Změnit heslo'}</span>
+            </button>
+          </div>
+        </section>
+      )}
+
+      {/* Sign Out All Devices */}
+      <section className="profile-card profile-card--danger">
+        <div className="profile-card__header">
+          <div className="profile-card__icon profile-card__icon--danger">
+            <FontAwesomeIcon icon={faSignOutAlt} />
+          </div>
+          <div className="profile-card__info">
+            <h3 className="profile-card__title">Odhlásit ze všech zařízení</h3>
+            <p className="profile-card__description">
+              Odhlásíte se ze všech zařízení (telefon, tablet, jiný počítač). Budete muset se znovu přihlásit všude.
+            </p>
+          </div>
+        </div>
+
+        <div className="profile-card__actions">
+          <button
+            type="button"
+            className="profile-btn profile-btn--danger"
+            onClick={async () => {
+              setLoggingOutAll(true);
+              const result = await signOutAllDevices();
+              setLoggingOutAll(false);
+              if (result.success) {
+                showSuccess('Byli jste odhlášeni ze všech zařízení.');
+              } else {
+                showError(result.error || 'Odhlášení se nezdařilo.');
+              }
+            }}
+            disabled={loggingOutAll}
+          >
+            <FontAwesomeIcon icon={faSignOutAlt} aria-hidden="true" />
+            <span>{loggingOutAll ? 'Odhlášení...' : 'Odhlásit vše'}</span>
+          </button>
+        </div>
+      </section>
+    </motion.div>
+  );
+
+  const renderAccountTab = () => (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -10 }}
+      transition={{ duration: 0.2 }}
+    >
+      <section className="profile-card">
+        <h3 className="profile-card__title" style={{ marginBottom: '1.5rem' }}>Informace o účtu</h3>
+
+        <div className="profile-info-grid">
+          <div className="profile-info-item">
+            <span className="profile-info-item__label">Členem od</span>
+            <span className="profile-info-item__value">
+              {profile?.created_at ? new Date(profile.created_at).toLocaleDateString('cs-CZ') : '-'}
+            </span>
+          </div>
+
+          <div className="profile-info-item">
+            <span className="profile-info-item__label">Poslední přihlášení</span>
+            <span className="profile-info-item__value">
+              {profile?.last_login ? new Date(profile.last_login).toLocaleDateString('cs-CZ') : '-'}
+            </span>
+          </div>
+
+          <div className="profile-info-item">
+            <span className="profile-info-item__label">Email ověřen</span>
+            <span className="profile-info-item__value">
+              {profile?.email_verified ? (
+                <span className="profile-status profile-status--success">
+                  <FontAwesomeIcon icon={faCheckCircle} />
+                  <span>Ověřen</span>
+                </span>
+              ) : (
+                <span className="profile-status profile-status--warning">
+                  <FontAwesomeIcon icon={faExclamationCircle} />
+                  <span>Neověřen</span>
+                </span>
+              )}
+            </span>
+            {!profile?.email_verified && (
+              <button
+                type="button"
+                className="profile-btn profile-btn--link"
+                onClick={handleResendVerification}
+              >
+                Odeslat ověřovací email znovu
+              </button>
+            )}
+          </div>
+
+          <div className="profile-info-item">
+            <span className="profile-info-item__label">Poskytovatel</span>
+            <span className="profile-info-item__value">
+              <span className="profile-badge">{getProviderLabel()}</span>
+            </span>
+          </div>
+
+          <div className="profile-info-item">
+            <span className="profile-info-item__label">2FA</span>
+            <span className="profile-info-item__value">
+              {mfaEnabled ? (
+                <span className="profile-status profile-status--success">
+                  <FontAwesomeIcon icon={faShieldAlt} />
+                  <span>Aktivní</span>
+                </span>
+              ) : (
+                <span className="profile-status profile-status--neutral">
+                  <FontAwesomeIcon icon={faShieldAlt} />
+                  <span>Neaktivní</span>
+                </span>
+              )}
+            </span>
+          </div>
+        </div>
+      </section>
+    </motion.div>
+  );
+
   return (
     <div className="profile-page">
       <div className="profile-container">
-        {/* Header */}
-        <motion.div
+        {/* Header with Avatar */}
+        <motion.header
           className="profile-header"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
+          transition={{ duration: 0.4 }}
         >
-          <h1 className="profile-title">Nastavení profilu</h1>
-          <p className="profile-subtitle">
-            Aktualizuj své osobní údaje a nastavení účtu
-          </p>
-        </motion.div>
-
-        <div className="profile-content">
-          {/* Avatar Section */}
-          <motion.div
-            className="avatar-section"
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.6, delay: 0.1 }}
-          >
-            <div className="avatar-card">
-              <div className="avatar-large">
-                {profile?.avatar_url ? (
-                  <img
-                    src={profile.avatar_url}
-                    alt="Avatar"
-                    loading="lazy"
-                    decoding="async"
-                  />
-                ) : (
-                  <div className="avatar-initials-large">
-                    {getUserInitials()}
-                  </div>
-                )}
-                <button className="avatar-upload-btn">
-                  <FontAwesomeIcon icon={faCamera} />
-                </button>
+          <div className="profile-avatar">
+            {profile?.avatar_url ? (
+              <img
+                src={profile.avatar_url}
+                alt="Avatar"
+                className="profile-avatar__image"
+                loading="lazy"
+              />
+            ) : (
+              <div className="profile-avatar__initials">
+                {getUserInitials()}
               </div>
-              <div className="avatar-info">
-                <h3>{formData.firstName || formData.lastName ? `${formData.firstName} ${formData.lastName}` : 'Uživatel'}</h3>
-                <p>{formData.email}</p>
-                <span className="user-badge">
-                  {profile?.provider === 'google' ? 'Google účet' :
-                   profile?.provider === 'github' ? 'GitHub účet' : 'Email účet'}
-                </span>
-              </div>
-            </div>
-          </motion.div>
-
-          {/* Profile Form */}
-          <motion.div
-            className="form-section"
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-          >
-            <form onSubmit={handleSubmit} className="profile-form">
-              {success && (
-                <div className="alert alert-success">
-                  <FontAwesomeIcon icon={faCheck} />
-                  Profil byl úspěšně aktualizován!
-                </div>
-              )}
-
-              {error && (
-                <div className="alert alert-error">
-                  {error}
-                </div>
-              )}
-
-              <div className="form-section-title">
-                <h2>Osobní údaje</h2>
-              </div>
-
-              <div className="form-row">
-                <div className="form-group">
-                  <label>
-                    <FontAwesomeIcon icon={faUser} />
-                    Křestní jméno
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.firstName}
-                    onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                    placeholder="Tvoje křestní jméno"
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>
-                    <FontAwesomeIcon icon={faUser} />
-                    Příjmení
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.lastName}
-                    onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-                    placeholder="Tvoje příjmení"
-                  />
-                </div>
-              </div>
-
-              <div className="form-group">
-                <label>
-                  <FontAwesomeIcon icon={faEnvelope} />
-                  Email
-                </label>
-                <input
-                  type="email"
-                  value={formData.email}
-                  disabled
-                  className="disabled-input"
-                />
-                <small className="form-hint">Email nelze změnit</small>
-              </div>
-
-              <div className="form-row">
-                <div className="form-group">
-                  <label>
-                    <FontAwesomeIcon icon={faPhone} />
-                    Telefon
-                  </label>
-                  <input
-                    type="tel"
-                    value={formData.phone}
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    placeholder="+420 123 456 789"
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>
-                    <FontAwesomeIcon icon={faBuilding} />
-                    Firma (volitelné)
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.company}
-                    onChange={(e) => setFormData({ ...formData, company: e.target.value })}
-                    placeholder="Název firmy"
-                  />
-                </div>
-              </div>
-
-              <div className="form-group">
-                <label>
-                  <FontAwesomeIcon icon={faMapMarkerAlt} />
-                  Adresa
-                </label>
-                <input
-                  type="text"
-                  value={formData.address}
-                  onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                  placeholder="Ulice a číslo popisné, PSČ Město"
-                />
-              </div>
-
-              <div className="form-section-title">
-                <h2>Fakturační údaje</h2>
-              </div>
-
-              <div className="form-row">
-                <div className="form-group">
-                  <label>
-                    <FontAwesomeIcon icon={faBuilding} />
-                    IČO (volitelné)
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.ico}
-                    onChange={(e) => setFormData({ ...formData, ico: e.target.value })}
-                    placeholder="12345678"
-                    maxLength={20}
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>
-                    <FontAwesomeIcon icon={faBuilding} />
-                    DIČ (volitelné)
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.dic}
-                    onChange={(e) => setFormData({ ...formData, dic: e.target.value })}
-                    placeholder="CZ12345678"
-                    maxLength={20}
-                  />
-                </div>
-              </div>
-
-              <div className="form-section-title">
-                <h2>Zabezpečení</h2>
-              </div>
-
-              <div className="mfa-section">
-                <div className="mfa-header">
-                  <div className="mfa-info">
-                    <div className="mfa-icon">
-                      <FontAwesomeIcon icon={faShieldAlt} />
-                    </div>
-                    <div>
-                      <h3>Dvoufaktorové ověření (2FA)</h3>
-                      <p>
-                        {mfaEnabled
-                          ? 'Tvůj účet je zabezpečený pomocí 2FA'
-                          : 'Přidej extra vrstvu zabezpečení k tvému účtu'}
-                      </p>
-                    </div>
-                  </div>
-                  {mfaEnabled ? (
-                    <button
-                      type="button"
-                      className="mfa-btn danger"
-                      onClick={disable2FA}
-                      disabled={enrolling}
-                    >
-                      Vypnout 2FA
-                    </button>
-                  ) : (
-                    <button
-                      type="button"
-                      className="mfa-btn primary"
-                      onClick={enable2FA}
-                      disabled={enrolling}
-                    >
-                      <FontAwesomeIcon icon={faShieldAlt} />
-                      Zapnout 2FA
-                    </button>
-                  )}
-                </div>
-
-                {mfaEnabled && recoveryCodes.length > 0 && (
-                  <div className="recovery-codes-section">
-                    <div className="recovery-codes-header">
-                      <h4>
-                        <FontAwesomeIcon icon={faKey} />
-                        Záložní kódy
-                      </h4>
-                      <button
-                        type="button"
-                        className="toggle-codes-btn"
-                        onClick={() => setShowRecoveryCodes(!showRecoveryCodes)}
-                      >
-                        {showRecoveryCodes ? 'Skrýt kódy' : 'Zobrazit kódy'}
-                      </button>
-                    </div>
-
-                    {showRecoveryCodes && (
-                      <>
-                        <p className="recovery-codes-hint">
-                          Ulož si tyto kódy na bezpečné místo. Použij je pokud ztratíš přístup k authenticator aplikaci.
-                        </p>
-                        <div className="recovery-codes-grid">
-                          {recoveryCodes.map((code, index) => (
-                            <div key={index} className="recovery-code">
-                              <code>{code}</code>
-                              <button
-                                type="button"
-                                className="copy-btn"
-                                onClick={() => copyToClipboard(code)}
-                                title="Kopírovat"
-                              >
-                                <FontAwesomeIcon icon={faCopy} />
-                              </button>
-                            </div>
-                          ))}
-                        </div>
-                      </>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              {/* Password Change */}
-              {profile?.provider !== 'google' && profile?.provider !== 'github' && (
-                <div className="password-change-section">
-                  <div className="mfa-header">
-                    <div className="mfa-info">
-                      <div className="mfa-icon">
-                        <FontAwesomeIcon icon={faLock} />
-                      </div>
-                      <div>
-                        <h3>Změna hesla</h3>
-                        <p>Pravidelná změna hesla zvyšuje zabezpečení účtu</p>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="password-fields">
-                    <div className="form-group">
-                      <label>Staré heslo</label>
-                      <input
-                        type="password"
-                        value={passwordData.oldPassword}
-                        onChange={(e) => setPasswordData({ ...passwordData, oldPassword: e.target.value })}
-                        placeholder="Zadej současné heslo"
-                        autoComplete="current-password"
-                      />
-                    </div>
-                    <div className="form-row">
-                      <div className="form-group">
-                        <label>Nové heslo</label>
-                        <input
-                          type="password"
-                          value={passwordData.newPassword}
-                          onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
-                          placeholder="Min. 8 znaků"
-                          autoComplete="new-password"
-                        />
-                      </div>
-                      <div className="form-group">
-                        <label>Potvrzení nového hesla</label>
-                        <input
-                          type="password"
-                          value={passwordData.confirmPassword}
-                          onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
-                          placeholder="Zopakuj nové heslo"
-                          autoComplete="new-password"
-                        />
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      className="mfa-btn primary"
-                      onClick={handleChangePassword}
-                      disabled={changingPassword || !passwordData.oldPassword || !passwordData.newPassword}
-                    >
-                      <FontAwesomeIcon icon={faLock} />
-                      {changingPassword ? 'Měním heslo...' : 'Změnit heslo'}
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              <div className="form-actions">
-                <button
-                  type="submit"
-                  className="save-btn"
-                  disabled={saving}
-                >
-                  <FontAwesomeIcon icon={faSave} />
-                  {saving ? 'Ukládám...' : 'Uložit změny'}
-                </button>
-              </div>
-            </form>
-          </motion.div>
-        </div>
-
-        {/* Account Info */}
-        <motion.div
-          className="account-info"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.3 }}
-        >
-          <h3>Informace o účtu</h3>
-          <div className="info-grid">
-            <div className="info-item">
-              <span className="info-label">Členem od:</span>
-              <span className="info-value">
-                {profile?.created_at ? new Date(profile.created_at).toLocaleDateString('cs-CZ') : '-'}
-              </span>
-            </div>
-            <div className="info-item">
-              <span className="info-label">Poslední přihlášení:</span>
-              <span className="info-value">
-                {profile?.last_login ? new Date(profile.last_login).toLocaleDateString('cs-CZ') : '-'}
-              </span>
-            </div>
-            <div className="info-item">
-              <span className="info-label">Email ověřen:</span>
-              <span className="info-value">
-                {profile?.email_verified ? '✓ Ano' : '✗ Ne'}
-              </span>
-              {!profile?.email_verified && (
-                <button
-                  type="button"
-                  className="resend-verification-btn"
-                  onClick={handleResendVerification}
-                >
-                  Odeslat ověřovací email znovu
-                </button>
-              )}
-            </div>
-            <div className="info-item">
-              <span className="info-label">Poskytovatel:</span>
-              <span className="info-value">
-                {profile?.provider === 'google' ? 'Google' :
-                 profile?.provider === 'github' ? 'GitHub' : 'Email'}
-              </span>
-            </div>
-          </div>
-          <div className="logout-all-section">
-            <p className="logout-all-description">
-              Odhlásíte se ze všech zařízení (telefon, tablet, jiný počítač). Budete muset se znovu přihlásit všude.
-            </p>
+            )}
             <button
               type="button"
-              className="logout-all-btn"
-              onClick={async () => {
-                setLoggingOutAll(true);
-                const result = await signOutAllDevices();
-                setLoggingOutAll(false);
-                if (result.success) {
-                  showSuccess('Byli jste odhlášeni ze všech zařízení.');
-                } else {
-                  showError(result.error || 'Odhlášení se nezdařilo.');
-                }
-              }}
-              disabled={loggingOutAll}
+              className="profile-avatar__upload"
+              aria-label="Nahrát avatar"
             >
-              <FontAwesomeIcon icon={faSignOutAlt} />
-              {loggingOutAll ? 'Odhlášení...' : 'Odhlásit ze všech zařízení'}
+              <FontAwesomeIcon icon={faCamera} />
             </button>
           </div>
-        </motion.div>
+
+          <div className="profile-header__info">
+            <h1 className="profile-header__name">
+              {formData.firstName || formData.lastName
+                ? `${formData.firstName} ${formData.lastName}`.trim()
+                : 'Uživatel'}
+            </h1>
+            <p className="profile-header__email">{formData.email}</p>
+            <span className="profile-badge profile-badge--accent">
+              {getProviderLabel()} účet
+            </span>
+          </div>
+        </motion.header>
+
+        {/* Tabs Navigation */}
+        <motion.nav
+          className="profile-tabs"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.1 }}
+          role="tablist"
+          aria-label="Nastavení profilu"
+        >
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              className={`profile-tabs__tab ${activeTab === tab.id ? 'profile-tabs__tab--active' : ''}`}
+              onClick={() => setActiveTab(tab.id)}
+              role="tab"
+              aria-selected={activeTab === tab.id}
+              aria-controls={`panel-${tab.id}`}
+              id={`tab-${tab.id}`}
+            >
+              <FontAwesomeIcon icon={tab.icon} aria-hidden="true" />
+              <span>{tab.label}</span>
+            </button>
+          ))}
+        </motion.nav>
+
+        {/* Tab Content */}
+        <motion.main
+          className="profile-content"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.2 }}
+          role="tabpanel"
+          id={`panel-${activeTab}`}
+          aria-labelledby={`tab-${activeTab}`}
+        >
+          <AnimatePresence mode="wait">
+            {activeTab === 'personal' && renderPersonalTab()}
+            {activeTab === 'security' && renderSecurityTab()}
+            {activeTab === 'account' && renderAccountTab()}
+          </AnimatePresence>
+        </motion.main>
 
         {/* 2FA Setup Modal */}
         <AnimatePresence>
           {show2FAModal && (
             <motion.div
-              className="modal-overlay"
+              className="profile-modal-overlay"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setShow2FAModal(false)}
             >
               <motion.div
-                className="modal-content mfa-modal"
-                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                className="profile-modal"
+                initial={{ opacity: 0, scale: 0.95, y: 20 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                exit={{ opacity: 0, scale: 0.95, y: 20 }}
                 onClick={(e) => e.stopPropagation()}
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="mfa-modal-title"
               >
-                <div className="modal-header">
-                  <h2>Nastavení dvoufaktorového ověření</h2>
+                <header className="profile-modal__header">
+                  <h2 id="mfa-modal-title">Nastavení dvoufaktorového ověření</h2>
                   <button
-                    className="close-modal-btn"
+                    type="button"
+                    className="profile-modal__close"
                     onClick={() => setShow2FAModal(false)}
+                    aria-label="Zavřít"
                   >
                     <FontAwesomeIcon icon={faTimes} />
                   </button>
-                </div>
+                </header>
 
-                <div className="modal-body">
-                  <div className="mfa-steps">
-                    <div className="mfa-step">
-                      <div className="step-number">1</div>
-                      <div className="step-content">
+                <div className="profile-modal__body">
+                  <div className="profile-mfa-steps">
+                    <div className="profile-mfa-step">
+                      <div className="profile-mfa-step__number">1</div>
+                      <div className="profile-mfa-step__content">
                         <h3>Stáhni si Authenticator aplikaci</h3>
                         <p>Použij Google Authenticator, Authy nebo jinou TOTP aplikaci</p>
                       </div>
                     </div>
 
-                    <div className="mfa-step">
-                      <div className="step-number">2</div>
-                      <div className="step-content">
+                    <div className="profile-mfa-step">
+                      <div className="profile-mfa-step__number">2</div>
+                      <div className="profile-mfa-step__content">
                         <h3>Naskenuj QR kód</h3>
-                        <div className="qr-code-container">
+                        <div className="profile-mfa-qr">
                           {qrCode && (
                             <QRCodeSVG
                               value={qrCode}
-                              size={200}
+                              size={180}
                               level="M"
                               includeMargin={true}
                             />
                           )}
                         </div>
-                        <div className="secret-key">
+                        <div className="profile-mfa-secret">
                           <p>Nebo zadej tento kód ručně:</p>
-                          <code>{totpSecret}</code>
-                          <button
-                            type="button"
-                            className="copy-btn-inline"
-                            onClick={() => copyToClipboard(totpSecret)}
-                          >
-                            <FontAwesomeIcon icon={faCopy} />
-                            Kopírovat
-                          </button>
+                          <div className="profile-mfa-secret__code">
+                            <code>{totpSecret}</code>
+                            <button
+                              type="button"
+                              className="profile-btn profile-btn--ghost"
+                              onClick={() => copyToClipboard(totpSecret)}
+                            >
+                              <FontAwesomeIcon icon={faCopy} aria-hidden="true" />
+                              <span>Kopírovat</span>
+                            </button>
+                          </div>
                         </div>
                       </div>
                     </div>
 
-                    <div className="mfa-step">
-                      <div className="step-number">3</div>
-                      <div className="step-content">
+                    <div className="profile-mfa-step">
+                      <div className="profile-mfa-step__number">3</div>
+                      <div className="profile-mfa-step__content">
                         <h3>Zadej ověřovací kód</h3>
                         <p>Zadej 6-místný kód z aplikace</p>
                         <input
                           type="text"
-                          className="verification-input"
+                          className="profile-mfa-input"
                           placeholder="123456"
                           maxLength={6}
                           value={verificationCode}
                           onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, ''))}
+                          aria-label="Ověřovací kód"
                         />
-                        {error && <div className="error-message">{error}</div>}
+                        {error && (
+                          <div className="profile-alert profile-alert--error" role="alert">
+                            <FontAwesomeIcon icon={faExclamationCircle} />
+                            <span>{error}</span>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
-
-                  <div className="modal-actions">
-                    <button
-                      type="button"
-                      className="cancel-btn"
-                      onClick={() => setShow2FAModal(false)}
-                    >
-                      Zrušit
-                    </button>
-                    <button
-                      type="button"
-                      className="verify-btn"
-                      onClick={verify2FA}
-                      disabled={enrolling || verificationCode.length !== 6}
-                    >
-                      {enrolling ? 'Ověřuji...' : 'Ověřit a zapnout'}
-                    </button>
-                  </div>
                 </div>
+
+                <footer className="profile-modal__footer">
+                  <button
+                    type="button"
+                    className="profile-btn profile-btn--secondary"
+                    onClick={() => setShow2FAModal(false)}
+                  >
+                    Zrušit
+                  </button>
+                  <button
+                    type="button"
+                    className="profile-btn profile-btn--primary"
+                    onClick={verify2FA}
+                    disabled={enrolling || verificationCode.length !== 6}
+                  >
+                    {enrolling ? 'Ověřuji...' : 'Ověřit a zapnout'}
+                  </button>
+                </footer>
               </motion.div>
             </motion.div>
           )}
