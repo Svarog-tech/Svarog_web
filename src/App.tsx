@@ -104,7 +104,7 @@ function App() {
                         <Route path="backups" element={<BackupManager />} />
                         <Route path="cron" element={<CronJobsManager />} />
                       </Route>
-                      <Route path="/tickets" element={<ProtectedRoute><Tickets /></ProtectedRoute>} />
+                      <Route path="/tickets" element={<ProtectedRoute allowGuest><Tickets /></ProtectedRoute>} />
                       <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
                       <Route path="/configurator" element={<ProtectedRoute><Configurator /></ProtectedRoute>} />
 

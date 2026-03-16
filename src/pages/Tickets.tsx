@@ -12,7 +12,7 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useToast } from '../components/Toast';
-import { createSupportTicket, apiCall } from '../lib/api';
+import { createSupportTicket, createPublicTicket, apiCall } from '../lib/api';
 import { SkeletonList } from '../components/Skeleton';
 import TicketDetailModal from '../components/TicketDetailModal';
 import './Tickets.css';
@@ -75,7 +75,17 @@ const Tickets: React.FC = () => {
     setSubmitting(true);
 
     try {
-      await createSupportTicket(formData);
+      // Use public endpoint if not logged in (development mode)
+      if (!user) {
+        await createPublicTicket({
+          ...formData,
+          email: 'test@example.com',
+          name: 'Test User'
+        });
+      } else {
+        await createSupportTicket(formData);
+      }
+
       setSuccess(true);
       setFormData({
         subject: '',
@@ -84,8 +94,10 @@ const Tickets: React.FC = () => {
         category: 'general'
       });
 
-      // Načtení tiketů znovu
-      fetchTickets();
+      // Načtení tiketů znovu (only if logged in)
+      if (user) {
+        fetchTickets();
+      }
 
       setTimeout(() => {
         setShowNewTicketForm(false);

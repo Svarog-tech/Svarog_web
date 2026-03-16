@@ -289,6 +289,8 @@ export interface SupportTicketData {
   message: string;
   priority?: 'low' | 'medium' | 'high' | 'urgent';
   category?: string;
+  email?: string;
+  name?: string;
 }
 
 export const createSupportTicket = async (data: SupportTicketData) => {
@@ -301,6 +303,28 @@ export const createSupportTicket = async (data: SupportTicketData) => {
     return result.ticket;
   }
   throw new Error(result.error || 'Failed to create support ticket');
+};
+
+/**
+ * Create a public ticket without authentication (development only)
+ * This bypasses auth and creates a Discord channel directly
+ */
+export const createPublicTicket = async (data: SupportTicketData) => {
+  const API_URL = import.meta.env.VITE_API_URL || '/api';
+  const response = await fetch(`${API_URL}/tickets/public`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(data),
+  });
+
+  const result = await response.json();
+
+  if (result.success) {
+    return result;
+  }
+  throw new Error(result.error || 'Failed to create ticket');
 };
 
 // ============================================

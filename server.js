@@ -226,6 +226,11 @@ function requireCsrfGuard(req, res, next) {
     return next();
   }
 
+  // Discord and public test endpoints (development only)
+  if (process.env.NODE_ENV !== 'production' && (req.path.startsWith('/discord/') || req.path === '/tickets/public')) {
+    return next();
+  }
+
   const csrfHeader = req.get('X-CSRF-Guard');
   if (!csrfHeader) {
     return next(new AppError('Missing CSRF protection header', 403));
@@ -1913,6 +1918,7 @@ app.post('/api/auth/change-password',
 // ============================================
 
 const discordService = require('./services/discordService');
+const { initializeDiscordBot, getDiscordBot } = require('./services/discordTicketBot');
 
 /**
  * Create a new support ticket
@@ -1972,25 +1978,37 @@ app.post('/api/tickets',
     const userQuery = 'SELECT email, first_name, last_name FROM profiles WHERE id = ?';
     const userResult = await db.queryOne(userQuery, [userId]);
 
-    // Send Discord notification (non-blocking)
+    // Send Discord notification and create ticket channel (non-blocking)
     if (userResult) {
       const fullName = [userResult.first_name, userResult.last_name]
         .filter(Boolean)
         .join(' ')
         .trim();
 
-      discordService.sendTicketNotification({
+      const ticketData = {
         ticketId: ticketId,
+        userId: userId,
         name: fullName || userResult.email || 'Unknown',
         email: userResult.email || 'Unknown',
         subject: subjectTrimmed,
         message: messageTrimmed,
         priority: ticketPriority,
-        category: ticketCategory
-      }).catch(error => {
-        // Log error but don't fail the request (Winston expects message + structured meta)
+        category: ticketCategory,
+        status: 'open'
+      };
+
+      // Legacy Discord notification (to notification channel)
+      discordService.sendTicketNotification(ticketData).catch(error => {
         logger.error('Failed to send Discord notification', { error: error?.message || String(error) });
       });
+
+      // Create Discord ticket channel (new feature)
+      const discordBot = getDiscordBot();
+      if (discordBot && discordBot.ready) {
+        discordBot.createTicketChannel(ticketData).catch(error => {
+          logger.error('Failed to create Discord ticket channel', { error: error?.message || String(error) });
+        });
+      }
     }
 
     logger.info(`Ticket #${ticketId} created by user ${userId}`, {
@@ -2128,6 +2146,27 @@ app.put('/api/tickets/:id',
       values
     );
     const updated = await db.queryOne('SELECT * FROM support_tickets WHERE id = ?', [ticketId]);
+
+    // Notify Discord about status change (non-blocking)
+    try {
+      const discordBot = getDiscordBot();
+      if (discordBot && discordBot.ready && status) {
+        if (status === 'closed') {
+          // Handle ticket closure - delete Discord channel
+          discordBot.onTicketClosed(ticketId).catch(err => {
+            logger.error('Failed to close Discord ticket channel', { error: err?.message || String(err), ticketId });
+          });
+        } else {
+          // Notify about status change
+          discordBot.onTicketStatusChanged(ticketId, status).catch(err => {
+            logger.error('Failed to notify Discord about status change', { error: err?.message || String(err), ticketId });
+          });
+        }
+      }
+    } catch (discordError) {
+      logger.error('Discord status notification error', { error: discordError?.message || String(discordError), ticketId });
+    }
+
     res.json({ success: true, ticket: updated });
   })
 );
@@ -2236,6 +2275,21 @@ app.post('/api/tickets/:id/messages',
         error: emailError.message || emailError,
         ticketId,
       });
+    }
+
+    // Sync message to Discord channel (non-blocking)
+    try {
+      const discordBot = getDiscordBot();
+      if (discordBot && discordBot.ready) {
+        const userName = req.user.first_name && req.user.last_name
+          ? `${req.user.first_name} ${req.user.last_name}`.trim()
+          : req.user.email || 'Unknown';
+        discordBot.sendMessageToChannel(ticketId, message.trim(), userName, isAdmin).catch(err => {
+          logger.error('Failed to sync message to Discord', { error: err?.message || String(err), ticketId });
+        });
+      }
+    } catch (discordError) {
+      logger.error('Discord message sync error', { error: discordError?.message || String(discordError), ticketId });
     }
 
     res.json({ success: true, messages: messages || [] });
@@ -5439,6 +5493,104 @@ app.get('/health/ready', asyncHandler(async (req, res) => {
   res.status(httpStatus).json(body);
 }));
 
+/**
+ * Discord Bot Test Endpoint (development only)
+ * POST /api/discord/test - Creates a test ticket channel
+ */
+if (process.env.NODE_ENV !== 'production') {
+  app.post('/api/discord/test', asyncHandler(async (req, res) => {
+    const discordBot = getDiscordBot();
+
+    if (!discordBot || !discordBot.isReady) {
+      return res.status(503).json({
+        success: false,
+        error: 'Discord bot is not ready or not configured'
+      });
+    }
+
+    const testTicket = {
+      ticketId: Date.now(),
+      subject: req.body.subject || 'Test Ticket',
+      category: req.body.category || 'general',
+      priority: req.body.priority || 'medium',
+      email: req.body.email || 'test@example.com',
+      message: req.body.message || 'This is a test ticket message from the API.'
+    };
+
+    const channelId = await discordBot.createTicketChannel(testTicket);
+
+    if (channelId) {
+      res.json({
+        success: true,
+        message: 'Test ticket channel created',
+        channelId,
+        ticketId: testTicket.ticketId
+      });
+    } else {
+      res.status(500).json({
+        success: false,
+        error: 'Failed to create ticket channel'
+      });
+    }
+  }));
+
+  app.get('/api/discord/status', (req, res) => {
+    const discordBot = getDiscordBot();
+    res.json({
+      configured: !!discordBot,
+      ready: discordBot?.isReady || false,
+      guildId: process.env.DISCORD_GUILD_ID || null,
+      categoryId: process.env.DISCORD_TICKET_CATEGORY_ID || null,
+      ticketRoleId: process.env.DISCORD_TICKET_ROLE_ID || null
+    });
+  });
+
+  /**
+   * Public ticket endpoint for testing (development only)
+   * POST /api/tickets/public - Creates a ticket without auth, just Discord channel
+   */
+  app.post('/api/tickets/public', asyncHandler(async (req, res) => {
+    const { subject, message, priority, category, email, name } = req.body;
+
+    // Validation
+    if (!subject?.trim() || !message?.trim()) {
+      throw new AppError('Subject and message are required', 400);
+    }
+
+    const discordBot = getDiscordBot();
+    if (!discordBot || !discordBot.isReady) {
+      throw new AppError('Discord bot is not ready', 503);
+    }
+
+    const ticketId = Date.now();
+    const ticketData = {
+      ticketId,
+      userId: 0,
+      name: name?.trim() || 'Test User',
+      email: email?.trim() || 'test@example.com',
+      subject: subject.trim(),
+      message: message.trim(),
+      priority: ['low', 'medium', 'high', 'urgent'].includes(priority) ? priority : 'medium',
+      category: ['general', 'technical', 'billing', 'domain', 'hosting'].includes(category) ? category : 'general',
+      status: 'open'
+    };
+
+    const channelId = await discordBot.createTicketChannel(ticketData);
+
+    if (channelId) {
+      logger.info(`[DEV] Public ticket #${ticketId} created`, { ticketId, channelId });
+      res.json({
+        success: true,
+        ticketId,
+        channelId,
+        message: 'Ticket created (development mode - Discord only)'
+      });
+    } else {
+      throw new AppError('Failed to create Discord channel', 500);
+    }
+  }));
+}
+
 // ============================================
 // Serve React Build (Production)
 // MUST BE LAST - after all API routes
@@ -5474,18 +5626,34 @@ const server = app.listen(PORT, async () => {
   console.log('================================================');
   console.log('  GoPay & HestiaCP Proxy Server');
   console.log('================================================');
+
   // Test MySQL připojení
   let mysqlStatus = '❌ Not connected';
+  let mysqlConnected = false;
   try {
     await db.query('SELECT 1 as test');
     mysqlStatus = '✅ Connected';
+    mysqlConnected = true;
     logger.info('MySQL connection successful');
-
     // NOTE: Cleanup expired refresh tokenů probíhá v authService.js (setInterval + setTimeout)
-    // Nepřidávat duplicitní cleanup zde
   } catch (error) {
     logger.error('MySQL connection failed', { error: error.message });
     console.error('❌ MySQL connection failed:', error.message);
+  }
+
+  // Initialize Discord Ticket Bot (works with or without MySQL)
+  try {
+    const discordBot = await initializeDiscordBot(mysqlConnected ? db : null);
+    if (discordBot) {
+      logger.info('Discord Ticket Bot initialized successfully');
+      console.log('  Discord Bot: ✅ Connected');
+    } else {
+      logger.warn('Discord Ticket Bot not initialized (missing configuration or credentials)');
+      console.log('  Discord Bot: ⚠️ Not configured');
+    }
+  } catch (discordError) {
+    logger.error('Failed to initialize Discord Bot', { error: discordError.message });
+    console.log('  Discord Bot: ❌ Failed to connect');
   }
 
   logger.info('Server starting', {

@@ -27,6 +27,7 @@
     "compression": "^1.8.1",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
+    "discord.js": "^14.25.1",
     "dompurify": "^3.3.1",
     "dotenv": "^16.6.1",
     "express": "^4.21.2",
@@ -53,9 +54,10 @@
     "winston-daily-rotate-file": "^5.0.0"
   },
   "scripts": {
-    "start": "vite",
+    "start": "concurrently \"npm run server\" \"npm run frontend\"",
+    "frontend": "vite",
     "server": "node server.js",
-    "dev": "concurrently \"npm run server\" \"npm start\"",
+    "dev": "concurrently \"npm run server\" \"npm run frontend\"",
     "build": "vite build",
     "build:prod": "cross-env VITE_APP_BASE_URL=https://alatyrhosting.eu vite build",
     "build:server": "npm run build && cross-env NODE_ENV=production node server.js",
