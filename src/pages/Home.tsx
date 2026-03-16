@@ -324,14 +324,6 @@ const Home: React.FC = () => {
                     </div>
                   </div>
                 </div>
-                <div className="floating-badge floating-badge-1">
-                  <FontAwesomeIcon icon={faShieldHalved} />
-                  <span>{t('landing.floatingBadge.secure')}</span>
-                </div>
-                <div className="floating-badge floating-badge-2">
-                  <FontAwesomeIcon icon={faBolt} />
-                  <span>{t('landing.floatingBadge.fast')}</span>
-                </div>
               </div>
             </motion.div>
           </div>
@@ -362,33 +354,64 @@ const Home: React.FC = () => {
         </div>
       </AnimatedSection>
 
-      {/* Features Section */}
+      {/* Features Section - Creative Layout */}
       <AnimatedSection className="features-section" id="features">
         <div className="container">
-          <motion.div className="section-header" variants={fadeInUp}>
-            <span className="section-badge">{t('landing.features.badge')}</span>
-            <h2 className="section-title">
-              {t('landing.features.title')}
-              <span className="gradient-text-animated">{t('landing.features.titleHighlight')}</span>
-            </h2>
-            <p className="section-description">{t('landing.features.description')}</p>
-          </motion.div>
+          <div className="features-layout">
+            <motion.div className="features-intro" variants={fadeInLeft}>
+              <span className="features-eyebrow">{t('landing.features.badge')}</span>
+              <h2 className="features-headline">
+                {t('landing.features.title')}
+                <span className="gradient-text-animated">{t('landing.features.titleHighlight')}</span>
+              </h2>
+              <p className="features-lead">{t('landing.features.description')}</p>
 
-          <div className="features-grid">
-            {features.map((feature, index) => (
-              <motion.div
-                key={index}
-                className="feature-card"
-                variants={scaleIn}
-                whileHover={{ y: -8, transition: { duration: 0.3 } }}
-              >
-                <div className="feature-icon-wrapper">
-                  <FontAwesomeIcon icon={feature.icon} />
+              <div className="features-highlight-box">
+                <div className="highlight-number">99.9%</div>
+                <div className="highlight-text">
+                  <strong>{t('landing.features.guaranteedUptime')}</strong>
+                  <span>{t('landing.features.uptimeDescription')}</span>
                 </div>
-                <h3 className="feature-title">{feature.title}</h3>
-                <p className="feature-description">{feature.description}</p>
-              </motion.div>
-            ))}
+              </div>
+            </motion.div>
+
+            <div className="features-stack">
+              {features.slice(0, 3).map((feature, index) => (
+                <motion.div
+                  key={index}
+                  className="feature-row"
+                  variants={fadeInRight}
+                  custom={index}
+                >
+                  <div className="feature-row-icon">
+                    <FontAwesomeIcon icon={feature.icon} />
+                  </div>
+                  <div className="feature-row-content">
+                    <h3>{feature.title}</h3>
+                    <p>{feature.description}</p>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+
+            <div className="features-stack">
+              {features.slice(3, 6).map((feature, index) => (
+                <motion.div
+                  key={index + 3}
+                  className="feature-row"
+                  variants={fadeInRight}
+                  custom={index + 3}
+                >
+                  <div className="feature-row-icon">
+                    <FontAwesomeIcon icon={feature.icon} />
+                  </div>
+                  <div className="feature-row-content">
+                    <h3>{feature.title}</h3>
+                    <p>{feature.description}</p>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
           </div>
         </div>
       </AnimatedSection>
