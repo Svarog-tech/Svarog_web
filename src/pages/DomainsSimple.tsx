@@ -122,42 +122,52 @@ const DomainsSimple: React.FC = () => {
                   />
                   <div className="domain-search-input-mask"></div>
                   <div className="domain-search-pink-mask"></div>
-                  <div className="domain-search-filterBorder"></div>
-                  <motion.div
-                    className="domain-search-filter-icon"
-                    whileHover={{ scale: isSearching ? 1 : 1.05 }}
-                    whileTap={{ scale: isSearching ? 1 : 0.95 }}
+                  <motion.button
+                    type="button"
+                    className="domain-search-btn"
+                    whileHover={{ scale: isSearching ? 1 : 1.02 }}
+                    whileTap={{ scale: isSearching ? 1 : 0.98 }}
                     onClick={handleSearch}
-                    style={{ cursor: isSearching ? 'not-allowed' : 'pointer' }}
+                    disabled={isSearching}
+                    aria-label={isSearching ? 'Vyhledávání...' : 'Vyhledat doménu'}
                   >
-                    {isSearching ? (
-                      <FontAwesomeIcon icon={faSpinner} spin style={{ fontSize: '20px' }} />
-                    ) : (
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="24"
-                        viewBox="0 0 24 24"
-                        strokeWidth="2"
-                        strokeLinejoin="round"
-                        strokeLinecap="round"
-                        height="24"
-                        fill="none"
-                      >
-                        <circle stroke="url(#search)" r="8" cy="11" cx="11"></circle>
-                        <line stroke="url(#searchl)" y2="16.65" y1="22" x2="16.65" x1="22"></line>
-                        <defs>
-                          <linearGradient gradientTransform="rotate(50)" id="search">
-                            <stop stopColor="#3b82f6" offset="0%"></stop>
-                            <stop stopColor="#2563eb" offset="50%"></stop>
-                          </linearGradient>
-                          <linearGradient id="searchl">
-                            <stop stopColor="#2563eb" offset="0%"></stop>
-                            <stop stopColor="#1d4ed8" offset="50%"></stop>
-                          </linearGradient>
-                        </defs>
-                      </svg>
-                    )}
-                  </motion.div>
+                    <span className="domain-search-btn__icon">
+                      {isSearching ? (
+                        <svg
+                          className="domain-search-btn__spinner"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          aria-hidden="true"
+                        >
+                          <circle
+                            cx="12"
+                            cy="12"
+                            r="9"
+                            stroke="currentColor"
+                            strokeWidth="2.5"
+                            strokeLinecap="round"
+                            strokeDasharray="45 15"
+                          />
+                        </svg>
+                      ) : (
+                        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                          <circle
+                            cx="11"
+                            cy="11"
+                            r="6"
+                            stroke="currentColor"
+                            strokeWidth="2.5"
+                          />
+                          <path
+                            d="M16 16L20 20"
+                            stroke="currentColor"
+                            strokeWidth="2.5"
+                            strokeLinecap="round"
+                          />
+                        </svg>
+                      )}
+                    </span>
+                  </motion.button>
                 </div>
               </div>
             </motion.div>
@@ -211,85 +221,128 @@ const DomainsSimple: React.FC = () => {
 
       {searchResults && (
         <motion.section
-          className="search-results"
+          className="domain-results"
           initial={{ opacity: 0, y: 50 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
+          aria-label="Výsledky vyhledávání domén"
         >
           <div className="container">
-            <div className="results-header">
-              <h2>Výsledky hledání pro "{searchResults.searchedDomain}"</h2>
-              <p>Zkontrolovali jsme dostupnost domény ve všech populárních doménových příponách.</p>
+            <header className="domain-results__header">
+              <h2 className="domain-results__title">
+                Výsledky pro <span className="domain-results__query">{searchResults.searchedDomain}</span>
+              </h2>
+              <p className="domain-results__subtitle">
+                Nalezeno {searchResults.results.filter(r => r.available && !r.error).length} dostupných z {searchResults.results.length} kontrolovaných přípon
+              </p>
+            </header>
+
+            <div className="domain-results__summary" role="status" aria-live="polite">
+              <div className="domain-results__stat domain-results__stat--available">
+                <span className="domain-results__stat-number">{searchResults.results.filter(r => r.available && !r.error).length}</span>
+                <span className="domain-results__stat-label">Dostupné</span>
+              </div>
+              <div className="domain-results__stat domain-results__stat--taken">
+                <span className="domain-results__stat-number">{searchResults.results.filter(r => !r.available && !r.error).length}</span>
+                <span className="domain-results__stat-label">Obsazené</span>
+              </div>
+              <div className="domain-results__stat domain-results__stat--error">
+                <span className="domain-results__stat-number">{searchResults.results.filter(r => r.error).length}</span>
+                <span className="domain-results__stat-label">Chyby</span>
+              </div>
             </div>
 
-            <div className="results-grid">
+            <ul className="domain-results__grid" role="list">
               {(showAllResults ? searchResults.results : searchResults.results.slice(0, 10)).map((result, index: number) => (
-                <motion.div
+                <motion.li
                   key={result.domain}
-                  className={`result-card ${result.error ? 'error' : result.available ? 'available' : 'taken'}`}
-                  initial={{ opacity: 0, y: 30 }}
+                  className={`domain-card ${result.error ? 'domain-card--error' : result.available ? 'domain-card--available' : 'domain-card--taken'}`}
+                  initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.4, delay: index * 0.1 }}
-                  whileHover={{ y: -3, scale: 1.02 }}
+                  transition={{ duration: 0.3, delay: index * 0.05 }}
                 >
-                  <div className="result-status">
-                    <FontAwesomeIcon
-                      icon={result.error ? faExclamationTriangle : result.available ? faCheckCircle : faTimes}
-                      className={result.error ? 'error-icon' : result.available ? 'available-icon' : 'taken-icon'}
-                    />
-                    <span className="status-text">
+                  <div className="domain-card__status" aria-label={result.error ? 'Chyba při kontrole' : result.available ? 'Doména je dostupná' : 'Doména je obsazená'}>
+                    <span className="domain-card__status-icon">
+                      <FontAwesomeIcon
+                        icon={result.error ? faExclamationTriangle : result.available ? faCheckCircle : faTimes}
+                        aria-hidden="true"
+                      />
+                    </span>
+                    <span className="domain-card__status-text">
                       {result.error ? 'Chyba' : result.available ? 'Dostupná' : 'Obsazená'}
                     </span>
                   </div>
 
-                  <div className="result-domain">{result.domain}</div>
-
-                  {result.error && (
-                    <div className="result-error">
-                      <small>{result.error}</small>
-                    </div>
-                  )}
-
-                  {result.available && !result.error && (
-                    <div className="result-price">
-                      <span className="price">{result.price}</span>
-                    </div>
-                  )}
+                  <h3 className="domain-card__name">{result.domain}</h3>
 
                   {result.error ? (
-                    <button className="result-action disabled" disabled>
-                      Nedostupné
-                    </button>
+                    <p className="domain-card__error">{result.error}</p>
                   ) : result.available ? (
-                    <motion.button
-                      className="result-action"
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={() => handleRegistration(result.domain)}
-                    >
-                      Registrovat
-                    </motion.button>
+                    <p className="domain-card__price">
+                      <span className="domain-card__price-value">{result.price}</span>
+                      <span className="domain-card__price-period">/rok</span>
+                    </p>
                   ) : (
-                    <button className="result-action disabled" disabled>
-                      Nedostupná
-                    </button>
+                    <p className="domain-card__taken-info">Tato doména je již registrována</p>
                   )}
-                </motion.div>
+
+                  <div className="domain-card__action">
+                    {result.error ? (
+                      <button
+                        className="domain-card__btn domain-card__btn--disabled"
+                        disabled
+                        aria-disabled="true"
+                      >
+                        Nedostupné
+                      </button>
+                    ) : result.available ? (
+                      <motion.button
+                        className="domain-card__btn domain-card__btn--primary"
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={() => handleRegistration(result.domain)}
+                        aria-label={`Registrovat doménu ${result.domain}`}
+                      >
+                        Registrovat
+                      </motion.button>
+                    ) : (
+                      <button
+                        className="domain-card__btn domain-card__btn--disabled"
+                        disabled
+                        aria-disabled="true"
+                      >
+                        Nedostupná
+                      </button>
+                    )}
+                  </div>
+                </motion.li>
               ))}
-            </div>
+            </ul>
 
             {searchResults.results.length > 10 && (
               <motion.div
-                className="show-more-section"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4 }}
+                className="domain-results__more"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.4, delay: 0.3 }}
               >
                 <button
-                  className="show-more-btn"
+                  className="domain-results__more-btn"
                   onClick={() => setShowAllResults(!showAllResults)}
+                  aria-expanded={showAllResults}
+                  aria-controls="domain-results-list"
                 >
-                  {showAllResults ? 'Zobrazit méně' : `Zobrazit více (${searchResults.results.length - 10} dalších)`}
+                  <span>{showAllResults ? 'Zobrazit méně' : `Zobrazit dalších ${searchResults.results.length - 10}`}</span>
+                  <svg
+                    className={`domain-results__more-icon ${showAllResults ? 'domain-results__more-icon--rotated' : ''}`}
+                    width="20"
+                    height="20"
+                    viewBox="0 0 20 20"
+                    fill="none"
+                    aria-hidden="true"
+                  >
+                    <path d="M5 7.5L10 12.5L15 7.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
                 </button>
               </motion.div>
             )}
