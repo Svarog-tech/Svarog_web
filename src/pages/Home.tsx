@@ -1,92 +1,70 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { motion, useInView, useAnimation } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faArrowRight,
-  faShieldHalved,
-  faBolt,
-  faHeadset,
-  faServer,
-  faGlobe,
-  faLock,
-  faCloudArrowUp,
-  faChartLine,
-  faClock,
   faCheck,
-  faStar,
-  faQuoteLeft
+  faTerminal,
+  faServer,
+  faChartLine,
+  faMicrochip,
+  faMemory,
+  faHdd,
+  faShieldHalved,
+  faGlobe,
+  faClock,
+  faLock,
+  faRocket
 } from '@fortawesome/free-solid-svg-icons';
+import { useLanguage } from '../contexts/LanguageContext';
 import HostingPlansNew from '../components/HostingPlansNew';
 import PageMeta from '../components/PageMeta';
-import { useLanguage } from '../contexts/LanguageContext';
 import './Home.css';
 
 // Animation variants
 const fadeInUp = {
   hidden: { opacity: 0, y: 60 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.6, ease: "easeOut" }
-  }
+  visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut" } }
 };
 
 const fadeInLeft = {
   hidden: { opacity: 0, x: -60 },
-  visible: {
-    opacity: 1,
-    x: 0,
-    transition: { duration: 0.6, ease: "easeOut" }
-  }
+  visible: { opacity: 1, x: 0, transition: { duration: 0.6, ease: "easeOut" } }
 };
 
 const fadeInRight = {
   hidden: { opacity: 0, x: 60 },
-  visible: {
-    opacity: 1,
-    x: 0,
-    transition: { duration: 0.6, ease: "easeOut" }
-  }
+  visible: { opacity: 1, x: 0, transition: { duration: 0.6, ease: "easeOut" } }
 };
 
 const staggerContainer = {
   hidden: { opacity: 0 },
   visible: {
     opacity: 1,
-    transition: {
-      staggerChildren: 0.1,
-      delayChildren: 0.2
-    }
+    transition: { staggerChildren: 0.1, delayChildren: 0.2 }
   }
 };
 
 const scaleIn = {
   hidden: { opacity: 0, scale: 0.8 },
-  visible: {
-    opacity: 1,
-    scale: 1,
-    transition: { duration: 0.5, ease: "easeOut" }
-  }
+  visible: { opacity: 1, scale: 1, transition: { duration: 0.5, ease: "easeOut" } }
 };
 
 // Animated counter hook
 const useCounter = (end: number, duration: number = 2000, suffix: string = '') => {
-  const [count, setCount] = React.useState(0);
+  const [count, setCount] = useState(0);
   const ref = useRef<HTMLSpanElement>(null);
   const isInView = useInView(ref, { once: true, margin: "-100px" });
 
   useEffect(() => {
     if (!isInView) return;
-
     let startTime: number;
     const animate = (timestamp: number) => {
       if (!startTime) startTime = timestamp;
       const progress = Math.min((timestamp - startTime) / duration, 1);
       setCount(Math.floor(progress * end));
-      if (progress < 1) {
-        requestAnimationFrame(animate);
-      }
+      if (progress < 1) requestAnimationFrame(animate);
     };
     requestAnimationFrame(animate);
   }, [isInView, end, duration]);
@@ -96,18 +74,14 @@ const useCounter = (end: number, duration: number = 2000, suffix: string = '') =
 
 // Section wrapper with animation
 const AnimatedSection: React.FC<{ children: React.ReactNode; className?: string; id?: string }> = ({
-  children,
-  className = '',
-  id
+  children, className = '', id
 }) => {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: "-50px" });
   const controls = useAnimation();
 
   useEffect(() => {
-    if (isInView) {
-      controls.start("visible");
-    }
+    if (isInView) controls.start("visible");
   }, [isInView, controls]);
 
   return (
@@ -124,15 +98,210 @@ const AnimatedSection: React.FC<{ children: React.ReactNode; className?: string;
   );
 };
 
+// Terminal typing animation component
+const TerminalTyping: React.FC = () => {
+  const [text, setText] = useState('');
+  const [lineIndex, setLineIndex] = useState(0);
+  const commands = [
+    'root@vps:~# sudo apt update',
+    'root@vps:~# sudo systemctl status nginx',
+    'root@vps:~# docker ps -a',
+    'root@vps:~# htop'
+  ];
+
+  useEffect(() => {
+    const currentCommand = commands[lineIndex];
+    let charIndex = 0;
+
+    const typeChar = () => {
+      if (charIndex < currentCommand.length) {
+        setText(currentCommand.slice(0, charIndex + 1));
+        charIndex++;
+        setTimeout(typeChar, 50 + Math.random() * 50);
+      } else {
+        setTimeout(() => {
+          setLineIndex((prev) => (prev + 1) % commands.length);
+          setText('');
+        }, 2000);
+      }
+    };
+
+    typeChar();
+  }, [lineIndex]);
+
+  return (
+    <div className="terminal-line">
+      <span className="terminal-text">{text}</span>
+      <span className="terminal-cursor">|</span>
+    </div>
+  );
+};
+
+// Animated SVG Line Graph
+const AnimatedGraph: React.FC = () => {
+  return (
+    <svg viewBox="0 0 400 100" className="analytics-graph">
+      <defs>
+        <linearGradient id="graphGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stopColor="var(--primary-color)" />
+          <stop offset="100%" stopColor="var(--accent-color)" />
+        </linearGradient>
+        <linearGradient id="graphFill" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stopColor="var(--primary-color)" stopOpacity="0.3" />
+          <stop offset="100%" stopColor="var(--primary-color)" stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <motion.path
+        d="M0,80 Q50,60 100,65 T200,45 T300,55 T400,30"
+        fill="none"
+        stroke="url(#graphGradient)"
+        strokeWidth="3"
+        initial={{ pathLength: 0 }}
+        animate={{ pathLength: 1 }}
+        transition={{ duration: 2, ease: "easeOut" }}
+      />
+      <motion.path
+        d="M0,80 Q50,60 100,65 T200,45 T300,55 T400,30 L400,100 L0,100 Z"
+        fill="url(#graphFill)"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 1.5, duration: 0.5 }}
+      />
+      {[
+        { x: 0, y: 80 }, { x: 100, y: 65 }, { x: 200, y: 45 }, { x: 300, y: 55 }, { x: 400, y: 30 }
+      ].map((point, i) => (
+        <motion.circle
+          key={i}
+          cx={point.x}
+          cy={point.y}
+          r="5"
+          fill="var(--primary-color)"
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          transition={{ delay: 0.5 + i * 0.2 }}
+        />
+      ))}
+    </svg>
+  );
+};
+
+// Circular Progress Gauge
+const CircularGauge: React.FC<{ value: number; label: string; color?: string }> = ({
+  value, label, color = 'var(--primary-color)'
+}) => {
+  const circumference = 2 * Math.PI * 40;
+  const offset = circumference - (value / 100) * circumference;
+
+  return (
+    <div className="circular-gauge">
+      <svg viewBox="0 0 100 100" className="gauge-svg">
+        <circle
+          cx="50"
+          cy="50"
+          r="40"
+          fill="none"
+          stroke="var(--border-light)"
+          strokeWidth="8"
+        />
+        <motion.circle
+          cx="50"
+          cy="50"
+          r="40"
+          fill="none"
+          stroke={color}
+          strokeWidth="8"
+          strokeLinecap="round"
+          strokeDasharray={circumference}
+          initial={{ strokeDashoffset: circumference }}
+          whileInView={{ strokeDashoffset: offset }}
+          transition={{ duration: 1.5, ease: "easeOut" }}
+          viewport={{ once: true }}
+          style={{ transform: 'rotate(-90deg)', transformOrigin: '50% 50%' }}
+        />
+      </svg>
+      <div className="gauge-content">
+        <span className="gauge-value">{value}%</span>
+        <span className="gauge-label">{label}</span>
+      </div>
+    </div>
+  );
+};
+
+// Server Visualization Component
+const ServerVisualization: React.FC = () => {
+  return (
+    <div className="server-visual">
+      <div className="server-rack">
+        <div className="server-unit">
+          <div className="server-leds">
+            <span className="led led-green active"></span>
+            <span className="led led-green active"></span>
+            <span className="led led-blue"></span>
+          </div>
+          <div className="server-slots">
+            <div className="slot"></div>
+            <div className="slot"></div>
+            <div className="slot active"></div>
+          </div>
+        </div>
+        <div className="server-unit">
+          <div className="server-leds">
+            <span className="led led-green active"></span>
+            <span className="led led-orange"></span>
+            <span className="led led-blue active"></span>
+          </div>
+          <div className="server-slots">
+            <div className="slot active"></div>
+            <div className="slot"></div>
+            <div className="slot active"></div>
+          </div>
+        </div>
+        <div className="server-unit primary">
+          <div className="server-leds">
+            <span className="led led-green active pulse"></span>
+            <span className="led led-green active"></span>
+            <span className="led led-blue active"></span>
+          </div>
+          <div className="server-slots">
+            <div className="slot active"></div>
+            <div className="slot active"></div>
+            <div className="slot active"></div>
+          </div>
+          <div className="server-label">YOUR VPS</div>
+        </div>
+      </div>
+      <div className="data-flow">
+        <div className="flow-line"></div>
+        <div className="flow-line"></div>
+        <div className="flow-line"></div>
+      </div>
+      <div className="server-metrics">
+        <div className="metric-bubble">
+          <FontAwesomeIcon icon={faMicrochip} />
+          <span>8 vCPU</span>
+        </div>
+        <div className="metric-bubble">
+          <FontAwesomeIcon icon={faMemory} />
+          <span>32GB RAM</span>
+        </div>
+        <div className="metric-bubble">
+          <FontAwesomeIcon icon={faHdd} />
+          <span>500GB NVMe</span>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const Home: React.FC = () => {
   const { t } = useLanguage();
   const navigate = useNavigate();
 
   // Stats counters
   const uptimeCounter = useCounter(99, 2000, '.9%');
-  const customersCounter = useCounter(10, 2000, 'k+');
+  const responseCounter = useCounter(45, 1500, 'ms');
+  const controlCounter = useCounter(100, 2000, '%');
   const supportCounter = useCounter(24, 1500, '/7');
-  const yearsCounter = useCounter(10, 2000, '+');
 
   const scrollToPlans = () => {
     const element = document.getElementById('hosting');
@@ -143,65 +312,22 @@ const Home: React.FC = () => {
     }
   };
 
-  const features = [
-    {
-      icon: faBolt,
-      title: t('landing.features.speed.title'),
-      description: t('landing.features.speed.description')
-    },
-    {
-      icon: faShieldHalved,
-      title: t('landing.features.security.title'),
-      description: t('landing.features.security.description')
-    },
-    {
-      icon: faHeadset,
-      title: t('landing.features.support.title'),
-      description: t('landing.features.support.description')
-    },
-    {
-      icon: faCloudArrowUp,
-      title: t('landing.features.backup.title'),
-      description: t('landing.features.backup.description')
-    },
-    {
-      icon: faChartLine,
-      title: t('landing.features.scalability.title'),
-      description: t('landing.features.scalability.description')
-    },
-    {
-      icon: faGlobe,
-      title: t('landing.features.global.title'),
-      description: t('landing.features.global.description')
-    }
-  ];
-
-  const testimonials = [
-    {
-      name: "Martin K.",
-      role: t('landing.testimonials.role1'),
-      content: t('landing.testimonials.content1'),
-      rating: 5
-    },
-    {
-      name: "Jana P.",
-      role: t('landing.testimonials.role2'),
-      content: t('landing.testimonials.content2'),
-      rating: 5
-    },
-    {
-      name: "Tomáš H.",
-      role: t('landing.testimonials.role3'),
-      content: t('landing.testimonials.content3'),
-      rating: 5
-    }
+  const techStack = [
+    { name: 'Docker', icon: '🐳' },
+    { name: 'Node.js', icon: '⬢' },
+    { name: 'Python', icon: '🐍' },
+    { name: 'PHP', icon: '🐘' },
+    { name: 'MySQL', icon: '🗄️' },
+    { name: 'Redis', icon: '⚡' },
+    { name: 'Nginx', icon: '🌐' },
+    { name: 'Git', icon: '📦' }
   ];
 
   return (
     <main className="landing-page">
       <PageMeta
         title="Alatyr Hosting – Webhosting, domény a serverová řešení"
-        description="Alatyr Hosting – profesionální webhosting, domény a serverová řešení. SSL zdarma, podpora 24/7, HestiaCP panel. Vyberte si hosting nebo doménu."
+        description="Alatyr Hosting – profesionální webhosting, domény a serverová řešení. SSL zdarma, podpora 24/7, HestiaCP panel."
         path="/"
       />
 
@@ -223,11 +349,11 @@ const Home: React.FC = () => {
             >
               <motion.div className="hero-badge" variants={fadeInUp}>
                 <span className="badge-dot"></span>
-                <span>{t('landing.hero.badge')}</span>
+                <span>Dedicated VPS • Full Root Access</span>
               </motion.div>
 
               <motion.h1 className="hero-main-title" variants={fadeInUp}>
-                {t('landing.hero.title')}
+                {t('landing.hero.title')}{' '}
                 <span className="gradient-text-animated">{t('landing.hero.titleHighlight')}</span>
               </motion.h1>
 
@@ -269,204 +395,210 @@ const Home: React.FC = () => {
               animate="visible"
               variants={fadeInRight}
             >
-              <div className="hero-dashboard-preview">
-                <div className="preview-window">
-                  <div className="preview-window-header">
-                    <div className="window-dots">
-                      <span className="dot red"></span>
-                      <span className="dot yellow"></span>
-                      <span className="dot green"></span>
-                    </div>
-                    <div className="window-title">alatyr.cz</div>
-                  </div>
-                  <div className="preview-window-content">
-                    <div className="preview-stats-grid">
-                      <div className="preview-stat-card">
-                        <FontAwesomeIcon icon={faServer} className="stat-icon" />
-                        <div className="stat-info">
-                          <span className="stat-label">{t('landing.preview.server')}</span>
-                          <span className="stat-value online">{t('landing.preview.online')}</span>
-                        </div>
-                      </div>
-                      <div className="preview-stat-card">
-                        <FontAwesomeIcon icon={faChartLine} className="stat-icon" />
-                        <div className="stat-info">
-                          <span className="stat-label">{t('landing.preview.uptime')}</span>
-                          <span className="stat-value">99.9%</span>
-                        </div>
-                      </div>
-                      <div className="preview-stat-card">
-                        <FontAwesomeIcon icon={faLock} className="stat-icon" />
-                        <div className="stat-info">
-                          <span className="stat-label">SSL</span>
-                          <span className="stat-value secure">{t('landing.preview.secure')}</span>
-                        </div>
-                      </div>
-                      <div className="preview-stat-card">
-                        <FontAwesomeIcon icon={faClock} className="stat-icon" />
-                        <div className="stat-info">
-                          <span className="stat-label">{t('landing.preview.response')}</span>
-                          <span className="stat-value">45ms</span>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="preview-performance-bar">
-                      <div className="performance-label">{t('landing.preview.performance')}</div>
-                      <div className="performance-track">
-                        <motion.div
-                          className="performance-fill"
-                          initial={{ width: 0 }}
-                          animate={{ width: "94%" }}
-                          transition={{ delay: 1, duration: 1.5, ease: "easeOut" }}
-                        ></motion.div>
-                      </div>
-                      <div className="performance-value">94%</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <ServerVisualization />
             </motion.div>
           </div>
         </div>
       </section>
 
-      {/* Trust Stats Section */}
-      <AnimatedSection className="trust-stats-section">
+      {/* Stats Section */}
+      <AnimatedSection className="landing-stats-section">
         <div className="container">
-          <div className="trust-stats-grid">
-            <motion.div className="trust-stat" variants={scaleIn}>
-              <span className="trust-stat-number" ref={uptimeCounter.ref}>{uptimeCounter.count}</span>
-              <span className="trust-stat-label">{t('landing.stats.uptime')}</span>
+          <div className="stats-grid">
+            <motion.div className="stat-card" variants={scaleIn}>
+              <span className="stat-number" ref={uptimeCounter.ref}>{uptimeCounter.count}</span>
+              <span className="stat-label">{t('landing.stats.uptime')}</span>
             </motion.div>
-            <motion.div className="trust-stat" variants={scaleIn}>
-              <span className="trust-stat-number" ref={customersCounter.ref}>{customersCounter.count}</span>
-              <span className="trust-stat-label">{t('landing.stats.customers')}</span>
+            <motion.div className="stat-card" variants={scaleIn}>
+              <span className="stat-number" ref={responseCounter.ref}>{responseCounter.count}</span>
+              <span className="stat-label">Avg Response Time</span>
             </motion.div>
-            <motion.div className="trust-stat" variants={scaleIn}>
-              <span className="trust-stat-number" ref={supportCounter.ref}>{supportCounter.count}</span>
-              <span className="trust-stat-label">{t('landing.stats.support')}</span>
+            <motion.div className="stat-card" variants={scaleIn}>
+              <span className="stat-number" ref={controlCounter.ref}>{controlCounter.count}</span>
+              <span className="stat-label">Full Control</span>
             </motion.div>
-            <motion.div className="trust-stat" variants={scaleIn}>
-              <span className="trust-stat-number" ref={yearsCounter.ref}>{yearsCounter.count}</span>
-              <span className="trust-stat-label">{t('landing.stats.years')}</span>
+            <motion.div className="stat-card" variants={scaleIn}>
+              <span className="stat-number" ref={supportCounter.ref}>{supportCounter.count}</span>
+              <span className="stat-label">{t('landing.stats.support')}</span>
             </motion.div>
           </div>
         </div>
       </AnimatedSection>
 
-      {/* Features Section - Creative Layout */}
-      <AnimatedSection className="features-section" id="features">
+      {/* Analytics Dashboard Section */}
+      <AnimatedSection className="analytics-section">
         <div className="container">
-          <div className="features-layout">
-            <motion.div className="features-intro" variants={fadeInLeft}>
-              <span className="features-eyebrow">{t('landing.features.badge')}</span>
-              <h2 className="features-headline">
-                {t('landing.features.title')}
-                <span className="gradient-text-animated">{t('landing.features.titleHighlight')}</span>
+          <div className="analytics-layout">
+            <motion.div className="analytics-intro" variants={fadeInLeft}>
+              <span className="section-eyebrow">Real-Time Analytics</span>
+              <h2 className="section-headline">
+                Monitor Everything with{' '}
+                <span className="gradient-text-animated">Live Analytics</span>
               </h2>
-              <p className="features-lead">{t('landing.features.description')}</p>
+              <p className="section-lead">
+                Access detailed server metrics, traffic analytics, and performance data in real-time.
+                Make informed decisions with comprehensive monitoring tools.
+              </p>
+            </motion.div>
 
-              <div className="features-highlight-box">
-                <div className="highlight-number">99.9%</div>
-                <div className="highlight-text">
-                  <strong>{t('landing.features.guaranteedUptime')}</strong>
-                  <span>{t('landing.features.uptimeDescription')}</span>
+            <motion.div className="analytics-dashboard" variants={fadeInRight}>
+              <div className="dashboard-window">
+                <div className="window-header">
+                  <div className="window-dots">
+                    <span className="dot red"></span>
+                    <span className="dot yellow"></span>
+                    <span className="dot green"></span>
+                  </div>
+                  <div className="window-title">Server Analytics</div>
+                </div>
+                <div className="dashboard-content">
+                  <div className="dashboard-graph">
+                    <div className="graph-header">
+                      <span className="graph-title">Traffic Overview</span>
+                      <span className="graph-period">Last 24h</span>
+                    </div>
+                    <AnimatedGraph />
+                  </div>
+                  <div className="dashboard-gauges">
+                    <CircularGauge value={72} label="CPU" color="var(--primary-color)" />
+                    <CircularGauge value={58} label="RAM" color="var(--accent-color)" />
+                    <CircularGauge value={34} label="Disk" color="var(--success-color)" />
+                  </div>
+                  <div className="dashboard-stats">
+                    <div className="mini-stat">
+                      <FontAwesomeIcon icon={faGlobe} />
+                      <div className="mini-stat-info">
+                        <span className="mini-stat-value">2,847</span>
+                        <span className="mini-stat-label">Active Visitors</span>
+                      </div>
+                    </div>
+                    <div className="mini-stat">
+                      <FontAwesomeIcon icon={faChartLine} />
+                      <div className="mini-stat-info">
+                        <span className="mini-stat-value">1.2TB</span>
+                        <span className="mini-stat-label">Bandwidth Used</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        </div>
+      </AnimatedSection>
+
+      {/* Terminal/Control Section */}
+      <AnimatedSection className="terminal-section">
+        <div className="container">
+          <div className="terminal-layout">
+            <motion.div className="terminal-visual" variants={fadeInLeft}>
+              <div className="terminal-window">
+                <div className="terminal-header">
+                  <div className="window-dots">
+                    <span className="dot red"></span>
+                    <span className="dot yellow"></span>
+                    <span className="dot green"></span>
+                  </div>
+                  <div className="terminal-title">
+                    <FontAwesomeIcon icon={faTerminal} />
+                    <span>root@your-vps ~ </span>
+                  </div>
+                </div>
+                <div className="terminal-body">
+                  <div className="terminal-output">
+                    <span className="output-line success">✓ SSH connection established</span>
+                    <span className="output-line">Welcome to Ubuntu 22.04 LTS</span>
+                    <span className="output-line muted">Last login: Today from your-ip</span>
+                  </div>
+                  <TerminalTyping />
                 </div>
               </div>
             </motion.div>
 
-            <div className="features-stack">
-              {features.slice(0, 3).map((feature, index) => (
-                <motion.div
-                  key={index}
-                  className="feature-row"
-                  variants={fadeInRight}
-                  custom={index}
-                >
-                  <div className="feature-row-icon">
-                    <FontAwesomeIcon icon={feature.icon} />
+            <motion.div className="terminal-info" variants={fadeInRight}>
+              <span className="section-eyebrow">Full Server Control</span>
+              <h2 className="section-headline">
+                Complete{' '}
+                <span className="gradient-text-animated">Root Access</span>
+              </h2>
+              <p className="section-lead">
+                Your VPS, your rules. Get full sudo privileges and SSH access to install,
+                configure, and manage anything you need.
+              </p>
+              <ul className="control-features">
+                <li>
+                  <FontAwesomeIcon icon={faTerminal} />
+                  <div>
+                    <strong>SSH Access</strong>
+                    <span>Secure shell access to your server</span>
                   </div>
-                  <div className="feature-row-content">
-                    <h3>{feature.title}</h3>
-                    <p>{feature.description}</p>
+                </li>
+                <li>
+                  <FontAwesomeIcon icon={faLock} />
+                  <div>
+                    <strong>Sudo Privileges</strong>
+                    <span>Full administrative control</span>
                   </div>
-                </motion.div>
-              ))}
-            </div>
-
-            <div className="features-stack">
-              {features.slice(3, 6).map((feature, index) => (
-                <motion.div
-                  key={index + 3}
-                  className="feature-row"
-                  variants={fadeInRight}
-                  custom={index + 3}
-                >
-                  <div className="feature-row-icon">
-                    <FontAwesomeIcon icon={feature.icon} />
+                </li>
+                <li>
+                  <FontAwesomeIcon icon={faServer} />
+                  <div>
+                    <strong>Dedicated Resources</strong>
+                    <span>No sharing, guaranteed performance</span>
                   </div>
-                  <div className="feature-row-content">
-                    <h3>{feature.title}</h3>
-                    <p>{feature.description}</p>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
+                </li>
+              </ul>
+            </motion.div>
           </div>
         </div>
       </AnimatedSection>
 
-      {/* Plans Section - Keep existing component */}
-      <HostingPlansNew />
-
-      {/* Testimonials Section */}
-      <AnimatedSection className="testimonials-section">
+      {/* Technology Stack Section */}
+      <AnimatedSection className="tech-stack-section">
         <div className="container">
-          <motion.div className="section-header" variants={fadeInUp}>
-            <span className="section-badge">{t('landing.testimonials.badge')}</span>
-            <h2 className="section-title">
-              {t('landing.testimonials.title')}
-              <span className="gradient-text-animated">{t('landing.testimonials.titleHighlight')}</span>
+          <motion.div className="tech-header" variants={fadeInUp}>
+            <span className="section-eyebrow">Install Anything</span>
+            <h2 className="section-headline">
+              Your Choice of{' '}
+              <span className="gradient-text-animated">Technology</span>
             </h2>
+            <p className="section-lead">
+              With full root access, install and run any software you need
+            </p>
           </motion.div>
 
-          <div className="testimonials-grid">
-            {testimonials.map((testimonial, index) => (
+          <div className="tech-orbit">
+            {techStack.map((tech, index) => (
               <motion.div
-                key={index}
-                className="testimonial-card"
-                variants={fadeInUp}
-                whileHover={{ y: -5, transition: { duration: 0.3 } }}
+                key={tech.name}
+                className="tech-item"
+                style={{
+                  '--orbit-delay': `${index * -2}s`,
+                  '--orbit-index': index
+                } as React.CSSProperties}
+                variants={scaleIn}
               >
-                <div className="testimonial-quote-icon">
-                  <FontAwesomeIcon icon={faQuoteLeft} />
-                </div>
-                <p className="testimonial-content">{testimonial.content}</p>
-                <div className="testimonial-rating">
-                  {[...Array(testimonial.rating)].map((_, i) => (
-                    <FontAwesomeIcon key={i} icon={faStar} />
-                  ))}
-                </div>
-                <div className="testimonial-author">
-                  <div className="author-avatar">
-                    {testimonial.name.charAt(0)}
-                  </div>
-                  <div className="author-info">
-                    <span className="author-name">{testimonial.name}</span>
-                    <span className="author-role">{testimonial.role}</span>
-                  </div>
-                </div>
+                <span className="tech-icon">{tech.icon}</span>
+                <span className="tech-name">{tech.name}</span>
               </motion.div>
             ))}
+            <div className="tech-center">
+              <FontAwesomeIcon icon={faRocket} />
+              <span>Your VPS</span>
+            </div>
           </div>
         </div>
       </AnimatedSection>
 
-      {/* Final CTA Section */}
-      <AnimatedSection className="final-cta-section">
+      {/* Hosting Plans */}
+      <HostingPlansNew />
+
+      {/* Trust/CTA Section */}
+      <AnimatedSection className="landing-cta-section">
         <div className="container">
-          <div className="final-cta-content">
+          <div className="cta-content">
             <motion.div className="cta-text" variants={fadeInLeft}>
+              <FontAwesomeIcon icon={faShieldHalved} className="cta-shield" />
               <h2 className="cta-title">{t('landing.cta.title')}</h2>
               <p className="cta-description">{t('landing.cta.description')}</p>
               <div className="cta-features">
@@ -491,7 +623,10 @@ const Home: React.FC = () => {
                   <FontAwesomeIcon icon={faArrowRight} />
                 </span>
               </button>
-              <p className="cta-guarantee">{t('landing.cta.guarantee')}</p>
+              <p className="cta-guarantee">
+                <FontAwesomeIcon icon={faClock} />
+                {t('landing.cta.guarantee')}
+              </p>
             </motion.div>
           </div>
         </div>
