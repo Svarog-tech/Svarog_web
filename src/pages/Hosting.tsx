@@ -171,9 +171,9 @@ const BarChart: React.FC = () => {
 // Timeline/Journey Component
 const JourneyPath: React.FC = () => {
   const steps = [
-    { icon: faRocket, title: 'Choose Plan', desc: 'Select perfect fit' },
-    { icon: faBolt, title: 'Instant Setup', desc: 'Ready in 5 min' },
-    { icon: faGlobe, title: 'Go Live', desc: 'Full control' },
+    { icon: faRocket, title: 'Choose Plan', desc: 'Select the perfect hosting package for your needs' },
+    { icon: faBolt, title: 'Instant Setup', desc: 'Your server is ready within 5 minutes' },
+    { icon: faGlobe, title: 'Go Live', desc: 'Launch your website with full control' },
   ];
 
   return (
@@ -185,12 +185,20 @@ const JourneyPath: React.FC = () => {
             <stop offset="50%" stopColor="var(--accent-color)" />
             <stop offset="100%" stopColor="var(--success-color)" />
           </linearGradient>
+          <filter id="glow">
+            <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+            <feMerge>
+              <feMergeNode in="coloredBlur"/>
+              <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+          </filter>
         </defs>
         <motion.path
           d="M0,50 Q200,20 400,50 T800,50"
           fill="none"
           stroke="url(#pathGradient)"
-          strokeWidth="3"
+          strokeWidth="4"
+          filter="url(#glow)"
           initial={{ pathLength: 0 }}
           whileInView={{ pathLength: 1 }}
           transition={{ duration: 1.5, ease: "easeInOut" }}
@@ -202,16 +210,23 @@ const JourneyPath: React.FC = () => {
           <motion.div
             key={index}
             className="journey-stop"
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5 + index * 0.3 }}
+            transition={{ delay: 0.3 + index * 0.2, duration: 0.5 }}
             viewport={{ once: true }}
           >
-            <div className="stop-marker">
-              <FontAwesomeIcon icon={step.icon} />
+            <span className="step-number">{String(index + 1).padStart(2, '0')}</span>
+            <div className="stop-marker-wrapper">
+              <div className="marker-ring"></div>
+              <div className="stop-marker">
+                <FontAwesomeIcon icon={step.icon} />
+              </div>
+              <div className="marker-glow"></div>
             </div>
-            <h4>{step.title}</h4>
-            <p>{step.desc}</p>
+            <div className="stop-content">
+              <h4>{step.title}</h4>
+              <p>{step.desc}</p>
+            </div>
           </motion.div>
         ))}
       </div>
