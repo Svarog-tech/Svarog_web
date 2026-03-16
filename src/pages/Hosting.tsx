@@ -328,6 +328,37 @@ const Hosting: React.FC = () => {
 
       {/* Hero Header */}
       <section className="hosting-hero">
+        {/* Animated Background */}
+        <div className="hero-bg">
+          <div className="hero-grid"></div>
+          <div className="hero-orb hero-orb-1"></div>
+          <div className="hero-orb hero-orb-2"></div>
+          <div className="hero-orb hero-orb-3"></div>
+          <div className="hero-glow"></div>
+          <svg className="hero-lines" viewBox="0 0 1200 600" preserveAspectRatio="xMidYMid slice">
+            <defs>
+              <linearGradient id="heroLineGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor="var(--primary-color)" stopOpacity="0" />
+                <stop offset="50%" stopColor="var(--primary-color)" stopOpacity="0.3" />
+                <stop offset="100%" stopColor="var(--primary-color)" stopOpacity="0" />
+              </linearGradient>
+            </defs>
+            <path d="M0,300 Q300,250 600,300 T1200,300" stroke="url(#heroLineGrad)" strokeWidth="1" fill="none" className="hero-wave-line" />
+            <path d="M0,350 Q300,300 600,350 T1200,350" stroke="url(#heroLineGrad)" strokeWidth="1" fill="none" className="hero-wave-line delay-1" />
+            <path d="M0,400 Q300,350 600,400 T1200,400" stroke="url(#heroLineGrad)" strokeWidth="1" fill="none" className="hero-wave-line delay-2" />
+          </svg>
+          <div className="hero-particles">
+            {[...Array(20)].map((_, i) => (
+              <span key={i} className="particle" style={{
+                left: `${Math.random() * 100}%`,
+                top: `${Math.random() * 100}%`,
+                animationDelay: `${Math.random() * 5}s`,
+                animationDuration: `${3 + Math.random() * 4}s`
+              }} />
+            ))}
+          </div>
+        </div>
+
         <div className="container">
           <div className="hero-content">
             <motion.h1
