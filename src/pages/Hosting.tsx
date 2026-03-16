@@ -169,11 +169,11 @@ const BarChart: React.FC = () => {
 };
 
 // Timeline/Journey Component
-const JourneyPath: React.FC = () => {
+const JourneyPath: React.FC<{ t: (key: string) => string }> = ({ t }) => {
   const steps = [
-    { icon: faRocket, title: 'Choose Plan', desc: 'Select the perfect hosting package for your needs' },
-    { icon: faBolt, title: 'Instant Setup', desc: 'Your server is ready within 5 minutes' },
-    { icon: faGlobe, title: 'Go Live', desc: 'Launch your website with full control' },
+    { icon: faRocket, titleKey: 'hosting.journey.step1.title', descKey: 'hosting.journey.step1.desc' },
+    { icon: faBolt, titleKey: 'hosting.journey.step2.title', descKey: 'hosting.journey.step2.desc' },
+    { icon: faGlobe, titleKey: 'hosting.journey.step3.title', descKey: 'hosting.journey.step3.desc' },
   ];
 
   return (
@@ -224,8 +224,8 @@ const JourneyPath: React.FC = () => {
               <div className="marker-glow"></div>
             </div>
             <div className="stop-content">
-              <h4>{step.title}</h4>
-              <p>{step.desc}</p>
+              <h4>{t(step.titleKey)}</h4>
+              <p>{t(step.descKey)}</p>
             </div>
           </motion.div>
         ))}
@@ -355,16 +355,13 @@ const Hosting: React.FC = () => {
         <div className="container">
           <div className="diagram-layout">
             <div className="diagram-text">
-              <h2>Everything <span className="gradient-text">Connected</span></h2>
-              <p>
-                Your VPS comes fully equipped with enterprise-grade features,
-                all seamlessly integrated and ready to power your projects.
-              </p>
+              <h2>{t('hosting.connected.title')} <span className="gradient-text">{t('hosting.connected.titleHighlight')}</span></h2>
+              <p>{t('hosting.connected.desc')}</p>
               <ul className="feature-list">
-                <li><FontAwesomeIcon icon={faCheck} /> NVMe SSD for blazing speed</li>
-                <li><FontAwesomeIcon icon={faCheck} /> Free SSL certificates</li>
-                <li><FontAwesomeIcon icon={faCheck} /> Automated daily backups</li>
-                <li><FontAwesomeIcon icon={faCheck} /> Full email hosting</li>
+                <li><FontAwesomeIcon icon={faCheck} /> {t('hosting.connected.feature1')}</li>
+                <li><FontAwesomeIcon icon={faCheck} /> {t('hosting.connected.feature2')}</li>
+                <li><FontAwesomeIcon icon={faCheck} /> {t('hosting.connected.feature3')}</li>
+                <li><FontAwesomeIcon icon={faCheck} /> {t('hosting.connected.feature4')}</li>
               </ul>
             </div>
             <ServerDiagram />
@@ -376,19 +373,19 @@ const Hosting: React.FC = () => {
       <section className="stats-section">
         <div className="container">
           <div className="stats-header">
-            <h2>Server <span className="gradient-text">Performance</span></h2>
-            <p>Enterprise-grade infrastructure optimized for speed</p>
+            <h2>{t('hosting.performance.title')} <span className="gradient-text">{t('hosting.performance.titleHighlight')}</span></h2>
+            <p>{t('hosting.performance.subtitle')}</p>
           </div>
 
           <div className="stats-layout">
             <div className="stats-circles">
-              <CircularStat value={99} label="Uptime" suffix="%" color="var(--success-color)" />
-              <CircularStat value={45} label="Response" suffix="ms" color="var(--primary-color)" />
-              <CircularStat value={10} label="Network" suffix="Gb" color="var(--accent-color)" />
+              <CircularStat value={99} label={t('hosting.performance.uptime')} suffix="%" color="var(--success-color)" />
+              <CircularStat value={45} label={t('hosting.performance.response')} suffix="ms" color="var(--primary-color)" />
+              <CircularStat value={10} label={t('hosting.performance.network')} suffix="Gb" color="var(--accent-color)" />
             </div>
 
             <div className="stats-bars">
-              <h3>Resource Efficiency</h3>
+              <h3>{t('hosting.performance.efficiency')}</h3>
               <BarChart />
             </div>
 
@@ -397,28 +394,28 @@ const Hosting: React.FC = () => {
                 <FontAwesomeIcon icon={faMicrochip} />
                 <div>
                   <strong>AMD EPYC</strong>
-                  <span>Latest Gen CPUs</span>
+                  <span>{t('hosting.performance.latestCpu')}</span>
                 </div>
               </div>
               <div className="spec-item">
                 <FontAwesomeIcon icon={faMemory} />
                 <div>
                   <strong>DDR4 ECC</strong>
-                  <span>Error-Correcting RAM</span>
+                  <span>{t('hosting.performance.eccRam')}</span>
                 </div>
               </div>
               <div className="spec-item">
                 <FontAwesomeIcon icon={faHdd} />
                 <div>
                   <strong>NVMe RAID-10</strong>
-                  <span>Redundant Storage</span>
+                  <span>{t('hosting.performance.redundantStorage')}</span>
                 </div>
               </div>
               <div className="spec-item">
                 <FontAwesomeIcon icon={faLock} />
                 <div>
                   <strong>DDoS Protected</strong>
-                  <span>Enterprise Security</span>
+                  <span>{t('hosting.performance.enterpriseSecurity')}</span>
                 </div>
               </div>
             </div>
@@ -430,10 +427,10 @@ const Hosting: React.FC = () => {
       <section className="journey-section">
         <div className="container">
           <div className="journey-header">
-            <h2>Your Journey to <span className="gradient-text">Launch</span></h2>
-            <p>From signup to live in three simple steps</p>
+            <h2>{t('hosting.journey.title')} <span className="gradient-text">{t('hosting.journey.titleHighlight')}</span></h2>
+            <p>{t('hosting.journey.subtitle')}</p>
           </div>
-          <JourneyPath />
+          <JourneyPath t={t} />
         </div>
       </section>
 
@@ -441,8 +438,8 @@ const Hosting: React.FC = () => {
       <section className="tech-section">
         <div className="container">
           <div className="tech-header">
-            <h2>Powered by <span className="gradient-text">Leading Tech</span></h2>
-            <p>Industry-standard tools, all pre-configured</p>
+            <h2>{t('hosting.tech.title')} <span className="gradient-text">{t('hosting.tech.titleHighlight')}</span></h2>
+            <p>{t('hosting.tech.subtitle')}</p>
           </div>
           <TechFlow />
         </div>

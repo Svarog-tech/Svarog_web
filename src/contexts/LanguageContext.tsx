@@ -562,7 +562,45 @@ const translations = {
     'landing.cta.feature2': 'Bez dlouhodobých závazků',
     'landing.cta.feature3': 'Aktivace během minut',
     'landing.cta.button': 'Začít nyní',
-    'landing.cta.guarantee': '14-denní záruka vrácení peněz'
+    'landing.cta.guarantee': '14-denní záruka vrácení peněz',
+
+    // Hosting page - Journey section
+    'hosting.journey.title': 'Vaše cesta k',
+    'hosting.journey.titleHighlight': ' spuštění',
+    'hosting.journey.subtitle': 'Od registrace k online webu ve třech jednoduchých krocích',
+    'hosting.journey.step1.title': 'Vyberte plán',
+    'hosting.journey.step1.desc': 'Vyberte si hosting balíček podle vašich potřeb',
+    'hosting.journey.step2.title': 'Okamžité nastavení',
+    'hosting.journey.step2.desc': 'Váš server je připraven během 5 minut',
+    'hosting.journey.step3.title': 'Spusťte web',
+    'hosting.journey.step3.desc': 'Nasaďte svůj web s plnou kontrolou',
+
+    // Hosting page - Everything Connected section
+    'hosting.connected.title': 'Vše',
+    'hosting.connected.titleHighlight': ' propojeno',
+    'hosting.connected.desc': 'Váš VPS přichází plně vybaven funkcemi enterprise úrovně, vše bezproblémově integrované a připravené pohánět vaše projekty.',
+    'hosting.connected.feature1': 'NVMe SSD pro bleskovou rychlost',
+    'hosting.connected.feature2': 'SSL certifikáty zdarma',
+    'hosting.connected.feature3': 'Automatické denní zálohy',
+    'hosting.connected.feature4': 'Plný email hosting',
+
+    // Hosting page - Server Performance section
+    'hosting.performance.title': 'Výkon',
+    'hosting.performance.titleHighlight': ' serveru',
+    'hosting.performance.subtitle': 'Infrastruktura enterprise úrovně optimalizovaná pro rychlost',
+    'hosting.performance.uptime': 'Dostupnost',
+    'hosting.performance.response': 'Odezva',
+    'hosting.performance.network': 'Síť',
+    'hosting.performance.efficiency': 'Efektivita zdrojů',
+    'hosting.performance.latestCpu': 'Nejnovější CPU',
+    'hosting.performance.eccRam': 'ECC RAM paměť',
+    'hosting.performance.redundantStorage': 'Redundantní úložiště',
+    'hosting.performance.enterpriseSecurity': 'Enterprise zabezpečení',
+
+    // Hosting page - Tech Stack section
+    'hosting.tech.title': 'Poháněno',
+    'hosting.tech.titleHighlight': ' špičkovými technologiemi',
+    'hosting.tech.subtitle': 'Standardní nástroje, vše předkonfigurované'
   },
   en: {
     // Navigation
@@ -1114,7 +1152,45 @@ const translations = {
     'landing.cta.feature2': 'No long-term commitments',
     'landing.cta.feature3': 'Activation within minutes',
     'landing.cta.button': 'Get started now',
-    'landing.cta.guarantee': '14-day money-back guarantee'
+    'landing.cta.guarantee': '14-day money-back guarantee',
+
+    // Hosting page - Journey section
+    'hosting.journey.title': 'Your Journey to',
+    'hosting.journey.titleHighlight': ' Launch',
+    'hosting.journey.subtitle': 'From signup to live in three simple steps',
+    'hosting.journey.step1.title': 'Choose Plan',
+    'hosting.journey.step1.desc': 'Select the perfect hosting package for your needs',
+    'hosting.journey.step2.title': 'Instant Setup',
+    'hosting.journey.step2.desc': 'Your server is ready within 5 minutes',
+    'hosting.journey.step3.title': 'Go Live',
+    'hosting.journey.step3.desc': 'Launch your website with full control',
+
+    // Hosting page - Everything Connected section
+    'hosting.connected.title': 'Everything',
+    'hosting.connected.titleHighlight': ' Connected',
+    'hosting.connected.desc': 'Your VPS comes fully equipped with enterprise-grade features, all seamlessly integrated and ready to power your projects.',
+    'hosting.connected.feature1': 'NVMe SSD for blazing speed',
+    'hosting.connected.feature2': 'Free SSL certificates',
+    'hosting.connected.feature3': 'Automated daily backups',
+    'hosting.connected.feature4': 'Full email hosting',
+
+    // Hosting page - Server Performance section
+    'hosting.performance.title': 'Server',
+    'hosting.performance.titleHighlight': ' Performance',
+    'hosting.performance.subtitle': 'Enterprise-grade infrastructure optimized for speed',
+    'hosting.performance.uptime': 'Uptime',
+    'hosting.performance.response': 'Response',
+    'hosting.performance.network': 'Network',
+    'hosting.performance.efficiency': 'Resource Efficiency',
+    'hosting.performance.latestCpu': 'Latest Gen CPUs',
+    'hosting.performance.eccRam': 'Error-Correcting RAM',
+    'hosting.performance.redundantStorage': 'Redundant Storage',
+    'hosting.performance.enterpriseSecurity': 'Enterprise Security',
+
+    // Hosting page - Tech Stack section
+    'hosting.tech.title': 'Powered by',
+    'hosting.tech.titleHighlight': ' Leading Tech',
+    'hosting.tech.subtitle': 'Industry-standard tools, all pre-configured'
   }
 };
 
