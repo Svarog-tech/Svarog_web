@@ -321,19 +321,24 @@ const Hosting: React.FC = () => {
       {/* Hero Header */}
       <section className="hosting-hero">
         <div className="container">
-          <motion.div
-            className="hero-content"
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-          >
-            <span className="hero-tag">Web Hosting</span>
-            <h1>
+          <div className="hero-content">
+            <motion.h1
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0 }}
+            >
               {t('hosting.title')}{' '}
               <span className="gradient-text">{t('hosting.titleHighlight')}</span>
-            </h1>
-            <p className="hero-lead">{t('hosting.description')}</p>
-          </motion.div>
+            </motion.h1>
+            <motion.p
+              className="hero-lead"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.15 }}
+            >
+              {t('hosting.description')}
+            </motion.p>
+          </div>
         </div>
       </section>
 
