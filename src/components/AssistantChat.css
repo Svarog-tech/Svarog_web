@@ -1,0 +1,655 @@
+/* ============================================
+   ASSISTANT CHAT - Creative Blob Design
+   Matching Hosting Page Feature Icons
+   ============================================ */
+
+/* Floating toggle button - Creative Blob Design */
+.assistant-toggle-btn {
+  position: fixed;
+  bottom: 32px;
+  right: 32px;
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  z-index: var(--z-modal);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.75rem;
+  padding: 2px;
+  background: radial-gradient(circle 50px at 80% -10%, var(--surface), var(--surface-light));
+}
+
+.assistant-toggle-btn::before {
+  content: "";
+  position: absolute;
+  width: 45px;
+  height: 100%;
+  border-radius: 50%;
+  bottom: 0;
+  left: 0;
+  background: radial-gradient(
+    circle 40px at 0% 100%,
+    var(--accent-color),
+    var(--primary-color),
+    transparent
+  );
+  box-shadow: -8px 8px 25px rgba(37, 99, 235, 0.4);
+  z-index: 0;
+  transition: all 0.3s ease;
+}
+
+.assistant-toggle-btn::after {
+  content: "";
+  position: absolute;
+  width: 55%;
+  height: 55%;
+  border-radius: 50%;
+  top: 2px;
+  right: 2px;
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.4);
+  z-index: -1;
+}
+
+.assistant-toggle-btn:hover::before {
+  box-shadow: -10px 12px 35px rgba(37, 99, 235, 0.55);
+  transform: scale(1.05);
+}
+
+.assistant-toggle-btn .icon-inner {
+  position: relative;
+  z-index: 3;
+  width: 56px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle 50px at 80% -50%, var(--surface-alt), var(--surface));
+  border-radius: 50%;
+  color: var(--primary-color);
+  transition: all 0.3s ease;
+}
+
+.assistant-toggle-btn:hover .icon-inner {
+  transform: scale(1.05);
+  color: var(--primary-dark);
+}
+
+[data-theme="dark"] .assistant-toggle-btn {
+  background: radial-gradient(circle 50px at 80% -10%, var(--surface-light), var(--surface));
+}
+
+[data-theme="dark"] .assistant-toggle-btn .icon-inner {
+  background: radial-gradient(circle 50px at 80% -50%, var(--surface-light), var(--surface));
+  color: var(--accent-color);
+}
+
+[data-theme="dark"] .assistant-toggle-btn:hover .icon-inner {
+  color: #22d3ee;
+}
+
+/* Pulse ring animation */
+.assistant-toggle-btn .pulse-ring {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  border: 2px solid var(--primary-color);
+  opacity: 0;
+  animation: pulseRing 2.5s ease-out infinite;
+}
+
+.assistant-toggle-btn .pulse-ring:nth-child(2) {
+  animation-delay: 0.8s;
+}
+
+@keyframes pulseRing {
+  0% {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+  100% {
+    transform: scale(1.6);
+    opacity: 0;
+  }
+}
+
+/* Chat popup */
+.assistant-popup {
+  position: fixed;
+  bottom: 120px;
+  right: 32px;
+  width: 400px;
+  max-width: calc(100vw - 48px);
+  height: 560px;
+  max-height: calc(100vh - 160px);
+  border-radius: 24px;
+  overflow: hidden;
+  z-index: var(--z-modal);
+  display: flex;
+  flex-direction: column;
+  /* Creative background matching feature cards */
+  --s: 200px;
+  --c1: rgba(15, 30, 61, 0.03);
+  --c2: rgba(22, 42, 82, 0.03);
+  --c3: rgba(18, 36, 71, 0.03);
+  background:
+    repeating-conic-gradient(
+      from 30deg,
+      #0000 0 120deg,
+      var(--c3) 0 180deg
+    ) calc(0.5 * var(--s)) calc(0.5 * var(--s) * 0.577),
+    repeating-conic-gradient(
+      from 30deg,
+      var(--c1) 0 60deg,
+      var(--c2) 0 120deg,
+      var(--c3) 0 180deg
+    ),
+    var(--surface);
+  background-size: var(--s) calc(var(--s) * 0.577);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--border-light);
+  box-shadow:
+    0 25px 60px -12px rgba(0, 0, 0, 0.2),
+    0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+}
+
+[data-theme="dark"] .assistant-popup {
+  --c1: rgba(37, 99, 235, 0.05);
+  --c2: rgba(6, 182, 212, 0.05);
+  --c3: rgba(139, 92, 246, 0.05);
+  box-shadow:
+    0 25px 60px -12px rgba(0, 0, 0, 0.5),
+    0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+}
+
+/* Header with creative gradient */
+.assistant-header {
+  position: relative;
+  padding: 20px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 50%, #1e3a5f 100%);
+  color: #fff;
+  overflow: hidden;
+}
+
+.assistant-header::before {
+  content: "";
+  position: absolute;
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  top: -75px;
+  right: -30px;
+  background: radial-gradient(
+    circle,
+    rgba(6, 182, 212, 0.3),
+    transparent 70%
+  );
+}
+
+.assistant-header::after {
+  content: "";
+  position: absolute;
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  bottom: -50px;
+  left: 20px;
+  background: radial-gradient(
+    circle,
+    rgba(139, 92, 246, 0.25),
+    transparent 70%
+  );
+}
+
+.assistant-header-content {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  position: relative;
+  z-index: 1;
+}
+
+/* Avatar with blob design */
+.assistant-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  padding: 2px;
+  background: radial-gradient(circle 30px at 80% -10%, rgba(255,255,255,0.3), rgba(255,255,255,0.1));
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.assistant-avatar::before {
+  content: "";
+  position: absolute;
+  width: 25px;
+  height: 100%;
+  border-radius: 14px;
+  bottom: 0;
+  left: 0;
+  background: radial-gradient(
+    circle 20px at 0% 100%,
+    rgba(6, 182, 212, 0.6),
+    rgba(37, 99, 235, 0.4),
+    transparent
+  );
+  z-index: 0;
+}
+
+.assistant-avatar .avatar-inner {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(10px);
+  border-radius: 12px;
+  font-size: 1.25rem;
+  position: relative;
+  z-index: 1;
+}
+
+.assistant-info h3 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.assistant-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+  opacity: 0.9;
+  margin-top: 2px;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #10b981;
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
+  animation: statusGlow 2s ease-in-out infinite;
+}
+
+@keyframes statusGlow {
+  0%, 100% {
+    box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
+  }
+  50% {
+    box-shadow: 0 0 16px rgba(16, 185, 129, 0.8);
+  }
+}
+
+.assistant-close-btn {
+  position: relative;
+  z-index: 1;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: none;
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(8px);
+}
+
+.assistant-close-btn:hover {
+  background: rgba(255, 255, 255, 0.22);
+  transform: scale(1.05);
+}
+
+/* Messages area */
+.assistant-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.assistant-messages::-webkit-scrollbar {
+  width: 5px;
+}
+
+.assistant-messages::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.assistant-messages::-webkit-scrollbar-thumb {
+  background: var(--border-medium);
+  border-radius: 3px;
+}
+
+.assistant-messages::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+/* Message bubbles */
+.assistant-message {
+  display: flex;
+  gap: 12px;
+  max-width: 88%;
+}
+
+.assistant-message.user {
+  margin-left: auto;
+  flex-direction: row-reverse;
+}
+
+.assistant-message.assistant {
+  margin-right: auto;
+}
+
+/* Message avatar with mini blob */
+.message-avatar {
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  border-radius: 12px;
+  padding: 2px;
+  background: radial-gradient(circle 25px at 80% -10%, var(--surface), var(--surface-light));
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.message-avatar::before {
+  content: "";
+  position: absolute;
+  width: 18px;
+  height: 100%;
+  border-radius: 12px;
+  bottom: 0;
+  left: 0;
+  background: radial-gradient(
+    circle 15px at 0% 100%,
+    var(--accent-color),
+    var(--primary-color),
+    transparent
+  );
+  box-shadow: -4px 4px 12px rgba(37, 99, 235, 0.25);
+  z-index: 0;
+}
+
+.message-avatar .avatar-icon {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle 20px at 80% -50%, var(--surface-alt), var(--surface));
+  border-radius: 10px;
+  color: var(--primary-color);
+  font-size: 0.85rem;
+  position: relative;
+  z-index: 1;
+}
+
+[data-theme="dark"] .message-avatar {
+  background: radial-gradient(circle 25px at 80% -10%, var(--surface-light), var(--surface));
+}
+
+[data-theme="dark"] .message-avatar .avatar-icon {
+  background: radial-gradient(circle 20px at 80% -50%, var(--surface-light), var(--surface));
+  color: var(--accent-color);
+}
+
+.message-content {
+  padding: 14px 18px;
+  border-radius: 18px;
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+.assistant-message.assistant .message-content {
+  background: var(--surface-solid);
+  border: 1px solid var(--border-light);
+  color: var(--text-primary);
+  border-bottom-left-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.assistant-message.user .message-content {
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+  color: #fff;
+  border-bottom-right-radius: 6px;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+}
+
+.message-content p {
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* Typing indicator */
+.message-content.typing {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+  padding: 18px 22px;
+}
+
+.typing-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--primary-color);
+  animation: typingBounce 1.4s ease-in-out infinite;
+}
+
+.typing-dot:nth-child(1) { animation-delay: 0s; }
+.typing-dot:nth-child(2) { animation-delay: 0.2s; }
+.typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes typingBounce {
+  0%, 60%, 100% {
+    transform: translateY(0);
+    opacity: 0.4;
+  }
+  30% {
+    transform: translateY(-10px);
+    opacity: 1;
+  }
+}
+
+/* Input container with gradient border effect */
+.assistant-input-container {
+  padding: 18px 20px;
+  display: flex;
+  gap: 12px;
+  background: var(--surface);
+  border-top: 1px solid var(--border-light);
+  position: relative;
+}
+
+.assistant-input-container::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 20px;
+  right: 20px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--primary-color), var(--accent-color), transparent);
+  opacity: 0.3;
+}
+
+.assistant-input {
+  flex: 1;
+  padding: 14px 18px;
+  border-radius: 14px;
+  border: 1px solid var(--border-light);
+  background: var(--surface-solid);
+  color: var(--text-primary);
+  font-size: 0.95rem;
+  font-family: inherit;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.assistant-input::placeholder {
+  color: var(--text-muted);
+}
+
+.assistant-input:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+/* Send button with blob design */
+.assistant-send-btn {
+  width: 48px;
+  height: 48px;
+  min-width: 48px;
+  border-radius: 14px;
+  border: none;
+  padding: 2px;
+  background: radial-gradient(circle 30px at 80% -10%, var(--primary-light), var(--primary-color));
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.2s ease;
+}
+
+.assistant-send-btn::before {
+  content: "";
+  position: absolute;
+  width: 25px;
+  height: 100%;
+  border-radius: 14px;
+  bottom: 0;
+  left: 0;
+  background: radial-gradient(
+    circle 20px at 0% 100%,
+    rgba(6, 182, 212, 0.5),
+    rgba(37, 99, 235, 0.3),
+    transparent
+  );
+  z-index: 0;
+  transition: all 0.2s ease;
+}
+
+.assistant-send-btn .btn-inner {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+  border-radius: 12px;
+  color: #fff;
+  font-size: 1rem;
+  position: relative;
+  z-index: 1;
+}
+
+.assistant-send-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+}
+
+.assistant-send-btn:hover:not(:disabled)::before {
+  box-shadow: -4px 6px 15px rgba(37, 99, 235, 0.35);
+}
+
+.assistant-send-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Mobile responsive */
+@media (max-width: 480px) {
+  .assistant-toggle-btn {
+    bottom: 20px;
+    right: 20px;
+    width: 64px;
+    height: 64px;
+  }
+
+  .assistant-toggle-btn .icon-inner {
+    width: 50px;
+    height: 50px;
+  }
+
+  .assistant-popup {
+    bottom: 0;
+    right: 0;
+    left: 0;
+    width: 100%;
+    max-width: 100%;
+    height: calc(100vh - 60px);
+    max-height: calc(100vh - 60px);
+    border-radius: 28px 28px 0 0;
+  }
+
+  .assistant-header {
+    padding: 16px 18px;
+  }
+
+  .assistant-avatar {
+    width: 42px;
+    height: 42px;
+  }
+
+  .assistant-messages {
+    padding: 16px;
+  }
+
+  .assistant-input-container {
+    padding: 14px 16px;
+  }
+}
+
+/* Tablet */
+@media (min-width: 481px) and (max-width: 768px) {
+  .assistant-popup {
+    width: 380px;
+    bottom: 110px;
+  }
+
+  .assistant-toggle-btn {
+    bottom: 28px;
+    right: 28px;
+  }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .assistant-toggle-btn,
+  .assistant-popup,
+  .assistant-message,
+  .typing-dot,
+  .status-dot,
+  .pulse-ring {
+    animation: none;
+  }
+
+  .assistant-toggle-btn::before,
+  .assistant-send-btn,
+  .assistant-close-btn,
+  .icon-inner {
+    transition: none;
+  }
+}

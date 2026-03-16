@@ -9,6 +9,7 @@ import { ToastProvider } from './components/Toast';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import CookieBanner from './components/CookieBanner';
+import AssistantChat from './components/AssistantChat';
 import ScrollToTop from './components/ScrollToTop';
 import TriangularBackground from './components/TriangularBackground';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -119,6 +120,7 @@ function App() {
                 </ErrorBoundary>
                 </div>
                 <CookieBanner />
+                <AssistantChat />
                 <Footer />
               </div>
             </Router>
