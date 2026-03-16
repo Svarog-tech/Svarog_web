@@ -120,9 +120,9 @@ function App() {
                 </ErrorBoundary>
                 </div>
                 <CookieBanner />
-                <AssistantChat />
                 <Footer />
               </div>
+              <AssistantChat />
             </Router>
             </ToastProvider>
           </AuthProvider>

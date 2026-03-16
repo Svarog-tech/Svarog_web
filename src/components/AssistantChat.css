@@ -5,7 +5,7 @@
 
 /* Floating toggle button - Creative Blob Design */
 .assistant-toggle-btn {
-  position: fixed;
+  position: fixed !important;
   bottom: 32px;
   right: 32px;
   width: 72px;
@@ -13,13 +13,14 @@
   border-radius: 50%;
   border: none;
   cursor: pointer;
-  z-index: var(--z-modal);
+  z-index: 9999;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 1.75rem;
   padding: 2px;
   background: radial-gradient(circle 50px at 80% -10%, var(--surface), var(--surface-light));
+  transform: translateZ(0); /* Force GPU layer */
 }
 
 .assistant-toggle-btn::before {
@@ -118,7 +119,7 @@
 
 /* Chat popup */
 .assistant-popup {
-  position: fixed;
+  position: fixed !important;
   bottom: 120px;
   right: 32px;
   width: 400px;
@@ -127,7 +128,8 @@
   max-height: calc(100vh - 160px);
   border-radius: 24px;
   overflow: hidden;
-  z-index: var(--z-modal);
+  z-index: 9998;
+  transform: translateZ(0); /* Force GPU layer */
   display: flex;
   flex-direction: column;
   /* Creative background matching feature cards */
