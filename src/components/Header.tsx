@@ -15,6 +15,7 @@ import {
 import LanguageSwitcher from './LanguageSwitcher';
 import CurrencySwitcher from './CurrencySwitcher';
 import ThemeToggle from './ThemeToggle';
+import './MobileMenu.css';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -245,168 +246,183 @@ const Header: React.FC = () => {
       </nav>
     </header>
 
-    {/* Mobile navigation drawer */}
-    <AnimatePresence>
-      {isMobileMenuOpen && (
-        <>
-          <motion.div
-            className="nav-overlay open"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.3 }}
-            onClick={() => setIsMobileMenuOpen(false)}
-          />
-          <motion.div
-            className="nav-drawer open"
-            initial={{ x: '-100%' }}
-            animate={{ x: 0 }}
-            exit={{ x: '-100%' }}
-            transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
-          >
-            <div className="mobile-nav-content">
-              {/* Mobile drawer header with close button */}
-              <div className="mobile-drawer-header">
-                <Link to="/" className="mobile-drawer-logo" onClick={() => setIsMobileMenuOpen(false)}>
-                  <img
-                    src="/alatyrlogo-removebg-preview.png"
-                    alt="Alatyr Hosting"
-                    className="mobile-logo-image"
-                    width="120"
-                    height="30"
-                  />
-                </Link>
-                <button
-                  className="mobile-close-btn"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  aria-label="Close menu"
-                >
-                  <span></span>
-                  <span></span>
-                </button>
-              </div>
+    {/* Mobile navigation drawer - rendered via portal for proper stacking */}
+    {createPortal(
+      <div
+        className="mobile-menu-container"
+        data-open={isMobileMenuOpen}
+        aria-hidden={!isMobileMenuOpen}
+      >
+        {/* Backdrop overlay */}
+        <div
+          className="mobile-menu-backdrop"
+          onClick={() => setIsMobileMenuOpen(false)}
+          aria-hidden="true"
+        />
 
-              {/* User profile section in mobile menu */}
-              {user && (
-                <div className="mobile-profile-section">
-                  <div className="mobile-profile-info">
-                    <div className="profile-avatar">
-                      {profile?.avatar_url ? (
-                        <img
-                          src={profile.avatar_url}
-                          alt="Avatar"
-                          loading="lazy"
-                          decoding="async"
-                        />
-                      ) : (
-                        <div className="avatar-initials">
-                          {getUserInitials()}
-                        </div>
-                      )}
-                    </div>
-                    <div className="mobile-profile-text">
-                      <div className="mobile-profile-name">
-                        {(profile?.first_name && profile.first_name.trim()) ||
-                         (user?.user_metadata?.first_name && user.user_metadata.first_name.trim()) ||
-                         (user?.email?.split('@')[0]) ||
-                         'User'}
-                        {profile?.is_admin && (
-                          <span className="admin-badge" title="Administrátor">
-                            <FontAwesomeIcon icon={faUserShield} />
-                          </span>
-                        )}
-                      </div>
-                      <div className="mobile-profile-email">{user?.email}</div>
-                    </div>
-                  </div>
-                  <div className="mobile-menu-divider"></div>
+        {/* Drawer panel */}
+        <nav
+          className="mobile-menu-drawer"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Mobile navigation"
+        >
+          {/* Drawer header */}
+          <div className="mobile-menu-header">
+            <Link
+              to="/"
+              className="mobile-menu-logo"
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              <img
+                src="/alatyrlogo-removebg-preview.png"
+                alt="Alatyr Hosting"
+                width="120"
+                height="30"
+              />
+            </Link>
+            <button
+              type="button"
+              className="mobile-menu-close"
+              onClick={() => setIsMobileMenuOpen(false)}
+              aria-label="Close menu"
+            >
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M18 6L6 18M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+
+          {/* Scrollable content */}
+          <div className="mobile-menu-body">
+            {/* User profile */}
+            {user && (
+              <div className="mobile-menu-profile">
+                <div className="mobile-menu-avatar">
+                  {profile?.avatar_url ? (
+                    <img src={profile.avatar_url} alt="Avatar" />
+                  ) : (
+                    <span className="mobile-menu-initials">{getUserInitials()}</span>
+                  )}
                 </div>
-              )}
+                <div className="mobile-menu-user">
+                  <span className="mobile-menu-name">
+                    {(profile?.first_name && profile.first_name.trim()) ||
+                     (user?.user_metadata?.first_name && user.user_metadata.first_name.trim()) ||
+                     (user?.email?.split('@')[0]) ||
+                     'User'}
+                    {profile?.is_admin && (
+                      <FontAwesomeIcon icon={faUserShield} className="mobile-menu-admin" title="Admin" />
+                    )}
+                  </span>
+                  <span className="mobile-menu-email">{user?.email}</span>
+                </div>
+              </div>
+            )}
 
-              {/* Navigation links */}
-              <nav className="mobile-nav-links">
-                <Link to="/" className={`mobile-nav-link ${isActive('/') ? 'active' : ''}`}>
+            {/* Navigation links */}
+            <ul className="mobile-menu-nav">
+              <li>
+                <Link to="/" className={isActive('/') ? 'active' : ''} onClick={() => setIsMobileMenuOpen(false)}>
                   {t('nav.home')}
                 </Link>
-                <Link to="/hosting" className={`mobile-nav-link ${isActive('/hosting') ? 'active' : ''}`}>
+              </li>
+              <li>
+                <Link to="/hosting" className={isActive('/hosting') ? 'active' : ''} onClick={() => setIsMobileMenuOpen(false)}>
                   {t('nav.hosting')}
                 </Link>
-                <Link to="/domains" className={`mobile-nav-link ${isActive('/domains') ? 'active' : ''}`}>
+              </li>
+              <li>
+                <Link to="/domains" className={isActive('/domains') ? 'active' : ''} onClick={() => setIsMobileMenuOpen(false)}>
                   {t('nav.domains')}
                 </Link>
-                <Link to="/support" className={`mobile-nav-link ${isActive('/support') ? 'active' : ''}`}>
+              </li>
+              <li>
+                <Link to="/support" className={isActive('/support') ? 'active' : ''} onClick={() => setIsMobileMenuOpen(false)}>
                   {t('nav.support')}
                 </Link>
-                <Link to="/about" className={`mobile-nav-link ${isActive('/about') ? 'active' : ''}`}>
+              </li>
+              <li>
+                <Link to="/about" className={isActive('/about') ? 'active' : ''} onClick={() => setIsMobileMenuOpen(false)}>
                   {t('nav.about')}
                 </Link>
+              </li>
+            </ul>
 
-                {user && (
-                  <>
-                    <div className="mobile-menu-divider"></div>
-                    <Link to="/dashboard" className={`mobile-nav-link ${isActive('/dashboard') ? 'active' : ''}`}>
-                      <FontAwesomeIcon icon={faDashboard} />
-                      {t('header.dashboard')}
+            {/* User menu links */}
+            {user && (
+              <ul className="mobile-menu-nav mobile-menu-user-nav">
+                <li>
+                  <Link to="/dashboard" className={isActive('/dashboard') ? 'active' : ''} onClick={() => setIsMobileMenuOpen(false)}>
+                    <FontAwesomeIcon icon={faDashboard} />
+                    {t('header.dashboard')}
+                  </Link>
+                </li>
+                {profile?.is_admin && (
+                  <li>
+                    <Link to="/admin" className={`admin-link ${isActive('/admin') ? 'active' : ''}`} onClick={() => setIsMobileMenuOpen(false)}>
+                      <FontAwesomeIcon icon={faUserShield} />
+                      {t('header.administration')}
                     </Link>
-                    {profile?.is_admin && (
-                      <Link to="/admin" className={`mobile-nav-link admin-link ${isActive('/admin') ? 'active' : ''}`}>
-                        <FontAwesomeIcon icon={faUserShield} />
-                        {t('header.administration')}
-                      </Link>
-                    )}
-                    <Link to="/services" className={`mobile-nav-link ${isActive('/services') ? 'active' : ''}`}>
-                      <FontAwesomeIcon icon={faServer} />
-                      {t('header.myServices')}
-                    </Link>
-                    <Link to="/tickets" className={`mobile-nav-link ${isActive('/tickets') ? 'active' : ''}`}>
-                      <FontAwesomeIcon icon={faTicket} />
-                      {t('header.supportTickets')}
-                    </Link>
-                    <Link to="/profile" className={`mobile-nav-link ${isActive('/profile') ? 'active' : ''}`}>
-                      <FontAwesomeIcon icon={faCog} />
-                      {t('header.settings')}
-                    </Link>
-                  </>
+                  </li>
                 )}
-              </nav>
+                <li>
+                  <Link to="/services" className={isActive('/services') ? 'active' : ''} onClick={() => setIsMobileMenuOpen(false)}>
+                    <FontAwesomeIcon icon={faServer} />
+                    {t('header.myServices')}
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/tickets" className={isActive('/tickets') ? 'active' : ''} onClick={() => setIsMobileMenuOpen(false)}>
+                    <FontAwesomeIcon icon={faTicket} />
+                    {t('header.supportTickets')}
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/profile" className={isActive('/profile') ? 'active' : ''} onClick={() => setIsMobileMenuOpen(false)}>
+                    <FontAwesomeIcon icon={faCog} />
+                    {t('header.settings')}
+                  </Link>
+                </li>
+              </ul>
+            )}
 
-              {/* Settings section */}
-              <div className="mobile-menu-divider"></div>
-              <div className="mobile-settings">
-                <div className="mobile-settings-label">{t('header.settings') || 'Settings'}</div>
-                <div className="mobile-settings-controls">
-                  <ThemeToggle />
-                  <CurrencySwitcher />
-                  <LanguageSwitcher />
-                </div>
-              </div>
-
-              {/* CTA buttons */}
-              <div className="mobile-cta">
-                {user ? (
-                  <motion.button
-                    className="mobile-logout-button"
-                    onClick={handleLogout}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    <FontAwesomeIcon icon={faSignOutAlt} />
-                    {t('header.logout')}
-                  </motion.button>
-                ) : (
-                  <motion.button
-                    className="primary-btn"
-                    onClick={handleLogin}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    <span>{t('nav.login')}</span>
-                  </motion.button>
-                )}
+            {/* Settings controls */}
+            <div className="mobile-menu-settings">
+              <span className="mobile-menu-settings-label">{t('header.settings') || 'Settings'}</span>
+              <div className="mobile-menu-settings-row">
+                <ThemeToggle />
+                <CurrencySwitcher />
+                <LanguageSwitcher />
               </div>
             </div>
-          </motion.div>
-        </>
-      )}
-    </AnimatePresence>
+          </div>
+
+          {/* Footer with CTA */}
+          <div className="mobile-menu-footer">
+            {user ? (
+              <button
+                type="button"
+                className="mobile-menu-logout"
+                onClick={handleLogout}
+              >
+                <FontAwesomeIcon icon={faSignOutAlt} />
+                {t('header.logout')}
+              </button>
+            ) : (
+              <button
+                type="button"
+                className="mobile-menu-login"
+                onClick={handleLogin}
+              >
+                {t('nav.login')}
+              </button>
+            )}
+          </div>
+        </nav>
+      </div>,
+      document.body
+    )}
 
     {/* Render profile menu in a portal */}
     {user && createPortal(

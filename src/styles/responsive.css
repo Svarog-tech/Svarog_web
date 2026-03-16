@@ -666,65 +666,7 @@
   background: var(--accent-color) !important;
 }
 
-/* Mobile nav links - touch-friendly */
-.nav-drawer .mobile-nav-link {
-  min-height: var(--touch-target-min);
-  display: flex;
-  align-items: center;
-}
-
-/* Mobile navigation drawer */
-.nav-drawer {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100vh;
-  background: var(--surface);
-  transform: translateX(-100%);
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  z-index: 401;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-}
-
-.nav-drawer.open {
-  transform: translateX(0);
-}
-
-/* Overlay for mobile menu */
-.nav-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100vh;
-  background: rgba(0, 0, 0, 0.5);
-  opacity: 0;
-  visibility: hidden;
-  transition: opacity 0.3s ease, visibility 0.3s ease;
-  z-index: 400;
-}
-
-.nav-overlay.open {
-  opacity: 1;
-  visibility: visible;
-}
-
-@media (min-width: 992px) {
-  .nav-drawer {
-    position: static;
-    width: auto;
-    height: auto;
-    background: transparent;
-    transform: none;
-    overflow: visible;
-  }
-
-  .nav-overlay {
-    display: none;
-  }
-}
+/* Old nav-drawer removed - using MobileMenu.css instead */
 
 /* ============================================
    RESPONSIVE TABLE UTILITIES
@@ -855,7 +797,7 @@
 /* Safe area for notched phones (iPhone X+) */
 @supports (padding: env(safe-area-inset-top)) {
   .nav-drawer .mobile-nav-content {
-    padding-top: max(6rem, calc(6rem + env(safe-area-inset-top)));
+    padding-top: calc(1rem + env(safe-area-inset-top, 0px));
     padding-left: max(1.5rem, env(safe-area-inset-left));
     padding-right: max(1.5rem, env(safe-area-inset-right));
   }
