@@ -177,10 +177,10 @@
 
 .feature-node.top-left { top: 8%; left: 12%; }
 .feature-node.top-right { top: 8%; right: 12%; }
-.feature-node.right { top: 50%; right: 2%; transform: translateY(-50%); }
-.feature-node.bottom-right { bottom: 8%; right: 12%; }
-.feature-node.bottom-left { bottom: 8%; left: 12%; }
-.feature-node.left { top: 50%; left: 2%; transform: translateY(-50%); }
+.feature-node.right { top: 42%; right: 3%; }
+.feature-node.bottom-right { bottom: 5%; right: 15%; }
+.feature-node.bottom-left { bottom: 5%; left: 15%; }
+.feature-node.left { top: 42%; left: 3%; }
 
 .node-icon {
   width: 50px;

@@ -72,21 +72,14 @@ const ServerDiagram: React.FC = () => {
         <span className="server-label">Your VPS</span>
       </div>
 
-      <svg className="connection-lines" viewBox="0 0 400 400">
-        <defs>
-          <linearGradient id="lineGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="var(--primary-color)" stopOpacity="0.2" />
-            <stop offset="50%" stopColor="var(--primary-color)" stopOpacity="0.8" />
-            <stop offset="100%" stopColor="var(--primary-color)" stopOpacity="0.2" />
-          </linearGradient>
-        </defs>
-        {/* Connection lines from center to each feature */}
-        <line x1="200" y1="200" x2="80" y2="80" stroke="url(#lineGradient)" strokeWidth="2" className="conn-line" />
-        <line x1="200" y1="200" x2="320" y2="80" stroke="url(#lineGradient)" strokeWidth="2" className="conn-line" />
-        <line x1="200" y1="200" x2="350" y2="200" stroke="url(#lineGradient)" strokeWidth="2" className="conn-line" />
-        <line x1="200" y1="200" x2="320" y2="320" stroke="url(#lineGradient)" strokeWidth="2" className="conn-line" />
-        <line x1="200" y1="200" x2="80" y2="320" stroke="url(#lineGradient)" strokeWidth="2" className="conn-line" />
-        <line x1="200" y1="200" x2="50" y2="200" stroke="url(#lineGradient)" strokeWidth="2" className="conn-line" />
+      <svg className="connection-lines" viewBox="0 0 400 400" preserveAspectRatio="none">
+        {/* Connection lines from server edges to each feature */}
+        <line x1="165" y1="165" x2="80" y2="80" stroke="var(--primary-color)" strokeWidth="2" strokeOpacity="0.5" className="conn-line" />
+        <line x1="235" y1="165" x2="320" y2="80" stroke="var(--primary-color)" strokeWidth="2" strokeOpacity="0.5" className="conn-line" />
+        <line x1="240" y1="200" x2="363" y2="200" stroke="var(--primary-color)" strokeWidth="2" strokeOpacity="0.5" className="conn-line" />
+        <line x1="230" y1="220" x2="320" y2="320" stroke="var(--primary-color)" strokeWidth="2" strokeOpacity="0.5" className="conn-line" />
+        <line x1="170" y1="220" x2="80" y2="320" stroke="var(--primary-color)" strokeWidth="2" strokeOpacity="0.5" className="conn-line" />
+        <line x1="160" y1="200" x2="37" y2="200" stroke="var(--primary-color)" strokeWidth="2" strokeOpacity="0.5" className="conn-line" />
       </svg>
 
       {features.map((feature, index) => (
