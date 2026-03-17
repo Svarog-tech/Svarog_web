@@ -76,13 +76,16 @@ const Tickets: React.FC = () => {
 
     try {
       // Use public endpoint if not logged in (development mode)
+      console.log('[Tickets] user:', user, 'isLoggedIn:', !!user);
       if (!user) {
+        console.log('[Tickets] Using PUBLIC endpoint');
         await createPublicTicket({
           ...formData,
           email: 'test@example.com',
           name: 'Test User'
         });
       } else {
+        console.log('[Tickets] Using AUTHENTICATED endpoint');
         await createSupportTicket(formData);
       }
 

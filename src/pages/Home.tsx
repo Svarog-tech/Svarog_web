@@ -99,27 +99,33 @@ const AnimatedSection: React.FC<{ children: React.ReactNode; className?: string;
 };
 
 // Terminal typing animation component
+const commands = [
+  'root@vps:~# sudo apt update',
+  'root@vps:~# sudo systemctl status nginx',
+  'root@vps:~# docker ps -a',
+  'root@vps:~# htop'
+];
+
 const TerminalTyping: React.FC = () => {
   const [text, setText] = useState('');
   const [lineIndex, setLineIndex] = useState(0);
-  const commands = [
-    'root@vps:~# sudo apt update',
-    'root@vps:~# sudo systemctl status nginx',
-    'root@vps:~# docker ps -a',
-    'root@vps:~# htop'
-  ];
 
   useEffect(() => {
     const currentCommand = commands[lineIndex];
     let charIndex = 0;
+    let timeoutId: NodeJS.Timeout;
+    let isCancelled = false;
 
     const typeChar = () => {
+      if (isCancelled) return;
+
       if (charIndex < currentCommand.length) {
         setText(currentCommand.slice(0, charIndex + 1));
         charIndex++;
-        setTimeout(typeChar, 50 + Math.random() * 50);
+        timeoutId = setTimeout(typeChar, 50 + Math.random() * 50);
       } else {
-        setTimeout(() => {
+        timeoutId = setTimeout(() => {
+          if (isCancelled) return;
           setLineIndex((prev) => (prev + 1) % commands.length);
           setText('');
         }, 2000);
@@ -127,6 +133,11 @@ const TerminalTyping: React.FC = () => {
     };
 
     typeChar();
+
+    return () => {
+      isCancelled = true;
+      clearTimeout(timeoutId);
+    };
   }, [lineIndex]);
 
   return (
