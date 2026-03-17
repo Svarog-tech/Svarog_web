@@ -325,16 +325,60 @@ const Home: React.FC = () => {
     }
   };
 
+  // Tech stack with code editor integration
   const techStack = [
-    { name: 'Docker', icon: '🐳' },
-    { name: 'Node.js', icon: '⬢' },
-    { name: 'Python', icon: '🐍' },
-    { name: 'PHP', icon: '🐘' },
-    { name: 'MySQL', icon: '🗄️' },
-    { name: 'Redis', icon: '⚡' },
-    { name: 'Nginx', icon: '🌐' },
-    { name: 'Git', icon: '📦' }
+    { id: 'docker', name: 'Docker', logo: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/docker/docker-original.svg', color: '#2496ED', desc: 'Containers', lineNum: 3 },
+    { id: 'nodejs', name: 'Node.js', logo: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/nodejs/nodejs-original.svg', color: '#339933', desc: 'Runtime', lineNum: 4 },
+    { id: 'python', name: 'Python', logo: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/python/python-original.svg', color: '#3776AB', desc: 'Backend', lineNum: 5 },
+    { id: 'php', name: 'PHP', logo: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/php/php-original.svg', color: '#777BB4', desc: 'Web', lineNum: 6 },
+    { id: 'mysql', name: 'MySQL', logo: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/mysql/mysql-original.svg', color: '#4479A1', desc: 'Database', lineNum: 7 },
+    { id: 'redis', name: 'Redis', logo: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/redis/redis-original.svg', color: '#DC382D', desc: 'Cache', lineNum: 8 },
+    { id: 'nginx', name: 'Nginx', logo: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/nginx/nginx-original.svg', color: '#009639', desc: 'Server', lineNum: 9 },
+    { id: 'git', name: 'Git', logo: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/git/git-original.svg', color: '#F05032', desc: 'Version', lineNum: 10 }
   ];
+
+  // Code lines for the editor
+  const codeLines = [
+    { num: 1, code: '// server.config.ts', type: 'comment' },
+    { num: 2, code: '', type: 'empty' },
+    { num: 3, code: "import { Container } from 'dockerode';", techId: 'docker' },
+    { num: 4, code: "const express = require('express');", techId: 'nodejs' },
+    { num: 5, code: "from flask import Flask, request", techId: 'python' },
+    { num: 6, code: "use Illuminate\\Support\\Facades\\Route;", techId: 'php' },
+    { num: 7, code: "import mysql from 'mysql2/promise';", techId: 'mysql' },
+    { num: 8, code: "import Redis from 'ioredis';", techId: 'redis' },
+    { num: 9, code: "server { listen 80; server_name _; }", techId: 'nginx' },
+    { num: 10, code: "git clone https://github.com/you/app", techId: 'git' },
+    { num: 11, code: '', type: 'empty' },
+    { num: 12, code: '// Deploy on your VPS', type: 'comment' }
+  ];
+
+  // State for code editor interaction
+  const [activeTech, setActiveTech] = useState<string | null>(null);
+  const [visibleLines, setVisibleLines] = useState(0);
+  const [isTypingDone, setIsTypingDone] = useState(false);
+  const editorRef = useRef<HTMLDivElement>(null);
+  const isEditorInView = useInView(editorRef, { once: true, margin: "-100px" });
+
+  // Typing animation effect
+  useEffect(() => {
+    if (!isEditorInView) return;
+
+    let currentLine = 0;
+    const totalLines = codeLines.length;
+
+    const interval = setInterval(() => {
+      currentLine++;
+      setVisibleLines(currentLine);
+
+      if (currentLine >= totalLines) {
+        clearInterval(interval);
+        setIsTypingDone(true);
+      }
+    }, 120);
+
+    return () => clearInterval(interval);
+  }, [isEditorInView]);
 
   return (
     <main className="landing-page">
@@ -564,7 +608,7 @@ const Home: React.FC = () => {
         </div>
       </AnimatedSection>
 
-      {/* Technology Stack Section */}
+      {/* Technology Stack Section - Interactive Code Editor */}
       <AnimatedSection className="tech-stack-section">
         <div className="container">
           <motion.div className="tech-header" variants={fadeInUp}>
@@ -578,25 +622,150 @@ const Home: React.FC = () => {
             </p>
           </motion.div>
 
-          <div className="tech-orbit">
-            {techStack.map((tech, index) => (
-              <motion.div
-                key={tech.name}
-                className="tech-item"
-                style={{
-                  '--orbit-delay': `${index * -2}s`,
-                  '--orbit-index': index
-                } as React.CSSProperties}
-                variants={scaleIn}
-              >
-                <span className="tech-icon">{tech.icon}</span>
-                <span className="tech-name">{tech.name}</span>
-              </motion.div>
-            ))}
-            <div className="tech-center">
-              <FontAwesomeIcon icon={faRocket} />
-              <span>{t('landing.techStack.center')}</span>
-            </div>
+          <div className="code-editor-stack" ref={editorRef}>
+            {/* Code Editor Window */}
+            <motion.div
+              className="editor-window"
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+            >
+              {/* Title Bar */}
+              <div className="editor-titlebar">
+                <div className="window-controls">
+                  <span className="control close"></span>
+                  <span className="control minimize"></span>
+                  <span className="control maximize"></span>
+                </div>
+                <div className="editor-filename">
+                  <span className="file-icon">📄</span>
+                  <span>server.config.ts</span>
+                </div>
+                <div className="editor-tabs">
+                  <span className="tab active">config</span>
+                </div>
+              </div>
+
+              {/* Editor Body */}
+              <div className="editor-body">
+                <div className="line-numbers">
+                  {codeLines.slice(0, visibleLines).map((line) => (
+                    <span
+                      key={line.num}
+                      className={activeTech && line.techId === activeTech ? 'highlighted' : ''}
+                    >
+                      {line.num}
+                    </span>
+                  ))}
+                </div>
+
+                <div className="code-content">
+                  {codeLines.slice(0, visibleLines).map((line) => (
+                    <motion.div
+                      key={line.num}
+                      className={`code-line ${line.type || ''} ${activeTech && line.techId === activeTech ? 'highlighted' : ''}`}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ duration: 0.15 }}
+                    >
+                      {line.type === 'comment' && (
+                        <span className="syntax-comment">{line.code}</span>
+                      )}
+                      {line.type === 'empty' && <span>&nbsp;</span>}
+                      {line.techId && (
+                        <span className="syntax-code">
+                          {line.code.includes('import') && (
+                            <>
+                              <span className="syntax-keyword">import</span>
+                              <span className="syntax-default">{line.code.replace('import', '')}</span>
+                            </>
+                          )}
+                          {line.code.includes('const') && (
+                            <>
+                              <span className="syntax-keyword">const</span>
+                              <span className="syntax-default">{line.code.replace('const', '')}</span>
+                            </>
+                          )}
+                          {line.code.includes('from ') && !line.code.includes('import') && (
+                            <>
+                              <span className="syntax-keyword">from</span>
+                              <span className="syntax-default">{line.code.replace('from', '')}</span>
+                            </>
+                          )}
+                          {line.code.includes('use ') && (
+                            <>
+                              <span className="syntax-keyword">use</span>
+                              <span className="syntax-default">{line.code.replace('use', '')}</span>
+                            </>
+                          )}
+                          {line.code.includes('server {') && (
+                            <>
+                              <span className="syntax-keyword">server</span>
+                              <span className="syntax-bracket">{' {'}</span>
+                              <span className="syntax-default"> listen 80; server_name _; </span>
+                              <span className="syntax-bracket">{'}'}</span>
+                            </>
+                          )}
+                          {line.code.includes('git clone') && (
+                            <>
+                              <span className="syntax-function">git</span>
+                              <span className="syntax-default"> clone </span>
+                              <span className="syntax-string">https://github.com/you/app</span>
+                            </>
+                          )}
+                        </span>
+                      )}
+                    </motion.div>
+                  ))}
+                  {!isTypingDone && (
+                    <span className="editor-cursor">|</span>
+                  )}
+                </div>
+              </div>
+
+              {/* Status Bar */}
+              <div className="editor-statusbar">
+                <span className="status-item">TypeScript</span>
+                <span className="status-item">UTF-8</span>
+                <span className="status-item">Ln {visibleLines}, Col 1</span>
+              </div>
+            </motion.div>
+
+            {/* Tech Cards Sidebar */}
+            <motion.div
+              className="tech-sidebar"
+              initial={{ opacity: 0, x: 30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+            >
+              {techStack.map((tech, index) => (
+                <motion.button
+                  key={tech.id}
+                  className={`tech-card ${activeTech === tech.id ? 'active' : ''}`}
+                  onMouseEnter={() => setActiveTech(tech.id)}
+                  onMouseLeave={() => setActiveTech(null)}
+                  onClick={() => setActiveTech(activeTech === tech.id ? null : tech.id)}
+                  style={{ '--tech-color': tech.color } as React.CSSProperties}
+                  initial={{ opacity: 0, x: 20 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: index * 0.05 + 0.3 }}
+                  whileHover={{ x: -4 }}
+                  aria-label={`${tech.name} - ${tech.desc}`}
+                  aria-pressed={activeTech === tech.id}
+                >
+                  <div className="tech-icon">
+                    <img src={tech.logo} alt={tech.name} loading="lazy" />
+                  </div>
+                  <div className="tech-info">
+                    <span className="tech-name">{tech.name}</span>
+                    <span className="tech-desc">{tech.desc}</span>
+                  </div>
+                </motion.button>
+              ))}
+            </motion.div>
           </div>
         </div>
       </AnimatedSection>
