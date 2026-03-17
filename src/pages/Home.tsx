@@ -240,6 +240,8 @@ const CircularGauge: React.FC<{ value: number; label: string; color?: string }> 
 
 // Server Visualization Component
 const ServerVisualization: React.FC = () => {
+  const { t } = useLanguage();
+
   return (
     <div className="server-visual">
       <div className="server-rack">
@@ -278,7 +280,7 @@ const ServerVisualization: React.FC = () => {
             <div className="slot active"></div>
             <div className="slot active"></div>
           </div>
-          <div className="server-label">YOUR VPS</div>
+          <div className="server-label">{t('landing.server.yourVps')}</div>
         </div>
       </div>
       <div className="data-flow">
@@ -289,15 +291,15 @@ const ServerVisualization: React.FC = () => {
       <div className="server-metrics">
         <div className="metric-bubble">
           <FontAwesomeIcon icon={faMicrochip} />
-          <span>8 vCPU</span>
+          <span>{t('landing.server.vcpu')}</span>
         </div>
         <div className="metric-bubble">
           <FontAwesomeIcon icon={faMemory} />
-          <span>32GB RAM</span>
+          <span>{t('landing.server.ram')}</span>
         </div>
         <div className="metric-bubble">
           <FontAwesomeIcon icon={faHdd} />
-          <span>500GB NVMe</span>
+          <span>{t('landing.server.storage')}</span>
         </div>
       </div>
     </div>
@@ -360,7 +362,7 @@ const Home: React.FC = () => {
             >
               <motion.div className="hero-badge" variants={fadeInUp}>
                 <span className="badge-dot"></span>
-                <span>Dedicated VPS • Full Root Access</span>
+                <span>{t('landing.hero.badgeVps')}</span>
               </motion.div>
 
               <motion.h1 className="hero-main-title" variants={fadeInUp}>
@@ -422,11 +424,11 @@ const Home: React.FC = () => {
             </motion.div>
             <motion.div className="stat-card" variants={scaleIn}>
               <span className="stat-number" ref={responseCounter.ref}>{responseCounter.count}</span>
-              <span className="stat-label">Avg Response Time</span>
+              <span className="stat-label">{t('landing.stats.responseTime')}</span>
             </motion.div>
             <motion.div className="stat-card" variants={scaleIn}>
               <span className="stat-number" ref={controlCounter.ref}>{controlCounter.count}</span>
-              <span className="stat-label">Full Control</span>
+              <span className="stat-label">{t('landing.stats.fullControl')}</span>
             </motion.div>
             <motion.div className="stat-card" variants={scaleIn}>
               <span className="stat-number" ref={supportCounter.ref}>{supportCounter.count}</span>
@@ -441,14 +443,13 @@ const Home: React.FC = () => {
         <div className="container">
           <div className="analytics-layout">
             <motion.div className="analytics-intro" variants={fadeInLeft}>
-              <span className="section-eyebrow">Real-Time Analytics</span>
+              <span className="section-eyebrow">{t('landing.analytics.eyebrow')}</span>
               <h2 className="section-headline">
-                Monitor Everything with{' '}
-                <span className="gradient-text-animated">Live Analytics</span>
+                {t('landing.analytics.title')}{' '}
+                <span className="gradient-text-animated">{t('landing.analytics.titleHighlight')}</span>
               </h2>
               <p className="section-lead">
-                Access detailed server metrics, traffic analytics, and performance data in real-time.
-                Make informed decisions with comprehensive monitoring tools.
+                {t('landing.analytics.description')}
               </p>
             </motion.div>
 
@@ -460,34 +461,34 @@ const Home: React.FC = () => {
                     <span className="dot yellow"></span>
                     <span className="dot green"></span>
                   </div>
-                  <div className="window-title">Server Analytics</div>
+                  <div className="window-title">{t('landing.analytics.windowTitle')}</div>
                 </div>
                 <div className="dashboard-content">
                   <div className="dashboard-graph">
                     <div className="graph-header">
-                      <span className="graph-title">Traffic Overview</span>
-                      <span className="graph-period">Last 24h</span>
+                      <span className="graph-title">{t('landing.analytics.trafficOverview')}</span>
+                      <span className="graph-period">{t('landing.analytics.last24h')}</span>
                     </div>
                     <AnimatedGraph />
                   </div>
                   <div className="dashboard-gauges">
-                    <CircularGauge value={72} label="CPU" color="var(--primary-color)" />
-                    <CircularGauge value={58} label="RAM" color="var(--accent-color)" />
-                    <CircularGauge value={34} label="Disk" color="var(--success-color)" />
+                    <CircularGauge value={72} label={t('landing.analytics.cpu')} color="var(--primary-color)" />
+                    <CircularGauge value={58} label={t('landing.analytics.ram')} color="var(--accent-color)" />
+                    <CircularGauge value={34} label={t('landing.analytics.disk')} color="var(--success-color)" />
                   </div>
                   <div className="dashboard-stats">
                     <div className="mini-stat">
                       <FontAwesomeIcon icon={faGlobe} />
                       <div className="mini-stat-info">
                         <span className="mini-stat-value">2,847</span>
-                        <span className="mini-stat-label">Active Visitors</span>
+                        <span className="mini-stat-label">{t('landing.analytics.activeVisitors')}</span>
                       </div>
                     </div>
                     <div className="mini-stat">
                       <FontAwesomeIcon icon={faChartLine} />
                       <div className="mini-stat-info">
                         <span className="mini-stat-value">1.2TB</span>
-                        <span className="mini-stat-label">Bandwidth Used</span>
+                        <span className="mini-stat-label">{t('landing.analytics.bandwidthUsed')}</span>
                       </div>
                     </div>
                   </div>
@@ -517,9 +518,9 @@ const Home: React.FC = () => {
                 </div>
                 <div className="terminal-body">
                   <div className="terminal-output">
-                    <span className="output-line success">✓ SSH connection established</span>
-                    <span className="output-line">Welcome to Ubuntu 22.04 LTS</span>
-                    <span className="output-line muted">Last login: Today from your-ip</span>
+                    <span className="output-line success">{t('landing.terminal.connected')}</span>
+                    <span className="output-line">{t('landing.terminal.welcome')}</span>
+                    <span className="output-line muted">{t('landing.terminal.lastLogin')}</span>
                   </div>
                   <TerminalTyping />
                 </div>
@@ -527,35 +528,34 @@ const Home: React.FC = () => {
             </motion.div>
 
             <motion.div className="terminal-info" variants={fadeInRight}>
-              <span className="section-eyebrow">Full Server Control</span>
+              <span className="section-eyebrow">{t('landing.terminal.eyebrow')}</span>
               <h2 className="section-headline">
-                Complete{' '}
-                <span className="gradient-text-animated">Root Access</span>
+                {t('landing.terminal.title')}{' '}
+                <span className="gradient-text-animated">{t('landing.terminal.titleHighlight')}</span>
               </h2>
               <p className="section-lead">
-                Your VPS, your rules. Get full sudo privileges and SSH access to install,
-                configure, and manage anything you need.
+                {t('landing.terminal.description')}
               </p>
               <ul className="control-features">
                 <li>
                   <FontAwesomeIcon icon={faTerminal} />
                   <div>
-                    <strong>SSH Access</strong>
-                    <span>Secure shell access to your server</span>
+                    <strong>{t('landing.terminal.sshTitle')}</strong>
+                    <span>{t('landing.terminal.sshDesc')}</span>
                   </div>
                 </li>
                 <li>
                   <FontAwesomeIcon icon={faLock} />
                   <div>
-                    <strong>Sudo Privileges</strong>
-                    <span>Full administrative control</span>
+                    <strong>{t('landing.terminal.sudoTitle')}</strong>
+                    <span>{t('landing.terminal.sudoDesc')}</span>
                   </div>
                 </li>
                 <li>
                   <FontAwesomeIcon icon={faServer} />
                   <div>
-                    <strong>Dedicated Resources</strong>
-                    <span>No sharing, guaranteed performance</span>
+                    <strong>{t('landing.terminal.dedicatedTitle')}</strong>
+                    <span>{t('landing.terminal.dedicatedDesc')}</span>
                   </div>
                 </li>
               </ul>
@@ -568,13 +568,13 @@ const Home: React.FC = () => {
       <AnimatedSection className="tech-stack-section">
         <div className="container">
           <motion.div className="tech-header" variants={fadeInUp}>
-            <span className="section-eyebrow">Install Anything</span>
+            <span className="section-eyebrow">{t('landing.techStack.eyebrow')}</span>
             <h2 className="section-headline">
-              Your Choice of{' '}
-              <span className="gradient-text-animated">Technology</span>
+              {t('landing.techStack.title')}{' '}
+              <span className="gradient-text-animated">{t('landing.techStack.titleHighlight')}</span>
             </h2>
             <p className="section-lead">
-              With full root access, install and run any software you need
+              {t('landing.techStack.description')}
             </p>
           </motion.div>
 
@@ -595,7 +595,7 @@ const Home: React.FC = () => {
             ))}
             <div className="tech-center">
               <FontAwesomeIcon icon={faRocket} />
-              <span>Your VPS</span>
+              <span>{t('landing.techStack.center')}</span>
             </div>
           </div>
         </div>

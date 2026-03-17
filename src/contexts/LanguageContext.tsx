@@ -600,7 +600,56 @@ const translations = {
     // Hosting page - Tech Stack section
     'hosting.tech.title': 'Poháněno',
     'hosting.tech.titleHighlight': ' špičkovými technologiemi',
-    'hosting.tech.subtitle': 'Standardní nástroje, vše předkonfigurované'
+    'hosting.tech.subtitle': 'Standardní nástroje, vše předkonfigurované',
+
+    // Landing page - Hero badge
+    'landing.hero.badgeVps': 'Dedikovaný VPS • Plný Root přístup',
+
+    // Landing page - Stats section
+    'landing.stats.responseTime': 'Průměrná odezva',
+    'landing.stats.fullControl': 'Plná kontrola',
+
+    // Landing page - Analytics section
+    'landing.analytics.eyebrow': 'Analýzy v reálném čase',
+    'landing.analytics.title': 'Sledujte vše s',
+    'landing.analytics.titleHighlight': 'živými analýzami',
+    'landing.analytics.description': 'Přístup k detailním metrikám serveru, analýze provozu a výkonnostním datům v reálném čase. Dělejte informovaná rozhodnutí s komplexními monitorovacími nástroji.',
+    'landing.analytics.windowTitle': 'Analýzy serveru',
+    'landing.analytics.trafficOverview': 'Přehled provozu',
+    'landing.analytics.last24h': 'Posledních 24h',
+    'landing.analytics.cpu': 'CPU',
+    'landing.analytics.ram': 'RAM',
+    'landing.analytics.disk': 'Disk',
+    'landing.analytics.activeVisitors': 'Aktivní návštěvníci',
+    'landing.analytics.bandwidthUsed': 'Využitá šířka pásma',
+
+    // Landing page - Terminal section
+    'landing.terminal.eyebrow': 'Plná kontrola serveru',
+    'landing.terminal.title': 'Kompletní',
+    'landing.terminal.titleHighlight': 'Root přístup',
+    'landing.terminal.description': 'Váš VPS, vaše pravidla. Získejte plná sudo oprávnění a SSH přístup pro instalaci, konfiguraci a správu čehokoliv potřebujete.',
+    'landing.terminal.sshTitle': 'SSH přístup',
+    'landing.terminal.sshDesc': 'Zabezpečený shell přístup k vašemu serveru',
+    'landing.terminal.sudoTitle': 'Sudo oprávnění',
+    'landing.terminal.sudoDesc': 'Plná administrátorská kontrola',
+    'landing.terminal.dedicatedTitle': 'Dedikované zdroje',
+    'landing.terminal.dedicatedDesc': 'Žádné sdílení, garantovaný výkon',
+    'landing.terminal.connected': '✓ SSH připojení navázáno',
+    'landing.terminal.welcome': 'Vítejte v Ubuntu 22.04 LTS',
+    'landing.terminal.lastLogin': 'Poslední přihlášení: Dnes z vaší IP',
+
+    // Landing page - Tech stack section
+    'landing.techStack.eyebrow': 'Nainstalujte cokoliv',
+    'landing.techStack.title': 'Vaše volba',
+    'landing.techStack.titleHighlight': 'technologií',
+    'landing.techStack.description': 'S plným root přístupem nainstalujte a spusťte jakýkoliv software potřebujete',
+    'landing.techStack.center': 'Váš VPS',
+
+    // Landing page - Server visualization
+    'landing.server.yourVps': 'VÁŠ VPS',
+    'landing.server.vcpu': '8 vCPU',
+    'landing.server.ram': '32GB RAM',
+    'landing.server.storage': '500GB NVMe'
   },
   en: {
     // Navigation
@@ -1190,7 +1239,56 @@ const translations = {
     // Hosting page - Tech Stack section
     'hosting.tech.title': 'Powered by',
     'hosting.tech.titleHighlight': ' Leading Tech',
-    'hosting.tech.subtitle': 'Industry-standard tools, all pre-configured'
+    'hosting.tech.subtitle': 'Industry-standard tools, all pre-configured',
+
+    // Landing page - Hero badge
+    'landing.hero.badgeVps': 'Dedicated VPS • Full Root Access',
+
+    // Landing page - Stats section
+    'landing.stats.responseTime': 'Avg Response Time',
+    'landing.stats.fullControl': 'Full Control',
+
+    // Landing page - Analytics section
+    'landing.analytics.eyebrow': 'Real-Time Analytics',
+    'landing.analytics.title': 'Monitor Everything with',
+    'landing.analytics.titleHighlight': 'Live Analytics',
+    'landing.analytics.description': 'Access detailed server metrics, traffic analytics, and performance data in real-time. Make informed decisions with comprehensive monitoring tools.',
+    'landing.analytics.windowTitle': 'Server Analytics',
+    'landing.analytics.trafficOverview': 'Traffic Overview',
+    'landing.analytics.last24h': 'Last 24h',
+    'landing.analytics.cpu': 'CPU',
+    'landing.analytics.ram': 'RAM',
+    'landing.analytics.disk': 'Disk',
+    'landing.analytics.activeVisitors': 'Active Visitors',
+    'landing.analytics.bandwidthUsed': 'Bandwidth Used',
+
+    // Landing page - Terminal section
+    'landing.terminal.eyebrow': 'Full Server Control',
+    'landing.terminal.title': 'Complete',
+    'landing.terminal.titleHighlight': 'Root Access',
+    'landing.terminal.description': 'Your VPS, your rules. Get full sudo privileges and SSH access to install, configure, and manage anything you need.',
+    'landing.terminal.sshTitle': 'SSH Access',
+    'landing.terminal.sshDesc': 'Secure shell access to your server',
+    'landing.terminal.sudoTitle': 'Sudo Privileges',
+    'landing.terminal.sudoDesc': 'Full administrative control',
+    'landing.terminal.dedicatedTitle': 'Dedicated Resources',
+    'landing.terminal.dedicatedDesc': 'No sharing, guaranteed performance',
+    'landing.terminal.connected': '✓ SSH connection established',
+    'landing.terminal.welcome': 'Welcome to Ubuntu 22.04 LTS',
+    'landing.terminal.lastLogin': 'Last login: Today from your-ip',
+
+    // Landing page - Tech stack section
+    'landing.techStack.eyebrow': 'Install Anything',
+    'landing.techStack.title': 'Your Choice of',
+    'landing.techStack.titleHighlight': 'Technology',
+    'landing.techStack.description': 'With full root access, install and run any software you need',
+    'landing.techStack.center': 'Your VPS',
+
+    // Landing page - Server visualization
+    'landing.server.yourVps': 'YOUR VPS',
+    'landing.server.vcpu': '8 vCPU',
+    'landing.server.ram': '32GB RAM',
+    'landing.server.storage': '500GB NVMe'
   }
 };
 
