@@ -8,7 +8,7 @@
 
 CREATE TABLE IF NOT EXISTS service_statistics (
   id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  service_id INT UNSIGNED NOT NULL,
+  service_id BIGINT NOT NULL,
   disk_used_mb DECIMAL(10, 2) DEFAULT 0,
   bandwidth_used_mb DECIMAL(10, 2) DEFAULT 0,
   email_accounts_used INT DEFAULT 0,
@@ -28,7 +28,7 @@ CREATE TABLE IF NOT EXISTS service_statistics (
 
 CREATE TABLE IF NOT EXISTS service_alerts (
   id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  service_id INT UNSIGNED NOT NULL,
+  service_id BIGINT NOT NULL,
   alert_type ENUM('disk_limit', 'bandwidth_limit', 'email_limit', 'database_limit', 'domain_limit', 'cpu_high', 'memory_high') NOT NULL,
   threshold_value DECIMAL(10, 2),
   current_value DECIMAL(10, 2),

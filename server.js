@@ -231,6 +231,11 @@ function requireCsrfGuard(req, res, next) {
     return next();
   }
 
+  // Public domain availability check (read-only DNS lookup, rate-limited)
+  if (req.path === '/domains/check') {
+    return next();
+  }
+
   const csrfHeader = req.get('X-CSRF-Guard');
   if (!csrfHeader) {
     return next(new AppError('Missing CSRF protection header', 403));
@@ -5404,6 +5409,185 @@ app.get('/api/admin/tickets',
 // ============================================
 // Health Check Endpoint
 // ============================================
+
+// ============================================
+// PUBLIC: Domain availability search (Wedos WAPI + DNS fallback)
+// ============================================
+const dns = require('dns');
+const { promisify } = require('util');
+const crypto = require('crypto');
+const dnsResolveNs = promisify(dns.resolveNs);
+
+// Domain pricing (CZK/year)
+const DOMAIN_PRICES = {
+  '.cz': '249 Kč', '.com': '299 Kč', '.eu': '199 Kč', '.sk': '349 Kč',
+  '.net': '349 Kč', '.org': '349 Kč', '.info': '299 Kč', '.online': '149 Kč',
+  '.store': '149 Kč', '.shop': '149 Kč'
+};
+
+// Wedos WAPI response codes
+const WAPI_AVAILABLE = 1000;
+const WAPI_REGISTERED = 3201;
+const WAPI_QUARANTINED = 3204;
+const WAPI_RESERVED = 3205;
+const WAPI_BLOCKED = 3206;
+
+/**
+ * Generate Wedos WAPI auth hash
+ * Formula: sha1(login + sha1(wapi_password) + current_hour_in_prague_tz)
+ */
+function getWapiAuth() {
+  const login = process.env.WEDOS_WAPI_LOGIN;
+  const password = process.env.WEDOS_WAPI_PASSWORD;
+  if (!login || !password) return null;
+
+  // Get current hour in Europe/Prague timezone
+  const pragueHour = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Europe/Prague',
+    hour: '2-digit',
+    hour12: false,
+  }).format(new Date());
+  const hour = pragueHour.padStart(2, '0');
+
+  const passwordHash = crypto.createHash('sha1').update(password).digest('hex');
+  const authString = login + passwordHash + hour;
+  return crypto.createHash('sha1').update(authString).digest('hex');
+}
+
+/**
+ * Check domains via Wedos WAPI (supports batch up to 30 comma-separated)
+ */
+async function checkDomainsWapi(domains) {
+  const login = process.env.WEDOS_WAPI_LOGIN;
+  const auth = getWapiAuth();
+  if (!auth) return null; // WAPI not configured, fallback to DNS
+
+  const requestData = {
+    request: {
+      user: login,
+      auth: auth,
+      command: 'domain-check',
+      clTRID: `alatyr-${Date.now()}`,
+      data: {
+        name: domains.join(','),
+      },
+    },
+  };
+
+  try {
+    const response = await fetch('https://api.wedos.com/wapi/json', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: 'request=' + encodeURIComponent(JSON.stringify(requestData)),
+      signal: AbortSignal.timeout(10000),
+    });
+
+    if (!response.ok) return null;
+
+    const json = await response.json();
+    const resp = json.response;
+
+    if (!resp) return null;
+
+    // Single domain response
+    if (resp.data && resp.data.name && !Array.isArray(resp.data)) {
+      const code = parseInt(resp.code);
+      return [{
+        domain: resp.data.name,
+        available: code === WAPI_AVAILABLE,
+        status: code === WAPI_AVAILABLE ? 'available' :
+                code === WAPI_QUARANTINED ? 'quarantined' :
+                code === WAPI_RESERVED ? 'reserved' :
+                code === WAPI_BLOCKED ? 'blocked' : 'registered',
+      }];
+    }
+
+    // Multiple domains response - data contains array
+    if (resp.data && Array.isArray(resp.data)) {
+      return resp.data.map(item => ({
+        domain: item.name,
+        available: parseInt(item.code) === WAPI_AVAILABLE,
+        status: parseInt(item.code) === WAPI_AVAILABLE ? 'available' :
+                parseInt(item.code) === WAPI_QUARANTINED ? 'quarantined' :
+                parseInt(item.code) === WAPI_RESERVED ? 'reserved' :
+                parseInt(item.code) === WAPI_BLOCKED ? 'blocked' : 'registered',
+      }));
+    }
+
+    return null;
+  } catch (err) {
+    logger.warn('Wedos WAPI check failed, falling back to DNS', { error: err.message });
+    return null;
+  }
+}
+
+/**
+ * DNS fallback check for a single domain
+ */
+async function checkDomainDns(domain) {
+  try {
+    await dnsResolveNs(domain);
+    return { domain, available: false };
+  } catch (err) {
+    if (err.code === 'ENOTFOUND' || err.code === 'ENODATA' || err.code === 'SERVFAIL') {
+      return { domain, available: true };
+    }
+    return { domain, available: false, error: 'Nepodařilo se ověřit dostupnost' };
+  }
+}
+
+app.post('/api/domains/check', rateLimit({ windowMs: 60000, max: 20, message: { success: false, error: 'Příliš mnoho požadavků. Zkuste to za minutu.' } }), asyncHandler(async (req, res) => {
+  const { domains } = req.body;
+
+  if (!domains || !Array.isArray(domains) || domains.length === 0) {
+    return res.status(400).json({ success: false, error: 'Zadejte alespoň jednu doménu.' });
+  }
+
+  if (domains.length > 15) {
+    return res.status(400).json({ success: false, error: 'Maximálně 15 domén najednou.' });
+  }
+
+  const domainRegex = /^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?(\.[a-zA-Z]{2,})+$/;
+  for (const d of domains) {
+    if (!domainRegex.test(d)) {
+      return res.status(400).json({ success: false, error: `Neplatný formát domény: ${d}` });
+    }
+  }
+
+  // Try Wedos WAPI first (more accurate WHOIS), fall back to DNS
+  let wapiResults = null;
+  if (process.env.WEDOS_WAPI_LOGIN && process.env.WEDOS_WAPI_PASSWORD) {
+    wapiResults = await checkDomainsWapi(domains);
+  }
+
+  const results = await Promise.all(domains.map(async (domain) => {
+    const ext = '.' + domain.split('.').slice(1).join('.');
+    const price = DOMAIN_PRICES[ext] || '399 Kč';
+
+    // Use WAPI result if available
+    if (wapiResults) {
+      const wapiResult = wapiResults.find(r => r.domain === domain);
+      if (wapiResult) {
+        const statusText = wapiResult.status === 'quarantined' ? 'V karanténě' :
+                          wapiResult.status === 'reserved' ? 'Rezervovaná' :
+                          wapiResult.status === 'blocked' ? 'Blokovaná' : undefined;
+        return {
+          domain,
+          available: wapiResult.available,
+          price,
+          ...(statusText && { error: statusText }),
+          source: 'wedos',
+        };
+      }
+    }
+
+    // DNS fallback
+    const dnsResult = await checkDomainDns(domain);
+    return { ...dnsResult, price, source: 'dns' };
+  }));
+
+  res.json({ success: true, results });
+}));
 
 /**
  * Health check endpoint

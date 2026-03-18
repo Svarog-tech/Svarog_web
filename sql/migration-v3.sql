@@ -10,7 +10,7 @@
 -- (již existuje idx_expires_at z původního schématu)
 
 -- user_hosting_services: query pro auto_renewal + active + expires_at
-ALTER TABLE user_hosting_services ADD INDEX idx_auto_renewal_active (auto_renewal, status, expires_at);
+-- (presunut nize - sloupec auto_renewal se vytvari az v sekci 5)
 
 -- user_hosting_services: last_renewed_at (pokud sloupec existuje)
 -- ALTER TABLE user_hosting_services ADD INDEX idx_last_renewed_at (last_renewed_at);
@@ -53,6 +53,9 @@ ALTER TABLE profiles ADD COLUMN IF NOT EXISTS address TEXT DEFAULT NULL;
 ALTER TABLE user_hosting_services ADD COLUMN IF NOT EXISTS auto_renewal BOOLEAN DEFAULT TRUE;
 ALTER TABLE user_hosting_services ADD COLUMN IF NOT EXISTS renewal_period ENUM('monthly', 'yearly') DEFAULT 'monthly';
 ALTER TABLE user_hosting_services ADD COLUMN IF NOT EXISTS last_renewed_at TIMESTAMP NULL DEFAULT NULL;
+
+-- Index pro auto_renewal (presunuto ze sekce 1 - sloupec musi existovat pred indexem)
+ALTER TABLE user_hosting_services ADD INDEX IF NOT EXISTS idx_auto_renewal_active (auto_renewal, status, expires_at);
 
 -- ============================================
 -- 6. MFA: Sloupce v users tabulce (pokud chybí)

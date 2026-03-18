@@ -39,7 +39,7 @@ export async function getWebDomainInfo(serviceId: number, domain: string): Promi
 
 export interface DomainSearchResult {
   searchedDomain: string;
-  results: { domain: string; available: boolean; error?: string }[];
+  results: { domain: string; available: boolean; error?: string; price?: string }[];
 }
 
 const POPULAR_EXTENSIONS = ['.cz', '.com', '.eu', '.sk', '.net', '.org', '.info', '.online', '.store', '.shop'];
@@ -64,8 +64,7 @@ export function getAllExtensions(): string[] {
 }
 
 /**
- * Kontrola dostupnosti domén (stub – bez backend WHOIS vrací simulované výsledky).
- * V produkci připojit na API pro WHOIS.
+ * Kontrola dostupnosti domén přes backend DNS lookup.
  */
 export async function searchDomains(
   baseName: string,
@@ -75,9 +74,36 @@ export async function searchDomains(
   if (!clean) {
     return { searchedDomain: baseName, results: [] };
   }
-  const results = extensions.map((ext) => {
-    const domain = `${clean}${ext.startsWith('.') ? ext : '.' + ext}`;
-    return { domain, available: false };
-  });
-  return { searchedDomain: baseName, results };
+
+  const domains = extensions.map((ext) =>
+    `${clean}${ext.startsWith('.') ? ext : '.' + ext}`
+  );
+
+  try {
+    const response = await fetch('/api/domains/check', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ domains }),
+    });
+
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err.error || 'Chyba při vyhledávání domén');
+    }
+
+    const data = await response.json();
+    return { searchedDomain: baseName, results: data.results };
+  } catch (error: any) {
+    if (error.message === 'Failed to fetch') {
+      return {
+        searchedDomain: baseName,
+        results: domains.map((domain) => ({
+          domain,
+          available: false,
+          error: 'Backend server není dostupný',
+        })),
+      };
+    }
+    throw error;
+  }
 }

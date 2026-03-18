@@ -123,9 +123,9 @@ CREATE TABLE IF NOT EXISTS user_hosting_services (
   -- Technické údaje
   disk_space INT, -- v GB
   bandwidth INT, -- v GB
-  databases INT,
+  `databases` INT,
   email_accounts INT,
-  domains INT,
+  `domains` INT,
   
   -- FTP přístup
   ftp_host VARCHAR(255),
@@ -279,14 +279,12 @@ CREATE TRIGGER trg_create_profile_after_user
 AFTER INSERT ON users
 FOR EACH ROW
 BEGIN
-  INSERT INTO profiles (id, email, first_name, last_name, provider, email_verified)
+  INSERT INTO profiles (id, email, first_name, last_name)
   VALUES (
     NEW.id,
     NEW.email,
     '',
-    '',
-    NEW.provider,
-    NEW.email_verified
+    ''
   );
 END//
 DELIMITER ;
