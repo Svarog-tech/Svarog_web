@@ -116,8 +116,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     let mounted = true;
 
     const initializeAuth = async () => {
-      // DEV BYPASS - fake user for testing
-      const DEV_BYPASS_AUTH = true;
+      // DEV BYPASS - fake user for testing (DISABLED - use real auth)
+      const DEV_BYPASS_AUTH = false;
       if (DEV_BYPASS_AUTH) {
         const fakeUser: AppUser = {
           id: 'test-user-id-123',
