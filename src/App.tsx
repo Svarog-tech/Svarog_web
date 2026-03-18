@@ -45,6 +45,7 @@ const Configurator = lazy(() => import('./pages/Configurator'));
 const Admin = lazy(() => import('./pages/Admin'));
 const AdminTickets = lazy(() => import('./pages/AdminTickets'));
 const AdminUsers = lazy(() => import('./pages/AdminUsers'));
+const AdminHestiaCP = lazy(() => import('./pages/AdminHestiaCP'));
 const PaymentSuccess = lazy(() => import('./pages/PaymentSuccess'));
 const VerifyEmail = lazy(() => import('./pages/VerifyEmail'));
 const NotFound = lazy(() => import('./pages/NotFound'));
@@ -112,6 +113,7 @@ function App() {
                       <Route path="/admin" element={<ProtectedRoute requireAdmin><Admin /></ProtectedRoute>} />
                       <Route path="/admin/tickets" element={<ProtectedRoute requireAdmin><AdminTickets /></ProtectedRoute>} />
                       <Route path="/admin/users" element={<ProtectedRoute requireAdmin><AdminUsers /></ProtectedRoute>} />
+                      <Route path="/admin/hestiacp" element={<ProtectedRoute requireAdmin><AdminHestiaCP /></ProtectedRoute>} />
 
                       {/* 404 catch-all */}
                       <Route path="*" element={<NotFound />} />

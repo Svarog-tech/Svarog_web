@@ -82,6 +82,31 @@ const db = require('./services/databaseService');
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+// ============================================
+// In-memory TTL cache for HestiaCP live data
+// ============================================
+const hestiaCache = new Map();
+const HESTIA_CACHE_TTL = 60 * 1000; // 60 seconds
+
+function getCached(key) {
+  const entry = hestiaCache.get(key);
+  if (entry && Date.now() - entry.timestamp < HESTIA_CACHE_TTL) {
+    return entry.data;
+  }
+  hestiaCache.delete(key);
+  return null;
+}
+
+function setCache(key, data) {
+  hestiaCache.set(key, { data, timestamp: Date.now() });
+}
+
+function invalidateHestiaCache() {
+  for (const key of hestiaCache.keys()) {
+    if (key.startsWith('hestia:')) hestiaCache.delete(key);
+  }
+}
+
 // SECURITY: Trust proxy – nutné za Nginx reverse proxy
 // Bez toho req.ip vrací 127.0.0.1 a rate limiting/IP logging nefunguje
 app.set('trust proxy', 1);
@@ -5424,6 +5449,126 @@ app.get('/api/admin/tickets',
       tickets: formatted,
       pagination: paginationMeta(page, limit, total)
     });
+  })
+);
+
+// ============================================
+// ADMIN: HestiaCP Live Data Endpoints
+// ============================================
+
+/**
+ * GET /api/admin/hestiacp/users - Seznam všech HestiaCP uživatelů (live)
+ */
+app.get('/api/admin/hestiacp/users',
+  authenticateUser,
+  requireAdmin,
+  asyncHandler(async (req, res) => {
+    const cacheKey = 'hestia:users';
+    const cached = getCached(cacheKey);
+    if (cached) return res.json(cached);
+
+    const result = await hestiacp.listUsers();
+    if (!result.success) {
+      return res.status(502).json({ success: false, error: result.error || 'HestiaCP nedostupné' });
+    }
+
+    const localProfiles = await db.query(
+      'SELECT id, email, hestia_username, first_name, last_name FROM profiles WHERE hestia_username IS NOT NULL'
+    );
+    const localMap = {};
+    for (const p of (localProfiles || [])) {
+      if (p.hestia_username) localMap[p.hestia_username] = p;
+    }
+
+    const users = result.users.map(u => ({
+      ...u,
+      is_system_admin: u.username === process.env.HESTIACP_USERNAME,
+      linked_local_user: localMap[u.username] ? {
+        id: localMap[u.username].id,
+        email: localMap[u.username].email,
+        name: `${localMap[u.username].first_name || ''} ${localMap[u.username].last_name || ''}`.trim()
+      } : null
+    }));
+
+    const response = { success: true, users };
+    setCache(cacheKey, response);
+    res.json(response);
+  })
+);
+
+/**
+ * GET /api/admin/hestiacp/users/:username - Detail uživatele
+ */
+app.get('/api/admin/hestiacp/users/:username',
+  authenticateUser,
+  requireAdmin,
+  asyncHandler(async (req, res) => {
+    const { username } = req.params;
+    if (!/^[a-zA-Z0-9_-]+$/.test(username)) {
+      throw new AppError('Neplatný formát', 400);
+    }
+
+    const cacheKey = `hestia:user:${username}`;
+    const cached = getCached(cacheKey);
+    if (cached) return res.json(cached);
+
+    const [userStats, webDomains, databases, mailDomains] = await Promise.all([
+      hestiacp.getUserStats(username),
+      hestiacp.listWebDomains(username),
+      hestiacp.listDatabases(username),
+      hestiacp.listMailDomains(username),
+    ]);
+
+    const localProfile = await db.queryOne(
+      'SELECT id, email, first_name, last_name FROM profiles WHERE hestia_username = ?', [username]
+    );
+
+    const response = {
+      success: true,
+      username,
+      stats: userStats.success ? userStats.stats : null,
+      domains: webDomains.success ? (webDomains.domains || []) : [],
+      databases: databases.success ? (databases.databases || []) : [],
+      mail_domains: mailDomains.success ? (mailDomains.domains || []) : [],
+      linked_local_user: localProfile || null,
+    };
+
+    setCache(cacheKey, response);
+    res.json(response);
+  })
+);
+
+/**
+ * GET /api/admin/hestiacp/server-stats - Agregované statistiky
+ */
+app.get('/api/admin/hestiacp/server-stats',
+  authenticateUser,
+  requireAdmin,
+  asyncHandler(async (req, res) => {
+    const cacheKey = 'hestia:server-stats';
+    const cached = getCached(cacheKey);
+    if (cached) return res.json(cached);
+
+    const result = await hestiacp.listUsers();
+    if (!result.success) {
+      return res.status(502).json({ success: false, error: result.error || 'HestiaCP nedostupné' });
+    }
+
+    const users = result.users.filter(u => u.username !== process.env.HESTIACP_USERNAME);
+    const stats = {
+      total_users: users.length,
+      active_users: users.filter(u => !u.suspended).length,
+      suspended_users: users.filter(u => u.suspended).length,
+      total_web_domains: users.reduce((s, u) => s + u.web_domains, 0),
+      total_databases: users.reduce((s, u) => s + u.databases, 0),
+      total_mail_domains: users.reduce((s, u) => s + u.mail_domains, 0),
+      total_disk_used_mb: users.reduce((s, u) => s + u.disk_used_mb, 0),
+      total_bandwidth_used_mb: users.reduce((s, u) => s + u.bandwidth_used_mb, 0),
+    };
+
+    const response = { success: true, stats };
+    setCache(cacheKey, response);
+    res.json(response);
   })
 );
 

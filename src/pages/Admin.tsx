@@ -366,6 +366,11 @@ const Admin: React.FC = () => {
                 <span>Uživatelé</span>
                 <FontAwesomeIcon icon={faArrowRight} className="arrow" />
               </button>
+              <button className="quick-link-btn" onClick={() => navigate('/admin/hestiacp')}>
+                <FontAwesomeIcon icon={faServer} />
+                <span>HestiaCP Live</span>
+                <FontAwesomeIcon icon={faArrowRight} className="arrow" />
+              </button>
             </div>
           </div>
         </motion.div>

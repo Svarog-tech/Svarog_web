@@ -237,3 +237,72 @@ export const createHostingAccountForOrder = async (
     };
   }
 };
+
+// ============================================
+// HestiaCP Live Data (Admin only)
+// ============================================
+
+export interface HestiaLiveUser {
+  username: string;
+  email: string;
+  package: string;
+  web_domains: number;
+  dns_domains: number;
+  mail_domains: number;
+  databases: number;
+  disk_used_mb: number;
+  disk_quota_mb: number | 'unlimited';
+  bandwidth_used_mb: number;
+  bandwidth_limit_mb: number | 'unlimited';
+  suspended: boolean;
+  ip_addresses: string;
+  creation_date: string;
+  is_system_admin?: boolean;
+  linked_local_user?: { id: string; email: string; name: string } | null;
+}
+
+export interface HestiaServerStats {
+  total_users: number;
+  active_users: number;
+  suspended_users: number;
+  total_web_domains: number;
+  total_databases: number;
+  total_mail_domains: number;
+  total_disk_used_mb: number;
+  total_bandwidth_used_mb: number;
+}
+
+export interface HestiaUserDetail {
+  username: string;
+  stats: Record<string, any> | null;
+  domains: Array<{ domain: string; [key: string]: any }>;
+  databases: Array<{ name: string; [key: string]: any }>;
+  mail_domains: string[];
+  linked_local_user: { id: string; email: string; first_name: string; last_name: string } | null;
+}
+
+export const getHestiaLiveUsers = async (): Promise<{ success: boolean; users: HestiaLiveUser[]; error?: string }> => {
+  try {
+    return await apiCall('/admin/hestiacp/users');
+  } catch (error) {
+    return { success: false, users: [], error: error instanceof Error ? error.message : 'Chyba sítě' };
+  }
+};
+
+export const getHestiaUserDetail = async (username: string): Promise<HestiaUserDetail | null> => {
+  try {
+    const result = await apiCall<HestiaUserDetail & { success: boolean }>(`/admin/hestiacp/users/${encodeURIComponent(username)}`);
+    return result.success ? result : null;
+  } catch {
+    return null;
+  }
+};
+
+export const getHestiaServerStats = async (): Promise<HestiaServerStats | null> => {
+  try {
+    const result = await apiCall<{ success: boolean; stats: HestiaServerStats }>('/admin/hestiacp/server-stats');
+    return result.success ? result.stats : null;
+  } catch {
+    return null;
+  }
+};

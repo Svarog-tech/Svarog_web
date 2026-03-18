@@ -225,6 +225,50 @@ class HestiaCP {
   }
 
   /**
+   * Seznam všech HestiaCP uživatelů s jejich statistikami.
+   * Volá v-list-users json.
+   */
+  async listUsers() {
+    const parseUsersObject = (data) => {
+      if (!data || typeof data !== 'object') return null;
+      return Object.entries(data).map(([username, info]) => ({
+        username,
+        email: info.CONTACT || '',
+        package: info.PACKAGE || 'default',
+        web_domains: parseInt(info.U_WEB_DOMAINS || '0', 10),
+        dns_domains: parseInt(info.U_DNS_DOMAINS || '0', 10),
+        mail_domains: parseInt(info.U_MAIL_DOMAINS || '0', 10),
+        databases: parseInt(info.U_DATABASES || '0', 10),
+        disk_used_mb: parseInt(info.U_DISK || '0', 10),
+        disk_quota_mb: info.DISK_QUOTA === 'unlimited' ? 'unlimited' : parseInt(info.DISK_QUOTA || '0', 10),
+        bandwidth_used_mb: parseInt(info.U_BANDWIDTH || '0', 10),
+        bandwidth_limit_mb: info.BANDWIDTH === 'unlimited' ? 'unlimited' : parseInt(info.BANDWIDTH || '0', 10),
+        suspended: info.SUSPENDED === 'yes',
+        ip_addresses: info.IP_OWNED || '',
+        creation_date: info.DATE || '',
+      }));
+    };
+
+    const result = await this.callAPI('v-list-users', ['json'], { returnCode: false });
+    if (result.success && result.data) {
+      const users = parseUsersObject(result.data);
+      if (users) return { success: true, users };
+    }
+    const raw = await this._callAPIRaw('v-list-users', ['json'], false);
+    if (raw.ok && raw.body) {
+      const trimmed = String(raw.body).trim();
+      const jsonStr = trimmed.startsWith('0\n') ? trimmed.slice(2).trim() : (trimmed === '0' ? '' : trimmed);
+      if (jsonStr) {
+        try {
+          const users = parseUsersObject(JSON.parse(jsonStr));
+          if (users) return { success: true, users };
+        } catch { /* ignore */ }
+      }
+    }
+    return { success: false, error: result.error || 'Failed to list HestiaCP users' };
+  }
+
+  /**
    * Získá statistiky využití pro HestiaCP uživatele (disk, bandwidth, emaily, databáze atd.)
    * @param {string} username - HestiaCP username
    * @returns {Promise<{success: boolean, stats?: Object, error?: string}>}
