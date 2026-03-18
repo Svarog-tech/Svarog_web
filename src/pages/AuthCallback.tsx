@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faSpinner, faCheckCircle, faExclamationTriangle } from '@fortawesome/free-solid-svg-icons';
+import { faSpinner, faCheckCircle, faExclamationTriangle, faArrowRight } from '@fortawesome/free-solid-svg-icons';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { setAccessToken, getCurrentUser } from '../lib/auth';
@@ -14,7 +14,17 @@ const AuthCallback: React.FC = () => {
   const { user, loading: authLoading, initialized } = useAuth();
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
   const [error, setError] = useState<string>('');
+  const [countdown, setCountdown] = useState<number | null>(null);
   const oauthHandled = useRef(false);
+
+  // Generate confetti pieces for success animation
+  const confettiPieces = Array.from({ length: 30 }, (_, i) => {
+    const angle = (i / 30) * 2 * Math.PI;
+    const distance = 150 + Math.random() * 100;
+    const x = Math.cos(angle) * distance;
+    const y = Math.sin(angle) * distance;
+    return { x, y, delay: i * 0.02 };
+  });
 
   useEffect(() => {
     let isMounted = true;
@@ -68,9 +78,10 @@ const AuthCallback: React.FC = () => {
           const oauthUser = await getCurrentUser();
           if (oauthUser && isMounted) {
             setStatus('success');
+            setCountdown(3);
             timeoutId = setTimeout(() => {
               navigate('/dashboard', { replace: true });
-            }, 1000);
+            }, 3000);
           } else if (isMounted) {
             setError('Nepodařilo se načíst profil po OAuth přihlášení.');
             setStatus('error');
@@ -87,9 +98,10 @@ const AuthCallback: React.FC = () => {
         if (user) {
           if (isMounted) {
             setStatus('success');
+            setCountdown(3);
             timeoutId = setTimeout(() => {
               navigate('/dashboard', { replace: true });
-            }, 1500);
+            }, 3000);
           }
         } else if (!authLoading) {
           // No user found after auth initialized
@@ -115,7 +127,18 @@ const AuthCallback: React.FC = () => {
         clearTimeout(timeoutId);
       }
     };
-  }, [navigate, user, authLoading, initialized]);
+  }, [navigate, user, authLoading, initialized, t]);
+
+  // Countdown timer effect
+  useEffect(() => {
+    if (countdown === null || countdown <= 0) return;
+
+    const timer = setTimeout(() => {
+      setCountdown(countdown - 1);
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, [countdown]);
 
   const getStatusIcon = () => {
     switch (status) {
@@ -158,6 +181,29 @@ const AuthCallback: React.FC = () => {
 
   return (
     <div className="auth-callback-page">
+      {/* Animated Background */}
+      <div className="auth-callback-bg">
+        <div className="auth-gradient-bg"></div>
+        <div className="auth-grid"></div>
+        <div className="auth-orb auth-orb-1"></div>
+        <div className="auth-orb auth-orb-2"></div>
+        <div className="auth-orb auth-orb-3"></div>
+        <div className="auth-particles">
+          {[...Array(15)].map((_, i) => (
+            <span
+              key={i}
+              className="auth-particle"
+              style={{
+                left: `${Math.random() * 100}%`,
+                top: `${Math.random() * 100}%`,
+                animationDelay: `${Math.random() * 6}s`,
+                animationDuration: `${4 + Math.random() * 3}s`
+              }}
+            />
+          ))}
+        </div>
+      </div>
+
       <div className="auth-callback-container">
         <motion.div
           className="auth-callback-card"
@@ -165,17 +211,68 @@ const AuthCallback: React.FC = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
         >
+          {/* Success Confetti */}
+          <AnimatePresence>
+            {status === 'success' && (
+              <div className="auth-confetti">
+                {confettiPieces.map((piece, i) => (
+                  <motion.div
+                    key={i}
+                    className="auth-confetti-piece"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    style={{
+                      '--x': `${piece.x}px`,
+                      '--y': `${piece.y}px`,
+                      animationDelay: `${piece.delay}s`,
+                    } as React.CSSProperties}
+                  />
+                ))}
+              </div>
+            )}
+          </AnimatePresence>
+
+          {/* Brand Logo */}
           <motion.div
-            className={`auth-status-icon ${status}`}
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ delay: 0.3, type: "spring" }}
+            className="auth-brand-logo"
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.2, type: "spring" }}
           >
-            {getStatusIcon()}
+            A
           </motion.div>
 
+          {/* Status Icon with Custom Spinner */}
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={status}
+              className={`auth-status-icon ${status}`}
+              initial={{ scale: 0, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0, opacity: 0 }}
+              transition={{
+                delay: 0.3,
+                type: "spring",
+                stiffness: 200,
+                damping: 15
+              }}
+            >
+              {status === 'loading' && (
+                <>
+                  <div className="icon-glow"></div>
+                  <div className="spinner-rings">
+                    <div className="spinner-ring"></div>
+                    <div className="spinner-ring"></div>
+                  </div>
+                </>
+              )}
+              {status !== 'loading' && getStatusIcon()}
+            </motion.div>
+          </AnimatePresence>
+
           <motion.h1
-            className="auth-callback-title"
+            className={`auth-callback-title ${status === 'success' ? 'gradient' : ''}`}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5 }}
@@ -192,6 +289,48 @@ const AuthCallback: React.FC = () => {
             {getStatusDescription()}
           </motion.p>
 
+          {/* Animated Loading Dots & Progress */}
+          {status === 'loading' && (
+            <>
+              <motion.div
+                className="auth-dots"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.8 }}
+              >
+                <span className="auth-dot"></span>
+                <span className="auth-dot"></span>
+                <span className="auth-dot"></span>
+              </motion.div>
+
+              <motion.div
+                className="auth-progress-bar-wrapper"
+                initial={{ opacity: 0, scaleX: 0 }}
+                animate={{ opacity: 1, scaleX: 1 }}
+                transition={{ delay: 1, duration: 0.5 }}
+              >
+                <div className="auth-progress-bar">
+                  <div className="auth-progress-fill"></div>
+                </div>
+              </motion.div>
+            </>
+          )}
+
+          {/* Countdown indicator for success */}
+          {status === 'success' && countdown !== null && countdown > 0 && (
+            <motion.div
+              className="auth-countdown"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5 }}
+            >
+              <FontAwesomeIcon icon={faArrowRight} className="countdown-icon" />
+              <span>Přesměrování za</span>
+              <span className="auth-countdown-number">{countdown}</span>
+              <span>sekund</span>
+            </motion.div>
+          )}
+
           {status === 'error' && (
             <motion.div
               className="auth-action-buttons"
@@ -205,7 +344,7 @@ const AuthCallback: React.FC = () => {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
-                Zkusit registraci emailem
+                <span>Zkusit registraci emailem</span>
               </motion.button>
               <motion.button
                 className="auth-retry-btn secondary"
@@ -213,7 +352,7 @@ const AuthCallback: React.FC = () => {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
-                Přihlásit se
+                <span>Přihlásit se</span>
               </motion.button>
             </motion.div>
           )}

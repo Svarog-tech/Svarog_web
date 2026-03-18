@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faUser, faEnvelope, faLock, faEye, faEyeSlash, faUserPlus } from '@fortawesome/free-solid-svg-icons';
+import { faUser, faEnvelope, faLock, faEye, faEyeSlash, faUserPlus, faShieldHalved, faBolt, faRocket } from '@fortawesome/free-solid-svg-icons';
 import { faGoogle, faGithub } from '@fortawesome/free-brands-svg-icons';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -30,6 +30,7 @@ const Register: React.FC = () => {
   const [error, setError] = useState<string>('');
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [passwordStrength, setPasswordStrength] = useState<'weak' | 'medium' | 'strong' | null>(null);
 
   // Redirect if already logged in
   useEffect(() => {
@@ -37,6 +38,22 @@ const Register: React.FC = () => {
       navigate('/dashboard');
     }
   }, [user, navigate]);
+
+  // Calculate password strength
+  const calculatePasswordStrength = (password: string): 'weak' | 'medium' | 'strong' | null => {
+    if (!password) return null;
+
+    let strength = 0;
+    if (password.length >= 8) strength++;
+    if (password.length >= 12) strength++;
+    if (/[a-z]/.test(password) && /[A-Z]/.test(password)) strength++;
+    if (/\d/.test(password)) strength++;
+    if (/[^a-zA-Z0-9]/.test(password)) strength++;
+
+    if (strength <= 2) return 'weak';
+    if (strength <= 4) return 'medium';
+    return 'strong';
+  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
@@ -48,6 +65,11 @@ const Register: React.FC = () => {
         ...prev,
         [name]: type === 'checkbox' ? checked : value
       }));
+    }
+
+    // Update password strength
+    if (name === 'password') {
+      setPasswordStrength(calculatePasswordStrength(value));
     }
 
     // Clear field error when user starts typing
@@ -144,24 +166,161 @@ const Register: React.FC = () => {
     <div className="register-page">
       <PageMeta title={t('register.title')} description="Vytvořte si účet u Alatyr Hosting." path="/register" noindex />
       <div className="register-container">
+        {/* Decorative Panel - Left Side */}
         <motion.div
-          className="register-card"
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
+          className="register-decorative"
+          initial={{ opacity: 0, x: -50 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.8, delay: 0.1 }}
         >
+          {/* Animated Background */}
+          <div className="decorative-bg">
+            <div className="decorative-grid"></div>
+            <div className="decorative-orb decorative-orb-1"></div>
+            <div className="decorative-orb decorative-orb-2"></div>
+            <div className="decorative-orb decorative-orb-3"></div>
+
+            {/* Wave SVG Lines */}
+            <svg className="decorative-waves" viewBox="0 0 1200 600" preserveAspectRatio="xMidYMid slice">
+              <defs>
+                <linearGradient id="decorativeLineGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stopColor="rgba(255,255,255,0.3)" stopOpacity="0" />
+                  <stop offset="50%" stopColor="rgba(255,255,255,0.3)" stopOpacity="0.3" />
+                  <stop offset="100%" stopColor="rgba(255,255,255,0.3)" stopOpacity="0" />
+                </linearGradient>
+              </defs>
+              <path d="M0,300 Q300,250 600,300 T1200,300" stroke="url(#decorativeLineGrad)" strokeWidth="1" fill="none" className="decorative-wave-line" />
+              <path d="M0,350 Q300,300 600,350 T1200,350" stroke="url(#decorativeLineGrad)" strokeWidth="1" fill="none" className="decorative-wave-line delay-1" />
+              <path d="M0,400 Q300,350 600,400 T1200,400" stroke="url(#decorativeLineGrad)" strokeWidth="1" fill="none" className="decorative-wave-line delay-2" />
+            </svg>
+
+            {/* Floating Particles */}
+            <div className="decorative-particles">
+              {[...Array(15)].map((_, i) => (
+                <span key={i} className="decorative-particle" style={{
+                  left: `${Math.random() * 100}%`,
+                  top: `${Math.random() * 100}%`,
+                  animationDelay: `${Math.random() * 5}s`,
+                  animationDuration: `${3 + Math.random() * 4}s`
+                }} />
+              ))}
+            </div>
+          </div>
+
+          {/* Decorative Content */}
+          <motion.div
+            className="decorative-content"
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.3 }}
+          >
+            <motion.div
+              className="decorative-icon"
+              initial={{ scale: 0, rotate: -180 }}
+              animate={{ scale: 1, rotate: 0 }}
+              transition={{ delay: 0.5, type: "spring", stiffness: 200, damping: 15 }}
+            >
+              <FontAwesomeIcon icon={faRocket} />
+            </motion.div>
+            <motion.h2
+              className="decorative-title"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.6, duration: 0.5 }}
+            >
+              Join Alatyr Hosting
+            </motion.h2>
+            <motion.p
+              className="decorative-subtitle"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.7, duration: 0.5 }}
+            >
+              Start your journey with professional hosting services designed for modern applications
+            </motion.p>
+
+            <motion.div
+              className="decorative-features"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.7 }}
+            >
+              <div className="decorative-feature">
+                <div className="decorative-feature-icon">
+                  <FontAwesomeIcon icon={faShieldHalved} />
+                </div>
+                <div className="decorative-feature-text">
+                  <strong>Secure & Reliable</strong>
+                  <span>Enterprise-grade security for your data</span>
+                </div>
+              </div>
+              <div className="decorative-feature">
+                <div className="decorative-feature-icon">
+                  <FontAwesomeIcon icon={faBolt} />
+                </div>
+                <div className="decorative-feature-text">
+                  <strong>Lightning Fast</strong>
+                  <span>NVMe SSD storage for peak performance</span>
+                </div>
+              </div>
+              <div className="decorative-feature">
+                <div className="decorative-feature-icon">
+                  <FontAwesomeIcon icon={faUserPlus} />
+                </div>
+                <div className="decorative-feature-text">
+                  <strong>Easy Setup</strong>
+                  <span>Get started in minutes, not hours</span>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        </motion.div>
+
+        {/* Form Panel - Right Side */}
+        <div className="register-form-panel">
+          <motion.div
+            className="register-card"
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+          >
           <div className="register-header">
             <motion.div
               className="register-icon"
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ delay: 0.3, type: "spring" }}
+              initial={{ scale: 0, rotate: -180 }}
+              animate={{ scale: 1, rotate: 0 }}
+              transition={{ delay: 0.4, type: "spring", stiffness: 200, damping: 15 }}
             >
               <FontAwesomeIcon icon={faUserPlus} />
             </motion.div>
-            <h1 className="register-title">{t('register.title')}</h1>
-            <p className="register-subtitle">{t('register.subtitle')}</p>
+            <motion.h1
+              className="register-title"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5, duration: 0.5 }}
+            >
+              {t('register.title')}
+            </motion.h1>
+            <motion.p
+              className="register-subtitle"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.6, duration: 0.5 }}
+            >
+              {t('register.subtitle')}
+            </motion.p>
           </div>
+
+          {/* Multi-Step Indicator */}
+          <motion.div
+            className="step-indicator"
+            initial={{ opacity: 0, scaleX: 0 }}
+            animate={{ opacity: 1, scaleX: 1 }}
+            transition={{ delay: 0.7, duration: 0.5 }}
+          >
+            <div className={`step-dot ${step === 'email' ? 'active' : ''}`}></div>
+            <div className={`step-dot ${step === 'details' ? 'active' : ''}`}></div>
+          </motion.div>
 
           {step === 'email' && (
             <>
@@ -169,7 +328,7 @@ const Register: React.FC = () => {
                 className="oauth-section"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4 }}
+                transition={{ delay: 0.8, duration: 0.5 }}
               >
                 <div className="oauth-buttons">
                   {oauthProviders.map((provider, index) => (
@@ -182,7 +341,7 @@ const Register: React.FC = () => {
                       whileTap={{ scale: isFormDisabled ? 1 : 0.98 }}
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.5 + (index * 0.1) }}
+                      transition={{ delay: 0.9 + (index * 0.1), duration: 0.5 }}
                       style={{ '--provider-color': provider.color } as React.CSSProperties}
                     >
                       <FontAwesomeIcon icon={provider.icon} className="oauth-icon" />
@@ -195,9 +354,9 @@ const Register: React.FC = () => {
 
                 <motion.div
                   className="divider"
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 1 }}
+                  initial={{ opacity: 0, scaleX: 0 }}
+                  animate={{ opacity: 1, scaleX: 1 }}
+                  transition={{ delay: 1.1, duration: 0.5 }}
                 >
                   <span className="divider-text">{t('register.orEmail')}</span>
                 </motion.div>
@@ -208,7 +367,7 @@ const Register: React.FC = () => {
                   className="form-group"
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.3 }}
+                  transition={{ delay: 1.2, duration: 0.5 }}
                 >
                   <label htmlFor="email" className="form-label">
                     {t('register.email')}
@@ -237,11 +396,11 @@ const Register: React.FC = () => {
                   type="submit"
                   className="register-button"
                   disabled={isFormDisabled}
-                  whileHover={{ scale: isFormDisabled ? 1 : 1.02 }}
+                  whileHover={{ scale: isFormDisabled ? 1 : 1.02, y: isFormDisabled ? 0 : -2 }}
                   whileTap={{ scale: isFormDisabled ? 1 : 0.98 }}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.5 }}
+                  transition={{ delay: 1.3, duration: 0.5 }}
                 >
                   <FontAwesomeIcon icon={faUserPlus} />
                   {t('register.continueWithEmail')}
@@ -398,6 +557,18 @@ const Register: React.FC = () => {
                   {fieldErrors.password && (
                     <span className="field-error">{fieldErrors.password}</span>
                   )}
+                  {formData.password && passwordStrength && (
+                    <div className="password-strength">
+                      <div className="password-strength-bar">
+                        <div className={`password-strength-fill ${passwordStrength}`}></div>
+                      </div>
+                      <span className={`password-strength-text ${passwordStrength}`}>
+                        {passwordStrength === 'weak' && 'Weak password'}
+                        {passwordStrength === 'medium' && 'Medium password'}
+                        {passwordStrength === 'strong' && 'Strong password'}
+                      </span>
+                    </div>
+                  )}
                 </motion.div>
 
                 <motion.div
@@ -465,11 +636,11 @@ const Register: React.FC = () => {
                   type="submit"
                   className="register-button"
                   disabled={!formData.agreeToTerms || isFormDisabled}
-                  whileHover={{ scale: isFormDisabled ? 1 : 1.02 }}
-                  whileTap={{ scale: isFormDisabled ? 1 : 0.98 }}
+                  whileHover={{ scale: isFormDisabled || !formData.agreeToTerms ? 1 : 1.02, y: isFormDisabled || !formData.agreeToTerms ? 0 : -2 }}
+                  whileTap={{ scale: isFormDisabled || !formData.agreeToTerms ? 1 : 0.98 }}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.7 }}
+                  transition={{ delay: 0.7, duration: 0.5 }}
                 >
                   <FontAwesomeIcon icon={faUserPlus} />
                   {isSubmitting ? t('register.creating') : t('register.createAccount')}
@@ -478,9 +649,9 @@ const Register: React.FC = () => {
 
               <motion.div
                 className="register-footer"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.8 }}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.8, duration: 0.5 }}
               >
                 <p className="login-link">
                   {t('register.haveAccount')} <Link to="/login">{t('register.loginLink')}</Link>
@@ -488,7 +659,8 @@ const Register: React.FC = () => {
               </motion.div>
             </>
           )}
-        </motion.div>
+          </motion.div>
+        </div>
       </div>
     </div>
   );

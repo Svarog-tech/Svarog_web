@@ -129,31 +129,93 @@ const Login: React.FC = () => {
     <div className="login-page">
       <PageMeta title={t('login.title')} description="Přihlaste se do svého účtu Alatyr Hosting." path="/login" noindex />
       <div className="login-container">
+        {/* Decorative Left Panel - Hidden on mobile, shown on desktop */}
         <motion.div
-          className="login-card"
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
+          className="login-decorative"
+          initial={{ opacity: 0, x: -50 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.8 }}
         >
-          <div className="login-header">
-            <motion.div
-              className="login-icon"
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ delay: 0.3, type: "spring" }}
-            >
-              <FontAwesomeIcon icon={faSignInAlt} />
-            </motion.div>
-            <h1 className="login-title">{t('login.title')}</h1>
-            <p className="login-subtitle">{t('login.subtitle')}</p>
+          <div className="decorative-bg">
+            <div className="decorative-grid"></div>
+            <div className="decorative-orb decorative-orb-1"></div>
+            <div className="decorative-orb decorative-orb-2"></div>
+            <div className="decorative-orb decorative-orb-3"></div>
+            <div className="decorative-particles">
+              {[...Array(15)].map((_, i) => (
+                <span
+                  key={i}
+                  className="decorative-particle"
+                  style={{
+                    left: `${Math.random() * 100}%`,
+                    top: `${Math.random() * 100}%`,
+                    animationDelay: `${Math.random() * 5}s`,
+                  }}
+                />
+              ))}
+            </div>
           </div>
+          <motion.div
+            className="decorative-content"
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3, duration: 0.6 }}
+          >
+            <div className="decorative-icon-wrapper">
+              <div className="decorative-rings">
+                <div className="decorative-ring decorative-ring-1"></div>
+                <div className="decorative-ring decorative-ring-2"></div>
+                <div className="decorative-ring decorative-ring-3"></div>
+              </div>
+              <FontAwesomeIcon icon={faSignInAlt} className="decorative-icon" />
+            </div>
+            <h2>Welcome Back!</h2>
+            <p>Access your hosting dashboard and manage your servers with ease. Professional VPS hosting at your fingertips.</p>
+          </motion.div>
+        </motion.div>
+
+        {/* Form Panel - Right side on desktop, full width on mobile */}
+        <div className="login-form-panel">
+          <div className="form-panel-bg"></div>
+          <motion.div
+            className="login-card"
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+          >
+            <div className="login-header">
+              <motion.div
+                className="login-icon"
+                initial={{ scale: 0, rotate: -180 }}
+                animate={{ scale: 1, rotate: 0 }}
+                transition={{ delay: 0.4, type: "spring", stiffness: 200, damping: 15 }}
+              >
+                <FontAwesomeIcon icon={faSignInAlt} />
+              </motion.div>
+              <motion.h1
+                className="login-title"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5, duration: 0.5 }}
+              >
+                {t('login.title')}
+              </motion.h1>
+              <motion.p
+                className="login-subtitle"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.6, duration: 0.5 }}
+              >
+                {t('login.subtitle')}
+              </motion.p>
+            </div>
 
           {/* OAuth Buttons */}
           <motion.div
             className="oauth-section"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
+            transition={{ delay: 0.7, duration: 0.5 }}
           >
             <div className="oauth-buttons">
               {oauthProviders.map((provider, index) => (
@@ -166,7 +228,7 @@ const Login: React.FC = () => {
                   whileTap={{ scale: isFormDisabled ? 1 : 0.98 }}
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.5 + (index * 0.1) }}
+                  transition={{ delay: 0.8 + (index * 0.1), duration: 0.5 }}
                   style={{ '--provider-color': provider.color } as React.CSSProperties}
                 >
                   <FontAwesomeIcon icon={provider.icon} className="oauth-icon" />
@@ -179,9 +241,9 @@ const Login: React.FC = () => {
 
             <motion.div
               className="divider"
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 1 }}
+              initial={{ opacity: 0, scaleX: 0 }}
+              animate={{ opacity: 1, scaleX: 1 }}
+              transition={{ delay: 1, duration: 0.5 }}
             >
               <span className="divider-text">{t('login.orContinueWithEmail')}</span>
             </motion.div>
@@ -205,7 +267,7 @@ const Login: React.FC = () => {
               className="form-group"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
+              transition={{ delay: 1.1, duration: 0.5 }}
             >
               <label htmlFor="email" className="form-label">
                 {t('login.emailLabel')}
@@ -234,7 +296,7 @@ const Login: React.FC = () => {
               className="form-group"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4 }}
+              transition={{ delay: 1.2, duration: 0.5 }}
             >
               <label htmlFor="password" className="form-label">
                 {t('login.passwordLabel')}
@@ -271,7 +333,7 @@ const Login: React.FC = () => {
                 className="form-group"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.45 }}
+                transition={{ delay: 1.3, duration: 0.5 }}
               >
                 <label htmlFor="mfaCode" className="form-label">
                   2FA kód (z Authenticator aplikace)
@@ -296,11 +358,11 @@ const Login: React.FC = () => {
               type="submit"
               className="login-button"
               disabled={isFormDisabled}
-              whileHover={{ scale: isFormDisabled ? 1 : 1.02 }}
+              whileHover={{ scale: isFormDisabled ? 1 : 1.02, y: isFormDisabled ? 0 : -2 }}
               whileTap={{ scale: isFormDisabled ? 1 : 0.98 }}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.5 }}
+              transition={{ delay: 1.4, duration: 0.5 }}
             >
               <FontAwesomeIcon icon={faSignInAlt} />
               {isSubmitting ? t('login.submitting') : t('login.submit')}
@@ -309,9 +371,9 @@ const Login: React.FC = () => {
 
           <motion.div
             className="login-footer"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.6 }}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 1.5, duration: 0.5 }}
           >
             <p className="register-link">
               {t('login.noAccount')} <Link to="/register">{t('login.registerLink')}</Link>
@@ -321,6 +383,7 @@ const Login: React.FC = () => {
             </p>
           </motion.div>
         </motion.div>
+        </div>
       </div>
     </div>
   );
