@@ -67,7 +67,7 @@ function App() {
               <div className="App">
                 <TriangularBackground opacity={0.25} />
                 <Header />
-                <div id="main-content" tabIndex={-1}>
+                <main id="main-content" role="main" tabIndex={-1}>
                 <ErrorBoundary>
                   <Suspense fallback={<Loading message="Načítám..." minHeight="60vh" />}>
                     <Routes>
@@ -118,7 +118,7 @@ function App() {
                     </Routes>
                   </Suspense>
                 </ErrorBoundary>
-                </div>
+                </main>
                 <CookieBanner />
                 <Footer />
               </div>

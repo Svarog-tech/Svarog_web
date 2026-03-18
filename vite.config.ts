@@ -34,6 +34,12 @@ export default defineConfig({
     host: 'localhost',
     strictPort: true,
     origin: 'http://localhost:3000',
+    headers: {
+      'X-Frame-Options': 'DENY',
+      'X-Content-Type-Options': 'nosniff',
+      'Referrer-Policy': 'strict-origin-when-cross-origin',
+      'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https: blob:; connect-src 'self' http://localhost:3001 ws://localhost:3000 https://cdn.jsdelivr.net",
+    },
     proxy: {
       '/api': {
         target: 'http://localhost:3001',
