@@ -1008,29 +1008,6 @@ body {
   transform: translateY(-2px);
 }
 
-.hero-stats {
-  display: flex;
-  gap: 2rem;
-}
-
-.stat {
-  text-align: center;
-}
-
-.stat-number {
-  font-size: 1.5rem;
-  font-weight: 800;
-  color: var(--primary-color);
-  display: block;
-  line-height: 1;
-}
-
-.stat-label {
-  font-size: 0.875rem;
-  color: var(--text-secondary);
-  font-weight: 500;
-}
-
 .hero-right {
   display: flex;
   justify-content: center;
@@ -3498,10 +3475,6 @@ body {
     justify-content: center;
   }
 
-  .hero-stats {
-    justify-content: center;
-  }
-
   .plans-grid {
     grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   }
@@ -3547,16 +3520,6 @@ body {
 
   .section-title {
     font-size: 2.5rem;
-  }
-
-  .hero-stats {
-    justify-content: center;
-    gap: 2rem;
-    flex-wrap: wrap;
-  }
-
-  .stat {
-    min-width: 100px;
   }
 
   .hero-cta {
@@ -3806,26 +3769,6 @@ body {
     font-size: 0.9rem;
   }
 
-  .hero-stats {
-    flex-direction: row;
-    flex-wrap: wrap;
-    gap: 1.5rem;
-    justify-content: center;
-  }
-
-  .stat {
-    flex: 0 0 calc(50% - 0.75rem);
-    min-width: auto;
-  }
-
-  .stat-number {
-    font-size: 1.5rem;
-  }
-
-  .stat-label {
-    font-size: 0.8rem;
-  }
-
   .hero-cta {
     gap: 0.75rem;
     margin-bottom: 1.75rem;
@@ -4050,14 +3993,6 @@ body {
 
   .spec-item {
     font-size: 0.65rem;
-  }
-
-  .stat {
-    flex: 0 0 100%;
-  }
-
-  .hero-stats {
-    gap: 1rem;
   }
 
   .primary-btn,

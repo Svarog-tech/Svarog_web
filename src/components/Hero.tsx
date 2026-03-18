@@ -127,25 +127,6 @@ const Hero: React.FC = () => {
               </button>
             </motion.div>
 
-            <motion.div
-              className="hero-stats"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.8 }}
-            >
-              <div className="stat">
-                <span className="stat-number">99.9%</span>
-                <span className="stat-label">{t('hero.uptime')}</span>
-              </div>
-              <div className="stat">
-                <span className="stat-number">10k+</span>
-                <span className="stat-label">{t('hero.customers')}</span>
-              </div>
-              <div className="stat">
-                <span className="stat-number">24/7</span>
-                <span className="stat-label">{t('hero.support')}</span>
-              </div>
-            </motion.div>
           </div>
 
           <div className="hero-right">

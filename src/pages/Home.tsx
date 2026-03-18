@@ -310,12 +310,6 @@ const Home: React.FC = () => {
   const { t } = useLanguage();
   const navigate = useNavigate();
 
-  // Stats counters
-  const uptimeCounter = useCounter(99, 2000, '.9%');
-  const responseCounter = useCounter(45, 1500, 'ms');
-  const controlCounter = useCounter(100, 2000, '%');
-  const supportCounter = useCounter(24, 1500, '/7');
-
   const scrollToPlans = () => {
     const element = document.getElementById('hosting');
     if (element) {
@@ -457,30 +451,6 @@ const Home: React.FC = () => {
           </div>
         </div>
       </section>
-
-      {/* Stats Section */}
-      <AnimatedSection className="landing-stats-section">
-        <div className="container">
-          <div className="stats-grid">
-            <motion.div className="stat-card" variants={scaleIn}>
-              <span className="stat-number" ref={uptimeCounter.ref}>{uptimeCounter.count}</span>
-              <span className="stat-label">{t('landing.stats.uptime')}</span>
-            </motion.div>
-            <motion.div className="stat-card" variants={scaleIn}>
-              <span className="stat-number" ref={responseCounter.ref}>{responseCounter.count}</span>
-              <span className="stat-label">{t('landing.stats.responseTime')}</span>
-            </motion.div>
-            <motion.div className="stat-card" variants={scaleIn}>
-              <span className="stat-number" ref={controlCounter.ref}>{controlCounter.count}</span>
-              <span className="stat-label">{t('landing.stats.fullControl')}</span>
-            </motion.div>
-            <motion.div className="stat-card" variants={scaleIn}>
-              <span className="stat-number" ref={supportCounter.ref}>{supportCounter.count}</span>
-              <span className="stat-label">{t('landing.stats.support')}</span>
-            </motion.div>
-          </div>
-        </div>
-      </AnimatedSection>
 
       {/* Analytics Dashboard Section */}
       <AnimatedSection className="analytics-section">
