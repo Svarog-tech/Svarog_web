@@ -1387,6 +1387,24 @@ app.post('/api/auth/register',
       throw new AppError('Jméno a příjmení nesmí být delší než 100 znaků', 400);
     }
 
+    // SECURITY: Kontrola zda email již neexistuje v HestiaCP (prevence duplicit)
+    try {
+      const hestiaUsers = await hestiacp.listUsers();
+      if (hestiaUsers.success && hestiaUsers.users) {
+        const emailLower = email.toLowerCase().trim();
+        const existsInHestia = hestiaUsers.users.some(
+          u => u.email && u.email.toLowerCase().trim() === emailLower
+        );
+        if (existsInHestia) {
+          throw new AppError('Tento email je již registrován v systému. Kontaktujte podporu pro přístup.', 409);
+        }
+      }
+    } catch (hestiaError) {
+      // Pokud HestiaCP není dostupné, pokračuj v registraci (neblokuj)
+      if (hestiaError instanceof AppError) throw hestiaError;
+      logger.warn('HestiaCP check during registration failed, continuing', { error: hestiaError.message });
+    }
+
     const result = await authService.register(email, password, firstName, lastName);
 
     if (result.success) {
