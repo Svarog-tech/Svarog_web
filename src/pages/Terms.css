@@ -1,8 +1,8 @@
 /* ============================================
-   PRIVACY POLICY PAGE - MINIMAL PROFESSIONAL DESIGN
+   TERMS OF SERVICE PAGE - MINIMAL PROFESSIONAL DESIGN
    ============================================ */
 
-.privacy-page {
+.terms-page {
   background: var(--surface-solid);
   min-height: 100vh;
 }
@@ -11,34 +11,34 @@
    HERO SECTION
    ============================================ */
 
-.privacy-hero {
+.terms-hero {
   padding: clamp(100px, 15vh, 140px) 0 clamp(60px, 10vh, 80px);
   text-align: center;
   background: var(--surface);
   border-bottom: 1px solid var(--border-light);
 }
 
-.privacy-hero-content {
-  max-width: 700px;
+.terms-hero-content {
+  max-width: 800px;
   margin: 0 auto;
 }
 
-.privacy-icon-wrapper {
+.terms-icon-wrapper {
   margin-bottom: 2rem;
 }
 
-.privacy-icon {
+.terms-icon {
   font-size: clamp(2.5rem, 5vw, 3.5rem);
   color: var(--primary-color);
   opacity: 0.9;
 }
 
-.privacy-hero h1 {
+.terms-hero h1 {
   font-size: clamp(2rem, 5vw, 3.5rem);
   font-weight: 800;
   color: var(--text-primary);
   line-height: 1.2;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.25rem;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
@@ -50,7 +50,14 @@
   display: inline-block;
 }
 
-.privacy-updated {
+.terms-subtitle {
+  font-size: clamp(1rem, 2vw, 1.15rem);
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin-bottom: 1rem;
+}
+
+.terms-updated {
   display: inline-block;
   font-size: 0.875rem;
   color: var(--text-muted);
@@ -64,12 +71,12 @@
    TABLE OF CONTENTS
    ============================================ */
 
-.privacy-toc-section {
+.terms-toc-section {
   padding: clamp(40px, 8vh, 60px) 0;
   background: var(--surface-solid);
 }
 
-.privacy-toc {
+.terms-toc {
   max-width: 800px;
   margin: 0 auto;
   background: var(--surface);
@@ -79,7 +86,7 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
-.privacy-toc h2 {
+.terms-toc h2 {
   font-size: clamp(1.25rem, 2.5vw, 1.5rem);
   font-weight: 700;
   color: var(--text-primary);
@@ -87,116 +94,150 @@
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
-.privacy-toc-list {
+.terms-toc-list {
   list-style: none;
   padding: 0;
   margin: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.625rem;
+  gap: 0.75rem;
 }
 
-.privacy-toc-item {
+.terms-toc-item {
   position: relative;
 }
 
-.privacy-toc-link {
-  display: block;
+.terms-toc-link {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
   padding: 0.875rem 1rem;
-  color: var(--text-secondary);
-  text-decoration: none;
+  background: var(--surface-light);
+  border: 1px solid transparent;
   border-radius: 8px;
-  font-size: 0.9375rem;
+  text-decoration: none;
+  color: var(--text-primary);
   font-weight: 500;
   transition: all 0.25s ease;
-  border: 1px solid transparent;
-  background: var(--surface-light);
 }
 
-.privacy-toc-link:hover {
-  background: var(--surface-alt);
-  color: var(--primary-color);
+.terms-toc-link:hover {
   border-color: var(--primary-color);
+  background: var(--surface-alt);
   transform: translateX(4px);
 }
 
+.terms-toc-number {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  height: 32px;
+  background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+  color: white;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.terms-toc-text {
+  flex: 1;
+  font-size: 0.9375rem;
+}
+
 /* ============================================
-   CONTENT SECTION
+   CONTENT SECTIONS
    ============================================ */
 
-.privacy-content-section {
+.terms-content-wrapper {
   padding: clamp(60px, 10vh, 80px) 0;
   background: var(--surface-solid);
 }
 
-.privacy-content {
+.terms-content {
   max-width: 800px;
   margin: 0 auto;
 }
 
-.privacy-section {
+.terms-section {
   margin-bottom: 2.5rem;
   scroll-margin-top: 100px;
 }
 
-.privacy-section h2 {
+.terms-section h2 {
   font-size: clamp(1.5rem, 3vw, 1.875rem);
   font-weight: 700;
   color: var(--text-primary);
-  margin-bottom: 1rem;
+  margin-bottom: 1.25rem;
   line-height: 1.3;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
-.privacy-section p {
+.terms-section p {
   font-size: clamp(1rem, 1.5vw, 1.0625rem);
   line-height: 1.8;
   color: var(--text-secondary);
+}
+
+/* Highlighted sections */
+.terms-highlight {
+  margin: 1.5rem 0;
+  padding: 1.5rem;
+  background: rgba(37, 99, 235, 0.05);
+  border-left: 4px solid var(--primary-color);
+  border-radius: 8px;
+}
+
+.terms-highlight p {
+  color: var(--text-primary);
+  font-weight: 500;
+  margin: 0;
 }
 
 /* ============================================
    BACK TO TOP BUTTON
    ============================================ */
 
-.privacy-back-to-top {
+.terms-back-to-top {
   position: fixed;
   bottom: 2rem;
   right: 2rem;
   width: 50px;
   height: 50px;
   background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+  color: white;
   border: none;
   border-radius: 50%;
-  color: white;
-  font-size: 1.25rem;
-  cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
+  cursor: pointer;
+  font-size: 1.25rem;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   z-index: 100;
   opacity: 0;
-  visibility: hidden;
   transform: translateY(20px);
   transition: all 0.3s ease;
+  pointer-events: none;
 }
 
-.privacy-back-to-top.visible {
+.terms-back-to-top.visible {
   opacity: 1;
-  visibility: visible;
   transform: translateY(0);
+  pointer-events: all;
 }
 
-.privacy-back-to-top:hover {
+.terms-back-to-top:hover {
   transform: translateY(-4px);
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
 }
 
 /* ============================================
-   FOOTER
+   FOOTER NAVIGATION
    ============================================ */
 
-.privacy-footer {
+.terms-footer-nav {
   padding: clamp(40px, 6vh, 60px) 0;
   text-align: center;
   background: var(--surface-solid);
@@ -210,8 +251,8 @@
   background: var(--surface);
   border: 1px solid var(--border-light);
   border-radius: 8px;
-  color: var(--primary-color);
   text-decoration: none;
+  color: var(--primary-color);
   font-weight: 600;
   font-size: 0.9375rem;
   transition: all 0.25s ease;
@@ -232,16 +273,20 @@
    DARK MODE SUPPORT
    ============================================ */
 
-[data-theme="dark"] .privacy-toc {
+[data-theme="dark"] .terms-toc {
   background: var(--surface-light);
 }
 
-[data-theme="dark"] .privacy-toc-link {
+[data-theme="dark"] .terms-toc-link {
   background: var(--surface-alt);
 }
 
-[data-theme="dark"] .privacy-toc-link:hover {
+[data-theme="dark"] .terms-toc-link:hover {
   background: var(--surface);
+}
+
+[data-theme="dark"] .terms-highlight {
+  background: rgba(37, 99, 235, 0.08);
 }
 
 [data-theme="dark"] .back-link {
@@ -253,19 +298,19 @@
    ============================================ */
 
 @media (max-width: 768px) {
-  .privacy-hero {
+  .terms-hero {
     padding: 80px 0 50px;
   }
 
-  .privacy-toc {
+  .terms-toc {
     padding: 1.25rem;
   }
 
-  .privacy-section {
+  .terms-section {
     margin-bottom: 2rem;
   }
 
-  .privacy-back-to-top {
+  .terms-back-to-top {
     bottom: 1.5rem;
     right: 1.5rem;
     width: 45px;
@@ -278,9 +323,9 @@
    ============================================ */
 
 @media (prefers-reduced-motion: reduce) {
-  .privacy-toc-link,
+  .terms-toc-link,
   .back-link,
-  .privacy-back-to-top {
+  .terms-back-to-top {
     transition: none;
   }
 }
@@ -290,17 +335,17 @@
    ============================================ */
 
 @media print {
-  .privacy-toc-section,
-  .privacy-footer,
-  .privacy-back-to-top {
+  .terms-toc-section,
+  .terms-footer-nav,
+  .terms-back-to-top {
     display: none;
   }
 
-  .privacy-hero {
+  .terms-hero {
     padding: 2rem 0;
   }
 
-  .privacy-section {
+  .terms-section {
     page-break-inside: avoid;
   }
 

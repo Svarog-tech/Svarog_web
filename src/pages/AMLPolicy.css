@@ -1,8 +1,8 @@
 /* ============================================
-   PRIVACY POLICY PAGE - MINIMAL PROFESSIONAL DESIGN
+   AML POLICY PAGE - MINIMAL PROFESSIONAL DESIGN
    ============================================ */
 
-.privacy-page {
+.aml-page {
   background: var(--surface-solid);
   min-height: 100vh;
 }
@@ -11,29 +11,29 @@
    HERO SECTION
    ============================================ */
 
-.privacy-hero {
+.aml-hero {
   padding: clamp(100px, 15vh, 140px) 0 clamp(60px, 10vh, 80px);
   text-align: center;
   background: var(--surface);
   border-bottom: 1px solid var(--border-light);
 }
 
-.privacy-hero-content {
-  max-width: 700px;
+.aml-hero-content {
+  max-width: 800px;
   margin: 0 auto;
 }
 
-.privacy-icon-wrapper {
+.aml-icon-wrapper {
   margin-bottom: 2rem;
 }
 
-.privacy-icon {
+.aml-icon {
   font-size: clamp(2.5rem, 5vw, 3.5rem);
   color: var(--primary-color);
   opacity: 0.9;
 }
 
-.privacy-hero h1 {
+.aml-hero h1 {
   font-size: clamp(2rem, 5vw, 3.5rem);
   font-weight: 800;
   color: var(--text-primary);
@@ -50,7 +50,17 @@
   display: inline-block;
 }
 
-.privacy-updated {
+.aml-subtitle {
+  font-size: clamp(1rem, 2vw, 1.25rem);
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin-bottom: 1rem;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.aml-updated {
   display: inline-block;
   font-size: 0.875rem;
   color: var(--text-muted);
@@ -64,12 +74,12 @@
    TABLE OF CONTENTS
    ============================================ */
 
-.privacy-toc-section {
+.aml-toc-section {
   padding: clamp(40px, 8vh, 60px) 0;
   background: var(--surface-solid);
 }
 
-.privacy-toc {
+.aml-toc {
   max-width: 800px;
   margin: 0 auto;
   background: var(--surface);
@@ -79,7 +89,7 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
-.privacy-toc h2 {
+.aml-toc h2 {
   font-size: clamp(1.25rem, 2.5vw, 1.5rem);
   font-weight: 700;
   color: var(--text-primary);
@@ -87,116 +97,213 @@
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
-.privacy-toc-list {
+.toc-list {
   list-style: none;
   padding: 0;
   margin: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.625rem;
+  gap: 0.75rem;
 }
 
-.privacy-toc-item {
-  position: relative;
-}
-
-.privacy-toc-link {
-  display: block;
+.toc-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
   padding: 0.875rem 1rem;
-  color: var(--text-secondary);
-  text-decoration: none;
+  background: var(--surface-light);
   border-radius: 8px;
-  font-size: 0.9375rem;
-  font-weight: 500;
+  cursor: pointer;
   transition: all 0.25s ease;
   border: 1px solid transparent;
-  background: var(--surface-light);
 }
 
-.privacy-toc-link:hover {
+.toc-item:hover {
   background: var(--surface-alt);
-  color: var(--primary-color);
   border-color: var(--primary-color);
   transform: translateX(4px);
+}
+
+.toc-number {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--primary-color);
+  min-width: 28px;
+  text-align: center;
+}
+
+.toc-title {
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  flex: 1;
 }
 
 /* ============================================
    CONTENT SECTION
    ============================================ */
 
-.privacy-content-section {
+.aml-content-section {
   padding: clamp(60px, 10vh, 80px) 0;
   background: var(--surface-solid);
 }
 
-.privacy-content {
+.aml-content {
   max-width: 800px;
   margin: 0 auto;
 }
 
-.privacy-section {
-  margin-bottom: 2.5rem;
+.content-section {
+  margin-bottom: 3rem;
   scroll-margin-top: 100px;
 }
 
-.privacy-section h2 {
+.content-section h2 {
   font-size: clamp(1.5rem, 3vw, 1.875rem);
   font-weight: 700;
   color: var(--text-primary);
-  margin-bottom: 1rem;
+  margin-bottom: 1.25rem;
   line-height: 1.3;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
-.privacy-section p {
+.content-section p {
+  font-size: clamp(1rem, 1.5vw, 1.0625rem);
+  line-height: 1.8;
+  color: var(--text-secondary);
+  margin-bottom: 1.5rem;
+}
+
+.content-section p:last-child {
+  margin-bottom: 0;
+}
+
+/* Lists */
+.risk-list,
+.procedures-list,
+.obligations-list {
+  list-style: none;
+  padding: 0;
+  margin: 1.5rem 0;
+}
+
+.risk-list li,
+.procedures-list li,
+.obligations-list li {
+  position: relative;
+  padding-left: 1.75rem;
+  margin-bottom: 1rem;
   font-size: clamp(1rem, 1.5vw, 1.0625rem);
   line-height: 1.8;
   color: var(--text-secondary);
 }
 
-/* ============================================
-   BACK TO TOP BUTTON
-   ============================================ */
-
-.privacy-back-to-top {
-  position: fixed;
-  bottom: 2rem;
-  right: 2rem;
-  width: 50px;
-  height: 50px;
-  background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
-  border: none;
+.risk-list li::before,
+.procedures-list li::before,
+.obligations-list li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.7em;
+  width: 6px;
+  height: 6px;
+  background: var(--primary-color);
   border-radius: 50%;
-  color: white;
-  font-size: 1.25rem;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  z-index: 100;
-  opacity: 0;
-  visibility: hidden;
-  transform: translateY(20px);
-  transition: all 0.3s ease;
-}
-
-.privacy-back-to-top.visible {
-  opacity: 1;
-  visibility: visible;
-  transform: translateY(0);
-}
-
-.privacy-back-to-top:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
 }
 
 /* ============================================
-   FOOTER
+   HIGHLIGHT & WARNING CARDS
    ============================================ */
 
-.privacy-footer {
+.highlight-card,
+.warning-card {
+  margin: 2rem 0;
+  padding: 1.5rem;
+  border-radius: 10px;
+  border-left: 4px solid;
+}
+
+.highlight-card {
+  background: rgba(37, 99, 235, 0.05);
+  border-left-color: var(--primary-color);
+}
+
+.warning-card {
+  background: rgba(245, 158, 11, 0.05);
+  border-left-color: #f59e0b;
+}
+
+.highlight-icon,
+.warning-icon {
+  font-size: 1.75rem;
+  margin-bottom: 0.75rem;
+  display: block;
+}
+
+.highlight-icon {
+  color: var(--primary-color);
+}
+
+.warning-icon {
+  color: #f59e0b;
+}
+
+.highlight-card h3,
+.warning-card h3 {
+  font-size: clamp(1.125rem, 2vw, 1.25rem);
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 0.75rem;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.highlight-card p,
+.warning-card p {
+  font-size: 1rem;
+  line-height: 1.7;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+/* ============================================
+   COMPANY INFO
+   ============================================ */
+
+.company-info-section {
+  padding: clamp(40px, 8vh, 60px) 0;
+  background: var(--surface);
+  border-top: 1px solid var(--border-light);
+}
+
+.company-info {
+  max-width: 800px;
+  margin: 0 auto;
+  text-align: center;
+  padding: 2rem;
+  background: var(--surface-solid);
+  border-radius: 12px;
+  border: 1px solid var(--border-light);
+}
+
+.company-info h2 {
+  font-size: clamp(1.25rem, 2.5vw, 1.5rem);
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 0.75rem;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.company-info p {
+  font-size: 0.9375rem;
+  color: var(--text-secondary);
+  margin: 0.5rem 0;
+}
+
+/* ============================================
+   FOOTER / BACK LINK
+   ============================================ */
+
+.aml-footer {
   padding: clamp(40px, 6vh, 60px) 0;
   text-align: center;
   background: var(--surface-solid);
@@ -232,16 +339,20 @@
    DARK MODE SUPPORT
    ============================================ */
 
-[data-theme="dark"] .privacy-toc {
+[data-theme="dark"] .aml-toc {
   background: var(--surface-light);
 }
 
-[data-theme="dark"] .privacy-toc-link {
+[data-theme="dark"] .toc-item {
   background: var(--surface-alt);
 }
 
-[data-theme="dark"] .privacy-toc-link:hover {
+[data-theme="dark"] .toc-item:hover {
   background: var(--surface);
+}
+
+[data-theme="dark"] .company-info {
+  background: var(--surface-light);
 }
 
 [data-theme="dark"] .back-link {
@@ -253,23 +364,24 @@
    ============================================ */
 
 @media (max-width: 768px) {
-  .privacy-hero {
+  .aml-hero {
     padding: 80px 0 50px;
   }
 
-  .privacy-toc {
+  .aml-toc {
     padding: 1.25rem;
   }
 
-  .privacy-section {
+  .toc-item {
+    padding: 0.75rem;
+  }
+
+  .content-section {
     margin-bottom: 2rem;
   }
 
-  .privacy-back-to-top {
-    bottom: 1.5rem;
-    right: 1.5rem;
-    width: 45px;
-    height: 45px;
+  .company-info {
+    padding: 1.5rem;
   }
 }
 
@@ -278,9 +390,8 @@
    ============================================ */
 
 @media (prefers-reduced-motion: reduce) {
-  .privacy-toc-link,
-  .back-link,
-  .privacy-back-to-top {
+  .toc-item,
+  .back-link {
     transition: none;
   }
 }
@@ -290,17 +401,16 @@
    ============================================ */
 
 @media print {
-  .privacy-toc-section,
-  .privacy-footer,
-  .privacy-back-to-top {
+  .aml-toc-section,
+  .aml-footer {
     display: none;
   }
 
-  .privacy-hero {
+  .aml-hero {
     padding: 2rem 0;
   }
 
-  .privacy-section {
+  .content-section {
     page-break-inside: avoid;
   }
 
