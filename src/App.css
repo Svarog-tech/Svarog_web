@@ -109,9 +109,15 @@ body {
   z-index: 1;
 }
 
-.App > *:not(canvas) {
+.App > *:not(canvas):not(.modern-header) {
   position: relative;
   z-index: var(--z-base);
+}
+
+/* Ensure header stays fixed and on top */
+.modern-header {
+  position: fixed !important;
+  z-index: var(--z-fixed) !important;
 }
 
 .container {
@@ -261,6 +267,43 @@ body {
 .nav-link:hover::after,
 .nav-link.active::after {
   width: 100%;
+}
+
+/* Header on dark pages (About, etc.) */
+body.dark-page .modern-header,
+body:has(.about-page) .modern-header {
+  background: rgba(10, 10, 18, 0.95) !important;
+  backdrop-filter: blur(20px);
+}
+
+body.dark-page .modern-header .nav-link,
+body.dark-page .modern-header .profile-name,
+body:has(.about-page) .modern-header .nav-link,
+body:has(.about-page) .modern-header .profile-name {
+  color: #f8fafc !important;
+}
+
+body.dark-page .modern-header .nav-link:hover,
+body.dark-page .modern-header .nav-link.active,
+body:has(.about-page) .modern-header .nav-link:hover,
+body:has(.about-page) .modern-header .nav-link.active {
+  color: #38bdf8 !important;
+}
+
+body.dark-page .modern-header .hamburger span,
+body:has(.about-page) .modern-header .hamburger span {
+  background-color: #f8fafc !important;
+}
+
+body.dark-page .modern-header .primary-btn,
+body:has(.about-page) .modern-header .primary-btn {
+  background: linear-gradient(135deg, #38bdf8, #06b6d4) !important;
+  color: #0a0a12 !important;
+}
+
+body.dark-page .modern-header .dropdown-arrow,
+body:has(.about-page) .modern-header .dropdown-arrow {
+  color: #f8fafc !important;
 }
 
 /* CTA Button */

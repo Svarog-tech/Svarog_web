@@ -296,8 +296,8 @@ const StarfieldCanvas: React.FC<StarfieldCanvasProps> = ({ scrollY = 0 }) => {
         left: 0,
         width: '100%',
         height: '100%',
-        zIndex: 0,
-        pointerEvents: 'auto',
+        zIndex: -1,
+        pointerEvents: 'none',
       }}
     />
   );
