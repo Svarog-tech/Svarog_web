@@ -766,107 +766,6 @@
 }
 
 /* ============================================
-   FAQ SECTION
-   ============================================ */
-
-.faq-section {
-  padding: 100px 0;
-  background: var(--surface);
-}
-
-.faq-layout {
-  max-width: 800px;
-  margin: 0 auto;
-}
-
-.faq-header {
-  margin-bottom: 3rem;
-}
-
-.faq-header h2 {
-  font-size: 2.5rem;
-  font-weight: 800;
-  color: var(--text-primary);
-  margin-bottom: 0.75rem;
-}
-
-.faq-header p {
-  font-size: 1.1rem;
-  color: var(--text-secondary);
-}
-
-.faq-accordion {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.faq-item {
-  border: 1px solid var(--border-light);
-  border-radius: 12px;
-  overflow: hidden;
-  transition: all 0.3s ease;
-}
-
-.faq-item.open {
-  border-color: var(--primary-color);
-}
-
-.faq-trigger {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding: 1.25rem;
-  background: none;
-  border: none;
-  cursor: pointer;
-  text-align: left;
-}
-
-.faq-number {
-  font-size: 0.875rem;
-  font-weight: 800;
-  color: var(--primary-color);
-  font-family: monospace;
-}
-
-.faq-question {
-  flex: 1;
-  font-size: 1rem;
-  font-weight: 600;
-  color: var(--text-primary);
-}
-
-.faq-chevron {
-  font-size: 0.875rem;
-  color: var(--text-secondary);
-  transition: transform 0.3s ease;
-}
-
-.faq-item.open .faq-chevron {
-  transform: rotate(180deg);
-  color: var(--primary-color);
-}
-
-.faq-content {
-  max-height: 0;
-  overflow: hidden;
-  transition: max-height 0.3s ease;
-}
-
-.faq-item.open .faq-content {
-  max-height: 200px;
-}
-
-.faq-content p {
-  padding: 0 1.25rem 1.25rem 3.5rem;
-  font-size: 0.95rem;
-  color: var(--text-secondary);
-  line-height: 1.7;
-}
-
-/* ============================================
    CTA SECTION
    ============================================ */
 
@@ -1053,10 +952,6 @@
   .stats-specs {
     grid-template-columns: repeat(2, 1fr);
   }
-
-  .faq-header {
-    text-align: center;
-  }
 }
 
 @media (min-width: 1024px) {
@@ -1072,7 +967,6 @@
   .stats-section,
   .journey-section,
   .tech-section,
-  .faq-section,
   .hosting-cta {
     padding: 120px 0;
   }
@@ -1116,10 +1010,6 @@
 }
 
 [data-theme="dark"] .tech-node {
-  background: var(--surface-light);
-}
-
-[data-theme="dark"] .faq-item {
   background: var(--surface-light);
 }
 

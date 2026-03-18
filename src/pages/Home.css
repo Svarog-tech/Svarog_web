@@ -1166,14 +1166,6 @@
     gap: 2.5rem;
   }
 
-  .stat-number {
-    font-size: 3rem;
-  }
-
-  .stat-label {
-    font-size: 1rem;
-  }
-
   .landing-cta-section .cta-features {
     flex-direction: row;
     justify-content: center;
@@ -1295,10 +1287,6 @@
     font-size: 3rem;
   }
 
-  .stat-number {
-    font-size: 3.5rem;
-  }
-
   .cta-title {
     font-size: 2.5rem;
   }
@@ -1337,10 +1325,6 @@
 [data-theme="dark"] .metric-bubble {
   background: var(--surface-light);
   border-color: rgba(255, 255, 255, 0.1);
-}
-
-[data-theme="dark"] .landing-stats-section {
-  background: var(--surface-light);
 }
 
 [data-theme="dark"] .dashboard-window {

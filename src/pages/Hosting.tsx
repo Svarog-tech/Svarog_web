@@ -12,7 +12,6 @@ import {
   faRocket,
   faCheck,
   faArrowRight,
-  faChevronDown,
   faMicrochip,
   faMemory,
   faNetworkWired,
@@ -273,47 +272,6 @@ const TechFlow: React.FC = () => {
   );
 };
 
-// FAQ Accordion
-const FAQ: React.FC = () => {
-  const [openIndex, setOpenIndex] = useState<number | null>(null);
-
-  const faqs = [
-    { q: 'What control panel do you use?', a: 'HestiaCP - modern, user-friendly panel with full control over websites, databases, email, and DNS.' },
-    { q: 'Do I get root/sudo access?', a: 'Yes! Full root access via SSH. Install any software, configure services, complete control.' },
-    { q: 'How fast is the setup?', a: 'Typically ready within 5 minutes. Login credentials sent immediately via email.' },
-    { q: 'What about backups?', a: 'Automated daily backups included. Create manual backups anytime through HestiaCP.' },
-    { q: 'Can I upgrade later?', a: 'Upgrade anytime with no downtime. Only pay the difference.' },
-  ];
-
-  return (
-    <div className="faq-accordion">
-      {faqs.map((faq, index) => (
-        <motion.div
-          key={index}
-          className={`faq-item ${openIndex === index ? 'open' : ''}`}
-          initial={{ opacity: 0, y: 10 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ delay: index * 0.05 }}
-          viewport={{ once: true }}
-        >
-          <button
-            className="faq-trigger"
-            onClick={() => setOpenIndex(openIndex === index ? null : index)}
-            aria-expanded={openIndex === index}
-          >
-            <span className="faq-number">{String(index + 1).padStart(2, '0')}</span>
-            <span className="faq-question">{faq.q}</span>
-            <FontAwesomeIcon icon={faChevronDown} className="faq-chevron" />
-          </button>
-          <div className="faq-content">
-            <p>{faq.a}</p>
-          </div>
-        </motion.div>
-      ))}
-    </div>
-  );
-};
-
 const Hosting: React.FC = () => {
   const { t } = useLanguage();
   const navigate = useNavigate();
@@ -478,19 +436,6 @@ const Hosting: React.FC = () => {
 
       {/* Pricing */}
       <HostingPlansNew />
-
-      {/* FAQ */}
-      <section className="faq-section">
-        <div className="container">
-          <div className="faq-layout">
-            <div className="faq-header">
-              <h2>Common <span className="gradient-text">Questions</span></h2>
-              <p>Everything you need to know about our hosting services</p>
-            </div>
-            <FAQ />
-          </div>
-        </div>
-      </section>
 
       {/* CTA */}
       <section className="hosting-cta">
