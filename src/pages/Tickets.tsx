@@ -21,10 +21,13 @@ interface Ticket {
   id: number;
   subject: string;
   message: string;
-  status: 'open' | 'in_progress' | 'resolved' | 'closed';
+  status: 'open' | 'in_progress' | 'waiting' | 'resolved' | 'closed';
   priority: 'low' | 'medium' | 'high' | 'urgent';
   category: string;
   created_at: string;
+  updated_at?: string;
+  last_reply_at?: string;
+  resolved_at?: string;
 }
 
 const Tickets: React.FC = () => {
@@ -120,6 +123,8 @@ const Tickets: React.FC = () => {
         return 'warning';
       case 'in_progress':
         return 'info';
+      case 'waiting':
+        return 'purple';
       case 'resolved':
         return 'success';
       case 'closed':
@@ -135,6 +140,8 @@ const Tickets: React.FC = () => {
         return t('tickets.status.open');
       case 'in_progress':
         return t('tickets.status.processing');
+      case 'waiting':
+        return 'Čeká na odpověď';
       case 'resolved':
         return t('tickets.status.resolved');
       case 'closed':

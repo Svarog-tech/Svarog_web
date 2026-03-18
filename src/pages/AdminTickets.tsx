@@ -25,7 +25,7 @@ interface Ticket {
   user_id: string;
   subject: string;
   message: string;
-  status: 'open' | 'in_progress' | 'resolved' | 'closed';
+  status: 'open' | 'in_progress' | 'waiting' | 'resolved' | 'closed';
   priority: 'low' | 'medium' | 'high' | 'urgent';
   category: string;
   assigned_to?: string;
@@ -101,6 +101,8 @@ const AdminTickets: React.FC = () => {
       const response = await fetch(`${API_BASE_URL}/admin/tickets`, {
         method: 'GET',
         headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-Guard': '1',
           ...getAuthHeader()
         }
       });
@@ -112,15 +114,12 @@ const AdminTickets: React.FC = () => {
       const result = await response.json();
       if (result.success && result.tickets) {
         // TODO: API by mělo vracet user info s tickety
-        const ticketsWithUserInfo = result.tickets.map((ticket: Ticket & {
-          user_email?: string;
-          profiles?: { first_name?: string; last_name?: string };
-          assigned?: { first_name?: string; last_name?: string };
-        }) => ({
+        // API already returns user_name and user_email directly
+        const ticketsWithUserInfo = result.tickets.map((ticket: any) => ({
           ...ticket,
-          user_email: ticket.user_email,
-          user_name: `${ticket.profiles?.first_name || ''} ${ticket.profiles?.last_name || ''}`.trim(),
-          assigned_name: ticket.assigned ? `${ticket.assigned.first_name || ''} ${ticket.assigned.last_name || ''}`.trim() : undefined
+          user_name: ticket.user_name || 'Neznámý',
+          user_email: ticket.user_email || '',
+          assigned_name: ticket.assigned_name || undefined
         }));
 
         setTickets(ticketsWithUserInfo);
@@ -146,6 +145,7 @@ const AdminTickets: React.FC = () => {
     const statusMap: Record<string, { color: string; icon: any; label: string }> = {
       open: { color: '#f59e0b', icon: faCircle, label: 'Otevřen' },
       in_progress: { color: '#3b82f6', icon: faClock, label: 'V řešení' },
+      waiting: { color: '#8b5cf6', icon: faClock, label: 'Čeká na odpověď' },
       resolved: { color: '#10b981', icon: faCheckCircle, label: 'Vyřešen' },
       closed: { color: '#6b7280', icon: faTimesCircle, label: 'Uzavřen' }
     };

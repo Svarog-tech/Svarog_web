@@ -15,15 +15,32 @@ import { API_BASE_URL } from './apiConfig';
 // SECURITY: Access token v paměti (ne localStorage), refresh token v httpOnly cookie
 // ==============================================
 
-// Access token uložený pouze v JS paměti (bezpečnější než localStorage)
+// Access token uložený v paměti + localStorage jako fallback pro page refresh
 let accessTokenInMemory: string | null = null;
+const TOKEN_STORAGE_KEY = 'alatyr_access_token';
 
 function setAccessToken(token: string): void {
   accessTokenInMemory = token;
+  try {
+    localStorage.setItem(TOKEN_STORAGE_KEY, token);
+  } catch {
+    // localStorage nedostupný (private mode apod.)
+  }
 }
 
 function getAccessToken(): string | null {
-  return accessTokenInMemory;
+  if (accessTokenInMemory) return accessTokenInMemory;
+  // Fallback: obnov z localStorage po page refresh / HMR
+  try {
+    const stored = localStorage.getItem(TOKEN_STORAGE_KEY);
+    if (stored) {
+      accessTokenInMemory = stored;
+      return stored;
+    }
+  } catch {
+    // localStorage nedostupný
+  }
+  return null;
 }
 
 /**
@@ -32,6 +49,11 @@ function getAccessToken(): string | null {
  */
 function clearTokens(): void {
   accessTokenInMemory = null;
+  try {
+    localStorage.removeItem(TOKEN_STORAGE_KEY);
+  } catch {
+    // localStorage nedostupný
+  }
   // Refresh token cookie se smaže přes /api/auth/logout endpoint
 }
 

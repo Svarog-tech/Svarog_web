@@ -92,6 +92,7 @@ const TicketDetailModal: React.FC<TicketDetailModalProps> = ({ ticket, isOpen, o
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
+          'X-CSRF-Guard': '1',
           ...getAuthHeader()
         },
         credentials: 'include'
@@ -117,6 +118,7 @@ const TicketDetailModal: React.FC<TicketDetailModalProps> = ({ ticket, isOpen, o
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
+          'X-CSRF-Guard': '1',
           ...getAuthHeader()
         },
         credentials: 'include'
@@ -159,6 +161,7 @@ const TicketDetailModal: React.FC<TicketDetailModalProps> = ({ ticket, isOpen, o
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
+          'X-CSRF-Guard': '1',
           ...getAuthHeader()
         },
         credentials: 'include',
@@ -199,6 +202,7 @@ const TicketDetailModal: React.FC<TicketDetailModalProps> = ({ ticket, isOpen, o
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'X-CSRF-Guard': '1',
           ...getAuthHeader()
         },
         credentials: 'include',

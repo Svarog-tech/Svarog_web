@@ -2057,10 +2057,13 @@ app.get('/api/tickets',
     const total = countResult[0]?.total || 0;
 
     const tickets = await db.query(`
-      SELECT id, subject, message, status, priority, category,
-             created_at, updated_at, last_reply_at, resolved_at
-      FROM support_tickets WHERE user_id = ?
-      ORDER BY created_at DESC LIMIT ? OFFSET ?
+      SELECT t.id, t.subject, t.message, t.status, t.priority, t.category,
+             t.created_at, t.updated_at, t.last_reply_at, t.resolved_at,
+             TRIM(CONCAT(COALESCE(p.first_name, ''), ' ', COALESCE(p.last_name, ''))) AS user_name
+      FROM support_tickets t
+      LEFT JOIN profiles p ON p.id = t.user_id
+      WHERE t.user_id = ?
+      ORDER BY t.created_at DESC LIMIT ? OFFSET ?
     `, [userId, limit, offset]);
 
     logger.info(`Retrieved ${tickets.length} tickets for user ${userId}`, {
@@ -2088,7 +2091,13 @@ app.get('/api/tickets/:id',
     const userId = req.user.id;
 
     const ticket = await db.queryOne(
-      'SELECT id, user_id, subject, message, status, priority, category, assigned_to, created_at, updated_at, last_reply_at, resolved_at FROM support_tickets WHERE id = ?',
+      `SELECT t.id, t.user_id, t.subject, t.message, t.status, t.priority, t.category, t.assigned_to,
+              t.created_at, t.updated_at, t.last_reply_at, t.resolved_at,
+              TRIM(CONCAT(COALESCE(p.first_name, ''), ' ', COALESCE(p.last_name, ''))) AS user_name,
+              p.email AS user_email
+       FROM support_tickets t
+       LEFT JOIN profiles p ON p.id = t.user_id
+       WHERE t.id = ?`,
       [ticketId]
     );
     if (!ticket) throw new AppError('Ticket not found', 404);
@@ -2192,11 +2201,19 @@ app.get('/api/tickets/:id/messages',
     if (!isOwner && !req.user.is_admin) throw new AppError('Forbidden', 403);
 
     const messages = await db.query(
-      `SELECT id, ticket_id, user_id, message, is_admin_reply, created_at
-       FROM ticket_messages WHERE ticket_id = ? ORDER BY created_at ASC`,
+      `SELECT m.id, m.ticket_id, m.user_id, m.message, m.is_admin_reply, m.created_at,
+              CONCAT(COALESCE(p.first_name, ''), ' ', COALESCE(p.last_name, '')) AS user_name,
+              p.email AS user_email
+       FROM ticket_messages m
+       LEFT JOIN profiles p ON p.id = m.user_id
+       WHERE m.ticket_id = ? ORDER BY m.created_at ASC`,
       [ticketId]
     );
-    res.json({ success: true, messages: messages || [] });
+    const formatted = (messages || []).map(m => ({
+      ...m,
+      user_name: (m.user_name || '').trim() || m.user_email || 'Uživatel'
+    }));
+    res.json({ success: true, messages: formatted });
   })
 );
 
@@ -5377,8 +5394,12 @@ app.get('/api/admin/tickets',
     const total = countResult[0]?.total || 0;
 
     const tickets = await db.query(
-      `SELECT t.*, p.email AS user_email, p.first_name, p.last_name
-       FROM support_tickets t LEFT JOIN profiles p ON p.id = t.user_id
+      `SELECT t.*,
+              p.email AS user_email, p.first_name, p.last_name,
+              ap.first_name AS assigned_first_name, ap.last_name AS assigned_last_name
+       FROM support_tickets t
+       LEFT JOIN profiles p ON p.id = t.user_id
+       LEFT JOIN profiles ap ON ap.id = t.assigned_to
        ORDER BY t.created_at DESC LIMIT ? OFFSET ?`, [limit, offset]
     );
 
@@ -5395,7 +5416,7 @@ app.get('/api/admin/tickets',
       created_at: t.created_at,
       user_email: t.user_email,
       user_name: `${t.first_name || ''} ${t.last_name || ''}`.trim(),
-      assigned_name: undefined
+      assigned_name: t.assigned_to ? `${t.assigned_first_name || ''} ${t.assigned_last_name || ''}`.trim() : undefined
     }));
 
     res.json({
