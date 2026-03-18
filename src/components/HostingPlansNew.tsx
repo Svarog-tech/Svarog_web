@@ -32,122 +32,91 @@ const HostingPlansNew: React.FC = () => {
   };
 
   return (
-    <section id="hosting" className="hosting-plans-new">
+    <section id="hosting" className="pricing-section">
       <div className="container">
-        {/* Header */}
-        <div className="plans-header-new">
-          <h2 className="plans-title-new">{t('plans.mainTitle')}</h2>
-          <p className="plans-subtitle-new">{t('plans.subtitle')}</p>
-        </div>
+        <motion.header
+          className="pricing-header"
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+        >
+          <h2>{t('plans.mainTitle')}</h2>
+          <p>{t('plans.subtitle')}</p>
+        </motion.header>
 
-        {/* Toggle Switches */}
-        <div className="plans-toggles">
-          {/* Hosting Type Toggle */}
-          <div className="toggle-group">
+        <motion.div
+          className="pricing-controls"
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ delay: 0.1 }}
+        >
+          <div className="control-group">
             <button
-              className={`toggle-btn ${hostingType === 'webhosting' ? 'active' : ''}`}
+              className={hostingType === 'webhosting' ? 'active' : ''}
               onClick={() => setHostingType('webhosting')}
             >
               {t('plans.webhosting')}
             </button>
             <button
-              className={`toggle-btn ${hostingType === 'wordpress' ? 'active' : ''}`}
+              className={hostingType === 'wordpress' ? 'active' : ''}
               onClick={() => setHostingType('wordpress')}
             >
               {t('plans.wordpress')}
             </button>
           </div>
 
-          {/* Billing Cycle Toggle */}
-          <div className="toggle-group">
+          <div className="control-group">
             <button
-              className={`toggle-btn ${billingCycle === 'monthly' ? 'active' : ''}`}
+              className={billingCycle === 'monthly' ? 'active' : ''}
               onClick={() => setBillingCycle('monthly')}
             >
               {t('plans.monthly')}
             </button>
             <button
-              className={`toggle-btn ${billingCycle === 'yearly' ? 'active' : ''}`}
+              className={billingCycle === 'yearly' ? 'active' : ''}
               onClick={() => setBillingCycle('yearly')}
             >
-              {t('plans.yearly')}
-              <span className="save-badge">{t('plans.discount')}</span>
+              {t('plans.yearly')} <span className="save">-20%</span>
             </button>
           </div>
-        </div>
+        </motion.div>
 
-        {/* Plans Grid */}
-        <div className={`plans-grid-new ${hostingType === 'wordpress' ? 'grid-2' : 'grid-4'}`}>
+        <div className={`pricing-grid cols-${hostingType === 'wordpress' ? '2' : '4'}`}>
           {plans.map((plan, index) => (
             <motion.div
               key={plan.id}
-              className="plan"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
+              className={`pricing-card${plan.popular ? ' recommended' : ''}`}
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: index * 0.08 }}
             >
-              {plan.popular && (
-                <div className="popular-stamp">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
-                  </svg>
-                </div>
-              )}
-              <div className="inner">
-                <span className="pricing">
-                  <span>
-                    {formatPrice(billingCycle === 'yearly' ? plan.yearlyPrice * 12 : plan.price)}{' '}
-                    <small>/ {billingCycle === 'yearly' ? t('plans.year') : t('plans.month')}</small>
-                  </span>
-                </span>
-                <p className="title">{plan.name}</p>
-                <p className="info">{plan.description}</p>
-                <ul className="features">
-                  {plan.features.map((feature, idx) => (
-                    <li key={idx}>
-                      <span className="icon">
-                        <svg height="24" width="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                          <path d="M0 0h24v24H0z" fill="none"></path>
-                          <path fill="currentColor" d="M10 15.172l9.192-9.193 1.415 1.414L10 18l-6.364-6.364 1.414-1.414z"></path>
-                        </svg>
-                      </span>
-                      <span>{feature}</span>
-                    </li>
-                  ))}
-                </ul>
-                <div className="action">
-                  <button className="button" onClick={() => handleSelectPlan(plan.id)}>
-                    <span className="button__icon-wrapper">
-                      <svg
-                        viewBox="0 0 14 15"
-                        fill="none"
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="button__icon-svg"
-                        width="10"
-                      >
-                        <path
-                          d="M13.376 11.552l-.264-10.44-10.44-.24.024 2.28 6.96-.048L.2 12.56l1.488 1.488 9.432-9.432-.048 6.912 2.304.024z"
-                          fill="currentColor"
-                        ></path>
-                      </svg>
+              {plan.popular && <span className="badge">{t('plans.recommended') || 'Recommended'}</span>}
 
-                      <svg
-                        viewBox="0 0 14 15"
-                        fill="none"
-                        width="10"
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="button__icon-svg button__icon-svg--copy"
-                      >
-                        <path
-                          d="M13.376 11.552l-.264-10.44-10.44-.24.024 2.28 6.96-.048L.2 12.56l1.488 1.488 9.432-9.432-.048 6.912 2.304.024z"
-                          fill="currentColor"
-                        ></path>
-                      </svg>
-                    </span>
-                    {t('plans.selectPlan')}
-                  </button>
-                </div>
+              <h3>{plan.name}</h3>
+
+              <div className="price">
+                <span className="amount">
+                  {formatPrice(billingCycle === 'yearly' ? plan.yearlyPrice * 12 : plan.price)}
+                </span>
+                <span className="period">/ {billingCycle === 'yearly' ? t('plans.year') : t('plans.month')}</span>
               </div>
+
+              <p className="description">{plan.description}</p>
+
+              <ul>
+                {plan.features.map((feature, idx) => (
+                  <li key={idx}>
+                    <FontAwesomeIcon icon={faCheck} />
+                    {feature}
+                  </li>
+                ))}
+              </ul>
+
+              <button onClick={() => handleSelectPlan(plan.id)}>
+                {t('plans.selectPlan')}
+              </button>
             </motion.div>
           ))}
         </div>
