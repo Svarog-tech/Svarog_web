@@ -284,12 +284,32 @@ const Configurator: React.FC = () => {
     <div className="configurator-page">
       <div className="configurator-header">
         <div className="container">
-          <button className="back-btn" onClick={() => navigate('/hosting')}>
+          <motion.button
+            className="back-btn"
+            onClick={() => navigate('/hosting')}
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5 }}
+            whileHover={{ x: -4 }}
+            whileTap={{ scale: 0.98 }}
+          >
             <FontAwesomeIcon icon={faArrowLeft} />
             Zpět na plány
-          </button>
-          <h1>Konfigurace hostingu</h1>
-          <p>Přizpůsobte si hosting přesně podle vašich potřeb</p>
+          </motion.button>
+          <motion.h1
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.1 }}
+          >
+            Konfigurace hostingu
+          </motion.h1>
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+          >
+            Přizpůsobte si hosting přesně podle vašich potřeb
+          </motion.p>
         </div>
       </div>
 
@@ -299,7 +319,12 @@ const Configurator: React.FC = () => {
             {/* Main Content */}
             <div className="config-main">
               {/* Selected Plan */}
-              <section className="config-section">
+              <motion.section
+                className="config-section"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.3 }}
+              >
                 <div className="config-section-inner">
                   <h2 className="section-heading">
                     <FontAwesomeIcon icon={faServer} />
@@ -333,10 +358,15 @@ const Configurator: React.FC = () => {
                     </div>
                   </div>
                 </div>
-              </section>
+              </motion.section>
 
               {/* Billing Period */}
-              <section className="config-section">
+              <motion.section
+                className="config-section"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.4 }}
+              >
                 <div className="config-section-inner">
                   <h2 className="section-heading">
                     <FontAwesomeIcon icon={faCalendar} />
@@ -362,10 +392,15 @@ const Configurator: React.FC = () => {
                     </div>
                   </div>
                 </div>
-              </section>
+              </motion.section>
 
               {/* Domain Selection */}
-              <section className="config-section">
+              <motion.section
+                className="config-section"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.5 }}
+              >
                 <div className="config-section-inner">
                   <h2 className="section-heading">
                     <FontAwesomeIcon icon={faGlobe} />
@@ -438,10 +473,15 @@ const Configurator: React.FC = () => {
                     </motion.div>
                   )}
                 </div>
-              </section>
+              </motion.section>
 
               {/* Addons */}
-              <section className="config-section">
+              <motion.section
+                className="config-section"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.6 }}
+              >
                 <div className="config-section-inner">
                   <h2 className="section-heading">
                     <FontAwesomeIcon icon={faPlus} />
@@ -484,10 +524,15 @@ const Configurator: React.FC = () => {
                     ))}
                   </div>
                 </div>
-              </section>
+              </motion.section>
 
               {/* Contact Form */}
-              <section className="config-section">
+              <motion.section
+                className="config-section"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.7 }}
+              >
                 <div className="config-section-inner">
                   <h2 className="section-heading">
                     <FontAwesomeIcon icon={faShoppingCart} />
@@ -565,12 +610,17 @@ const Configurator: React.FC = () => {
                     </div>
                   </form>
                 </div>
-              </section>
+              </motion.section>
             </div>
 
             {/* Sidebar - Order Summary */}
             <div className="config-sidebar">
-              <div className="order-summary-sticky">
+              <motion.div
+                className="order-summary-sticky"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.6, delay: 0.4 }}
+              >
                 <h3 className="summary-title">Shrnutí objednávky</h3>
 
                 <div className="summary-section">
@@ -643,7 +693,7 @@ const Configurator: React.FC = () => {
                     <span>SSL certifikát zdarma</span>
                   </div>
                 </div>
-              </div>
+              </motion.div>
             </div>
           </div>
         </div>

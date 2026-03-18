@@ -176,6 +176,29 @@ const Services: React.FC = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
         >
+          {/* Animated Background */}
+          <div className="services-hero-bg">
+            <div className="services-hero-grid"></div>
+            <div className="services-hero-orb services-hero-orb-1"></div>
+            <div className="services-hero-orb services-hero-orb-2"></div>
+            <div className="services-hero-orb services-hero-orb-3"></div>
+            <div className="services-hero-glow"></div>
+            <div className="services-hero-particles">
+              {[...Array(20)].map((_, i) => (
+                <span
+                  key={i}
+                  className="services-particle"
+                  style={{
+                    left: `${Math.random() * 100}%`,
+                    top: `${Math.random() * 100}%`,
+                    animationDelay: `${Math.random() * 5}s`,
+                    animationDuration: `${3 + Math.random() * 4}s`,
+                  }}
+                />
+              ))}
+            </div>
+          </div>
+
           <div className="container">
             <div className="services-hero-content">
               <motion.h1
@@ -215,6 +238,29 @@ const Services: React.FC = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8 }}
       >
+        {/* Animated Background */}
+        <div className="services-hero-bg">
+          <div className="services-hero-grid"></div>
+          <div className="services-hero-orb services-hero-orb-1"></div>
+          <div className="services-hero-orb services-hero-orb-2"></div>
+          <div className="services-hero-orb services-hero-orb-3"></div>
+          <div className="services-hero-glow"></div>
+          <div className="services-hero-particles">
+            {[...Array(20)].map((_, i) => (
+              <span
+                key={i}
+                className="services-particle"
+                style={{
+                  left: `${Math.random() * 100}%`,
+                  top: `${Math.random() * 100}%`,
+                  animationDelay: `${Math.random() * 5}s`,
+                  animationDuration: `${3 + Math.random() * 4}s`,
+                }}
+              />
+            ))}
+          </div>
+        </div>
+
         <div className="container">
           <div className="services-hero-content">
             <motion.h1
@@ -245,16 +291,18 @@ const Services: React.FC = () => {
             className="services-header"
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
+            transition={{ duration: 0.6 }}
             viewport={{ once: true }}
           >
-            <div className="services-header-icon">
-              <FontAwesomeIcon icon={faLayerGroup} />
+            <div className="services-header-content">
+              <div className="services-header-icon">
+                <FontAwesomeIcon icon={faLayerGroup} />
+              </div>
+              <h2 className="services-section-title">Přehled služeb</h2>
             </div>
-            <h2 className="services-section-title">Přehled služeb</h2>
             <button className="refresh-btn" onClick={fetchServices}>
               <FontAwesomeIcon icon={faSync} />
-              Obnovit
+              <span>Obnovit</span>
             </button>
           </motion.div>
 
@@ -438,8 +486,10 @@ const Services: React.FC = () => {
                     className="service-action-btn primary"
                     onClick={() => navigate(`/services/${service.id}`)}
                   >
-                    <FontAwesomeIcon icon={faExternalLinkAlt} />
-                    Panel
+                    <span>
+                      <FontAwesomeIcon icon={faExternalLinkAlt} />
+                      Panel
+                    </span>
                   </button>
                 </div>
               </motion.div>

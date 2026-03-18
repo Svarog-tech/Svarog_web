@@ -279,41 +279,64 @@ const ServiceDetail: React.FC = () => {
 
   return (
     <div className="sd-page">
+      {/* Animated Background */}
+      <div className="sd-bg-wrapper">
+        <div className="sd-bg-grid"></div>
+        <div className="sd-bg-orb sd-bg-orb-1"></div>
+        <div className="sd-bg-orb sd-bg-orb-2"></div>
+        <div className="sd-bg-particles">
+          {[...Array(15)].map((_, i) => (
+            <span key={i} className="sd-particle" style={{
+              left: `${Math.random() * 100}%`,
+              top: `${Math.random() * 100}%`,
+              animationDelay: `${Math.random() * 6}s`,
+              animationDuration: `${4 + Math.random() * 4}s`
+            }} />
+          ))}
+        </div>
+      </div>
+
       <div className="sd-container">
-        {/* Header */}
+        {/* Back Button */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.4 }}
         >
           <Link to="/services" className="sd-back-btn">
             <FontAwesomeIcon icon={faArrowLeft} />
             Zpět na služby
           </Link>
+        </motion.div>
 
-          <div className="sd-header-info">
-            <div className="sd-header-left">
-              <div className="sd-service-icon">
-                <FontAwesomeIcon icon={faServer} />
-              </div>
-              <div>
-                <h1 className="sd-title">{service.plan_name}</h1>
-                <p className="sd-domain">
-                  <FontAwesomeIcon icon={faGlobe} />
-                  {service.hestia_domain || 'Bez domény'}
-                </p>
-              </div>
+        {/* Header */}
+        <motion.div
+          className="sd-header-info"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.1 }}
+        >
+          <div className="sd-header-left">
+            <div className="sd-service-icon">
+              <FontAwesomeIcon icon={faServer} />
             </div>
-            <div className="sd-header-right">
-              <div className={`sd-status-badge status-${getStatusColor(service.status)}`}>
-                <FontAwesomeIcon icon={faCircle} className="sd-status-dot" />
-                {getStatusLabel(service.status)}
-              </div>
-              <button className="sd-refresh-btn" onClick={refreshAll}>
-                <FontAwesomeIcon icon={faSync} />
-                Obnovit
-              </button>
+            <div>
+              <h1 className="sd-title">{service.plan_name}</h1>
+              <p className="sd-domain">
+                <FontAwesomeIcon icon={faGlobe} />
+                {service.hestia_domain || 'Bez domény'}
+              </p>
             </div>
+          </div>
+          <div className="sd-header-right">
+            <div className={`sd-status-badge status-${getStatusColor(service.status)}`}>
+              <FontAwesomeIcon icon={faCircle} className="sd-status-dot" />
+              {getStatusLabel(service.status)}
+            </div>
+            <button className="sd-refresh-btn" onClick={refreshAll}>
+              <FontAwesomeIcon icon={faSync} />
+              Obnovit
+            </button>
           </div>
         </motion.div>
 
@@ -335,35 +358,55 @@ const ServiceDetail: React.FC = () => {
           className="sd-section"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.1 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
         >
           <h2 className="sd-section-title">
             <FontAwesomeIcon icon={faInfoCircle} />
             Přehled služby
           </h2>
           <div className="sd-overview-grid">
-            <div className="sd-overview-item">
+            <motion.div
+              className="sd-overview-item"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: 0.3 }}
+            >
               <FontAwesomeIcon icon={faMoneyBill} />
               <span className="sd-overview-label">Cena</span>
               <span className="sd-overview-value">
                 {formatPrice(service.price)} / {getBillingLabel(service.billing_period)}
               </span>
-            </div>
-            <div className="sd-overview-item">
+            </motion.div>
+            <motion.div
+              className="sd-overview-item"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: 0.4 }}
+            >
               <FontAwesomeIcon icon={faCalendarAlt} />
               <span className="sd-overview-label">Platné do</span>
               <span className="sd-overview-value">{formatDate(service.expires_at)}</span>
-            </div>
-            <div className="sd-overview-item">
+            </motion.div>
+            <motion.div
+              className="sd-overview-item"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: 0.5 }}
+            >
               <FontAwesomeIcon icon={faCalendarAlt} />
               <span className="sd-overview-label">Aktivováno</span>
               <span className="sd-overview-value">{formatDate(service.activated_at)}</span>
-            </div>
-            <div className="sd-overview-item">
+            </motion.div>
+            <motion.div
+              className="sd-overview-item"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: 0.6 }}
+            >
               <FontAwesomeIcon icon={faServer} />
               <span className="sd-overview-label">Balíček</span>
               <span className="sd-overview-value">{service.hestia_package || service.plan_name}</span>
-            </div>
+            </motion.div>
           </div>
         </motion.div>
 
@@ -372,7 +415,7 @@ const ServiceDetail: React.FC = () => {
           className="sd-section"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
+          transition={{ duration: 0.5, delay: 0.3 }}
         >
           <h2 className="sd-section-title">
             <FontAwesomeIcon icon={faHdd} />
@@ -430,7 +473,7 @@ const ServiceDetail: React.FC = () => {
             className="sd-section"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.3 }}
+            transition={{ duration: 0.5, delay: 0.4 }}
           >
             <h2 className="sd-section-title">
               <FontAwesomeIcon icon={faKey} />
@@ -489,7 +532,7 @@ const ServiceDetail: React.FC = () => {
             className="sd-section"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.4 }}
+            transition={{ duration: 0.5, delay: 0.5 }}
           >
             <h2 className="sd-section-title">
               <FontAwesomeIcon icon={faGlobe} />
@@ -523,7 +566,7 @@ const ServiceDetail: React.FC = () => {
             className="sd-section"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.5 }}
+            transition={{ duration: 0.5, delay: 0.6 }}
           >
             <h2 className="sd-section-title">
               <FontAwesomeIcon icon={faExternalLinkAlt} />
