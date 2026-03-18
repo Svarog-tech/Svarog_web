@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import React, { useState, useEffect, useRef } from 'react';
+import { motion, useInView } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
@@ -20,6 +20,64 @@ import { useCurrency } from '../contexts/CurrencyContext';
 import { getUserOrders, getAllUserHostingServices, HostingService, Order as ApiOrder } from '../lib/api';
 import Loading from '../components/Loading';
 import './Dashboard.css';
+
+// Animated counter hook (matching Hosting.tsx)
+const useAnimatedValue = (end: number, duration: number = 2000) => {
+  const [value, setValue] = useState(0);
+  const ref = useRef<HTMLDivElement>(null);
+  const isInView = useInView(ref, { once: true });
+
+  useEffect(() => {
+    if (!isInView) return;
+    let start = 0;
+    const increment = end / (duration / 16);
+    const timer = setInterval(() => {
+      start += increment;
+      if (start >= end) {
+        setValue(end);
+        clearInterval(timer);
+      } else {
+        setValue(Math.floor(start));
+      }
+    }, 16);
+    return () => clearInterval(timer);
+  }, [isInView, end, duration]);
+
+  return { value, ref };
+};
+
+// Animated Stat Component with circular progress (like Hosting.tsx)
+const AnimatedStat: React.FC<{
+  icon: any;
+  value: number;
+  label: string;
+  delay?: number;
+  isPrice?: boolean;
+  formatPrice?: (value: number) => string;
+}> = ({ icon, value, label, delay = 0, isPrice = false, formatPrice }) => {
+  const { value: animatedValue, ref } = useAnimatedValue(value);
+
+  return (
+    <motion.div
+      ref={ref}
+      className="stat-card"
+      initial={{ opacity: 0, y: 30 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, delay }}
+      viewport={{ once: true }}
+    >
+      <div className="stat-icon">
+        <FontAwesomeIcon icon={icon} />
+      </div>
+      <div className="stat-content">
+        <h3 className="stat-number">
+          {isPrice && formatPrice ? formatPrice(animatedValue) : animatedValue}
+        </h3>
+        <p className="stat-label">{label}</p>
+      </div>
+    </motion.div>
+  );
+};
 
 interface Order {
   id: number;
@@ -145,81 +203,114 @@ const Dashboard: React.FC = () => {
           </motion.button>
         </motion.div>
 
-        {/* Stats Cards */}
+        {/* Stats Cards - Animated with staggered entrance */}
         <motion.div
           className="stats-grid"
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.2 }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.5, delay: 0.3 }}
         >
-          <div className="stat-card">
-            <div className="stat-icon">
-              <FontAwesomeIcon icon={faServer} />
-            </div>
-            <div className="stat-content">
-              <h3 className="stat-number">{stats.activeServices}</h3>
-              <p className="stat-label">{t('dashboard.activeServices')}</p>
-            </div>
-          </div>
+          <AnimatedStat
+            icon={faServer}
+            value={stats.activeServices}
+            label={t('dashboard.activeServices')}
+            delay={0.4}
+          />
 
-          <div className="stat-card">
-            <div className="stat-icon">
-              <FontAwesomeIcon icon={faChartBar} />
-            </div>
-            <div className="stat-content">
-              <h3 className="stat-number">{stats.totalOrders}</h3>
-              <p className="stat-label">{t('dashboard.totalOrders')}</p>
-            </div>
-          </div>
+          <AnimatedStat
+            icon={faChartBar}
+            value={stats.totalOrders}
+            label={t('dashboard.totalOrders')}
+            delay={0.5}
+          />
 
-          <div className="stat-card">
-            <div className="stat-icon">
-              <FontAwesomeIcon icon={faCreditCard} />
-            </div>
-            <div className="stat-content">
-              <h3 className="stat-number">{formatPrice(stats.totalSpent)}</h3>
-              <p className="stat-label">{t('dashboard.totalSpent')}</p>
-            </div>
-          </div>
+          <AnimatedStat
+            icon={faCreditCard}
+            value={stats.totalSpent}
+            label={t('dashboard.totalSpent')}
+            delay={0.6}
+            isPrice={true}
+            formatPrice={formatPrice}
+          />
 
-          <div className="stat-card">
-            <div className="stat-icon">
-              <FontAwesomeIcon icon={faCalendarAlt} />
-            </div>
-            <div className="stat-content">
-              <h3 className="stat-number">
-                {profile?.created_at ? new Date(profile.created_at).getFullYear() : new Date().getFullYear().toString()}
-              </h3>
-              <p className="stat-label">{t('dashboard.customerSince')}</p>
-            </div>
-          </div>
+          <AnimatedStat
+            icon={faCalendarAlt}
+            value={profile?.created_at ? new Date(profile.created_at).getFullYear() : new Date().getFullYear()}
+            label={t('dashboard.customerSince')}
+            delay={0.7}
+          />
         </motion.div>
 
         {/* Quick Actions */}
         <motion.div
           className="quick-actions"
           initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.4 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+          viewport={{ once: true }}
         >
-          <h2 className="section-title">{t('dashboard.quickActions')}</h2>
+          <motion.h2
+            className="section-title"
+            initial={{ opacity: 0, x: -20 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5, delay: 0.3 }}
+            viewport={{ once: true }}
+          >
+            {t('dashboard.quickActions')}
+          </motion.h2>
           <div className="actions-grid">
-            <button className="action-card" onClick={() => navigate('/hosting')}>
+            <motion.button
+              className="action-card"
+              onClick={() => navigate('/hosting')}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.4 }}
+              viewport={{ once: true }}
+              whileHover={{ y: -6 }}
+              whileTap={{ scale: 0.95 }}
+            >
               <FontAwesomeIcon icon={faServer} />
               <span>{t('dashboard.newHosting')}</span>
-            </button>
-            <button className="action-card" onClick={() => navigate('/domains')}>
+            </motion.button>
+            <motion.button
+              className="action-card"
+              onClick={() => navigate('/domains')}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.5 }}
+              viewport={{ once: true }}
+              whileHover={{ y: -6 }}
+              whileTap={{ scale: 0.95 }}
+            >
               <FontAwesomeIcon icon={faGlobe} />
               <span>{t('dashboard.registerDomain')}</span>
-            </button>
-            <button className="action-card" onClick={() => navigate('/tickets')}>
+            </motion.button>
+            <motion.button
+              className="action-card"
+              onClick={() => navigate('/tickets')}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.6 }}
+              viewport={{ once: true }}
+              whileHover={{ y: -6 }}
+              whileTap={{ scale: 0.95 }}
+            >
               <FontAwesomeIcon icon={faTicket} />
               <span>{t('dashboard.createTicket')}</span>
-            </button>
-            <button className="action-card" onClick={() => navigate('/profile')}>
+            </motion.button>
+            <motion.button
+              className="action-card"
+              onClick={() => navigate('/profile')}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.7 }}
+              viewport={{ once: true }}
+              whileHover={{ y: -6 }}
+              whileTap={{ scale: 0.95 }}
+            >
               <FontAwesomeIcon icon={faUser} />
               <span>{t('dashboard.editProfile')}</span>
-            </button>
+            </motion.button>
           </div>
         </motion.div>
 
@@ -227,31 +318,72 @@ const Dashboard: React.FC = () => {
         <motion.div
           className="recent-orders"
           initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.6 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.3 }}
+          viewport={{ once: true }}
         >
           <div className="section-header">
-            <h2 className="section-title">{t('dashboard.recentOrders')}</h2>
-            <button className="view-all-btn" onClick={() => navigate('/services')}>
+            <motion.h2
+              className="section-title"
+              initial={{ opacity: 0, x: -20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.5, delay: 0.4 }}
+              viewport={{ once: true }}
+            >
+              {t('dashboard.recentOrders')}
+            </motion.h2>
+            <motion.button
+              className="view-all-btn"
+              onClick={() => navigate('/services')}
+              initial={{ opacity: 0, x: 20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.5, delay: 0.4 }}
+              viewport={{ once: true }}
+              whileHover={{ x: 3 }}
+              whileTap={{ scale: 0.95 }}
+            >
               {t('dashboard.viewAll')}
               <FontAwesomeIcon icon={faExternalLinkAlt} />
-            </button>
+            </motion.button>
           </div>
 
           {orders.length === 0 ? (
-            <div className="empty-state">
+            <motion.div
+              className="empty-state"
+              initial={{ opacity: 0, scale: 0.95 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5 }}
+              viewport={{ once: true }}
+            >
               <FontAwesomeIcon icon={faServer} />
               <h3>{t('dashboard.noOrders')}</h3>
               <p>{t('dashboard.noOrdersDescription')}</p>
-              <button className="cta-button" onClick={() => navigate('/hosting')}>
+              <motion.button
+                className="cta-button"
+                onClick={() => navigate('/hosting')}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
                 <FontAwesomeIcon icon={faPlus} />
                 {t('dashboard.orderHosting')}
-              </button>
-            </div>
+              </motion.button>
+            </motion.div>
           ) : (
             <div className="orders-list">
-              {orders.slice(0, 5).map((order) => (
-                <div key={order.id} className="order-card">
+              {orders.slice(0, 5).map((order, index) => (
+                <motion.div
+                  key={order.id}
+                  className="order-card"
+                  initial={{ opacity: 0, x: -30 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  transition={{
+                    duration: 0.5,
+                    delay: 0.5 + (index * 0.1),
+                    type: "spring",
+                    stiffness: 100
+                  }}
+                  viewport={{ once: true }}
+                >
                   <div className="order-info">
                     <h4 className="order-title">{order.plan_name}</h4>
                     <p className="order-domain">
@@ -276,14 +408,24 @@ const Dashboard: React.FC = () => {
                   </div>
 
                   <div className="order-actions">
-                    <button className="action-btn" onClick={() => navigate('/services')}>
+                    <motion.button
+                      className="action-btn"
+                      onClick={() => navigate('/services')}
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.9 }}
+                    >
                       <FontAwesomeIcon icon={faCog} />
-                    </button>
-                    <button className="action-btn" onClick={() => navigate('/services')}>
+                    </motion.button>
+                    <motion.button
+                      className="action-btn"
+                      onClick={() => navigate('/services')}
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.9 }}
+                    >
                       <FontAwesomeIcon icon={faExternalLinkAlt} />
-                    </button>
+                    </motion.button>
                   </div>
-                </div>
+                </motion.div>
               ))}
             </div>
           )}

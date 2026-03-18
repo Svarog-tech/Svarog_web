@@ -76,6 +76,30 @@ const Profile: React.FC = () => {
     { id: 'account', label: 'Účet', icon: faInfoCircle }
   ];
 
+  // Container animation variants
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+        delayChildren: 0.2
+      }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        duration: 0.5,
+        ease: [0.4, 0.0, 0.2, 1]
+      }
+    }
+  };
+
   useEffect(() => {
     if (profile || user) {
       setFormData({
@@ -321,10 +345,10 @@ const Profile: React.FC = () => {
 
   const renderPersonalTab = () => (
     <motion.div
-      initial={{ opacity: 0, y: 10 }}
+      initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -10 }}
-      transition={{ duration: 0.2 }}
+      exit={{ opacity: 0, y: -20 }}
+      transition={{ duration: 0.3, ease: "easeOut" }}
     >
       <form onSubmit={handleSubmit} className="profile-form">
         {success && (
@@ -341,10 +365,20 @@ const Profile: React.FC = () => {
           </div>
         )}
 
-        <section className="profile-section">
+        <motion.section
+          className="profile-section"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.1 }}
+        >
           <h3 className="profile-section__title">Základní údaje</h3>
 
-          <div className="profile-form__row">
+          <motion.div
+            className="profile-form__row"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: 0.15 }}
+          >
             <div className="profile-form__group">
               <label htmlFor="firstName" className="profile-form__label">
                 <FontAwesomeIcon icon={faUser} aria-hidden="true" />
@@ -374,9 +408,14 @@ const Profile: React.FC = () => {
                 placeholder="Tvoje příjmení"
               />
             </div>
-          </div>
+          </motion.div>
 
-          <div className="profile-form__group">
+          <motion.div
+            className="profile-form__group"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: 0.2 }}
+          >
             <label htmlFor="email" className="profile-form__label">
               <FontAwesomeIcon icon={faEnvelope} aria-hidden="true" />
               <span>Email</span>
@@ -390,9 +429,14 @@ const Profile: React.FC = () => {
               aria-describedby="email-hint"
             />
             <small id="email-hint" className="profile-form__hint">Email nelze změnit</small>
-          </div>
+          </motion.div>
 
-          <div className="profile-form__row">
+          <motion.div
+            className="profile-form__row"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: 0.25 }}
+          >
             <div className="profile-form__group">
               <label htmlFor="phone" className="profile-form__label">
                 <FontAwesomeIcon icon={faPhone} aria-hidden="true" />
@@ -422,9 +466,14 @@ const Profile: React.FC = () => {
                 placeholder="Název firmy"
               />
             </div>
-          </div>
+          </motion.div>
 
-          <div className="profile-form__group">
+          <motion.div
+            className="profile-form__group"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: 0.3 }}
+          >
             <label htmlFor="address" className="profile-form__label">
               <FontAwesomeIcon icon={faMapMarkerAlt} aria-hidden="true" />
               <span>Adresa</span>
@@ -437,13 +486,23 @@ const Profile: React.FC = () => {
               onChange={(e) => setFormData({ ...formData, address: e.target.value })}
               placeholder="Ulice a číslo popisné, PSČ Město"
             />
-          </div>
-        </section>
+          </motion.div>
+        </motion.section>
 
-        <section className="profile-section">
+        <motion.section
+          className="profile-section"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.35 }}
+        >
           <h3 className="profile-section__title">Fakturační údaje</h3>
 
-          <div className="profile-form__row">
+          <motion.div
+            className="profile-form__row"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: 0.4 }}
+          >
             <div className="profile-form__group">
               <label htmlFor="ico" className="profile-form__label">
                 <FontAwesomeIcon icon={faBuilding} aria-hidden="true" />
@@ -475,10 +534,15 @@ const Profile: React.FC = () => {
                 maxLength={20}
               />
             </div>
-          </div>
-        </section>
+          </motion.div>
+        </motion.section>
 
-        <div className="profile-form__actions">
+        <motion.div
+          className="profile-form__actions"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.45 }}
+        >
           <button
             type="submit"
             className="profile-btn profile-btn--primary"
@@ -487,17 +551,17 @@ const Profile: React.FC = () => {
             <FontAwesomeIcon icon={faSave} aria-hidden="true" />
             <span>{saving ? 'Ukládám...' : 'Uložit změny'}</span>
           </button>
-        </div>
+        </motion.div>
       </form>
     </motion.div>
   );
 
   const renderSecurityTab = () => (
     <motion.div
-      initial={{ opacity: 0, y: 10 }}
+      initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -10 }}
-      transition={{ duration: 0.2 }}
+      exit={{ opacity: 0, y: -20 }}
+      transition={{ duration: 0.3, ease: "easeOut" }}
       className="profile-security"
     >
       {/* 2FA Section */}
@@ -711,10 +775,10 @@ const Profile: React.FC = () => {
 
   const renderAccountTab = () => (
     <motion.div
-      initial={{ opacity: 0, y: 10 }}
+      initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -10 }}
-      transition={{ duration: 0.2 }}
+      exit={{ opacity: 0, y: -20 }}
+      transition={{ duration: 0.3, ease: "easeOut" }}
     >
       <section className="profile-card">
         <h3 className="profile-card__title" style={{ marginBottom: '1.5rem' }}>Informace o účtu</h3>
@@ -794,9 +858,9 @@ const Profile: React.FC = () => {
         {/* Header with Avatar */}
         <motion.header
           className="profile-header"
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4 }}
+          transition={{ duration: 0.5, ease: "easeOut" }}
         >
           <div className="profile-avatar">
             {profile?.avatar_url ? (
@@ -836,9 +900,9 @@ const Profile: React.FC = () => {
         {/* Tabs Navigation */}
         <motion.nav
           className="profile-tabs"
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.1 }}
+          transition={{ duration: 0.5, delay: 0.1, ease: "easeOut" }}
           role="tablist"
           aria-label="Nastavení profilu"
         >
@@ -861,9 +925,9 @@ const Profile: React.FC = () => {
         {/* Tab Content */}
         <motion.main
           className="profile-content"
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.2 }}
+          transition={{ duration: 0.5, delay: 0.2, ease: "easeOut" }}
           role="tabpanel"
           id={`panel-${activeTab}`}
           aria-labelledby={`tab-${activeTab}`}
@@ -887,9 +951,10 @@ const Profile: React.FC = () => {
             >
               <motion.div
                 className="profile-modal"
-                initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                initial={{ opacity: 0, scale: 0.9, y: 40 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                exit={{ opacity: 0, scale: 0.9, y: 40 }}
+                transition={{ duration: 0.3, ease: "easeOut" }}
                 onClick={(e) => e.stopPropagation()}
                 role="dialog"
                 aria-modal="true"
