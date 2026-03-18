@@ -29,6 +29,22 @@ export interface PaymentStatusResult {
 import { API_ROOT_URL } from '../lib/api';
 
 /**
+ * Helper: autentizovaný fetch s CSRF headerem
+ */
+function authFetch(url: string, options: RequestInit = {}): Promise<Response> {
+  return fetch(url, {
+    ...options,
+    credentials: 'include',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRF-Guard': '1',
+      ...getAuthHeader(),
+      ...(options.headers || {}),
+    },
+  });
+}
+
+/**
  * Vytvoření platby v GoPay - přes lokální proxy server
  */
 export const createGoPayPayment = async (data: PaymentData): Promise<PaymentResult> => {
@@ -44,12 +60,8 @@ export const createGoPayPayment = async (data: PaymentData): Promise<PaymentResu
       };
     }
 
-    const response = await fetch(`${API_ROOT_URL}/api/gopay/create-payment`, {
+    const response = await authFetch(`${API_ROOT_URL}/api/gopay/create-payment`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...getAuthHeader()
-      },
       body: JSON.stringify(data)
     });
 
@@ -64,12 +76,8 @@ export const createGoPayPayment = async (data: PaymentData): Promise<PaymentResu
 
     // Uložení payment_id a payment_url do databáze
     try {
-      const updateResponse = await fetch(`${API_ROOT_URL}/api/orders/${data.orderId}`, {
+      const updateResponse = await authFetch(`${API_ROOT_URL}/api/orders/${data.orderId}`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          ...getAuthHeader()
-        },
         body: JSON.stringify({
           payment_id: result.paymentId,
           payment_url: result.paymentUrl,
@@ -115,12 +123,8 @@ export const checkPaymentStatus = async (paymentId: string): Promise<PaymentStat
       };
     }
 
-    const response = await fetch(`${API_ROOT_URL}/api/gopay/check-payment`, {
+    const response = await authFetch(`${API_ROOT_URL}/api/gopay/check-payment`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...getAuthHeader()
-      },
       body: JSON.stringify({ paymentId })
     });
 
@@ -146,7 +150,7 @@ export const checkPaymentStatus = async (paymentId: string): Promise<PaymentStat
     let updatedOrder = null;
     try {
       // Najdi objednávku podle payment_id
-      const findResponse = await fetch(`${API_ROOT_URL}/api/orders?payment_id=${paymentId}`, {
+      const findResponse = await authFetch(`${API_ROOT_URL}/api/orders?payment_id=${paymentId}`, {
         method: 'GET',
         headers: {
           ...getAuthHeader()
@@ -159,7 +163,7 @@ export const checkPaymentStatus = async (paymentId: string): Promise<PaymentStat
           const orderId = findResult.orders[0].id;
           
           // Aktualizuj objednávku
-          const updateResponse = await fetch(`${API_ROOT_URL}/api/orders/${orderId}`, {
+          const updateResponse = await authFetch(`${API_ROOT_URL}/api/orders/${orderId}`, {
             method: 'PUT',
             headers: {
               'Content-Type': 'application/json',
@@ -227,7 +231,7 @@ export const cancelPayment = async (paymentId: string): Promise<{ success: boole
 
     // Aktualizace v databázi - najdi objednávku a aktualizuj
     try {
-      const findResponse = await fetch(`${API_ROOT_URL}/api/orders?payment_id=${paymentId}`, {
+      const findResponse = await authFetch(`${API_ROOT_URL}/api/orders?payment_id=${paymentId}`, {
         method: 'GET',
         headers: {
           ...getAuthHeader()
@@ -238,7 +242,7 @@ export const cancelPayment = async (paymentId: string): Promise<{ success: boole
         const findResult = await findResponse.json();
         if (findResult.orders && findResult.orders.length > 0) {
           const orderId = findResult.orders[0].id;
-          await fetch(`${API_ROOT_URL}/api/orders/${orderId}`, {
+          await authFetch(`${API_ROOT_URL}/api/orders/${orderId}`, {
             method: 'PUT',
             headers: {
               'Content-Type': 'application/json',
@@ -278,7 +282,7 @@ export const refundPayment = async (
 
     // Aktualizace v databázi - najdi objednávku a aktualizuj
     try {
-      const findResponse = await fetch(`${API_ROOT_URL}/api/orders?payment_id=${paymentId}`, {
+      const findResponse = await authFetch(`${API_ROOT_URL}/api/orders?payment_id=${paymentId}`, {
         method: 'GET',
         headers: {
           ...getAuthHeader()
@@ -289,7 +293,7 @@ export const refundPayment = async (
         const findResult = await findResponse.json();
         if (findResult.orders && findResult.orders.length > 0) {
           const orderId = findResult.orders[0].id;
-          await fetch(`${API_ROOT_URL}/api/orders/${orderId}`, {
+          await authFetch(`${API_ROOT_URL}/api/orders/${orderId}`, {
             method: 'PUT',
             headers: {
               'Content-Type': 'application/json',
