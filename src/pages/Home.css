@@ -276,16 +276,6 @@
   background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
 }
 
-.server-label {
-  position: absolute;
-  right: 1rem;
-  font-size: 0.625rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--primary-color);
-}
-
 .data-flow {
   display: flex;
   gap: 1.5rem;
@@ -296,16 +286,8 @@
   width: 2px;
   height: 40px;
   background: linear-gradient(to bottom, var(--primary-color), transparent);
-  animation: flow-animation 1.5s ease-in-out infinite;
 }
 
-.flow-line:nth-child(2) { animation-delay: 0.3s; }
-.flow-line:nth-child(3) { animation-delay: 0.6s; }
-
-@keyframes flow-animation {
-  0%, 100% { opacity: 0.3; height: 30px; }
-  50% { opacity: 1; height: 50px; }
-}
 
 .server-metrics {
   display: flex;
@@ -325,17 +307,8 @@
   font-size: 0.875rem;
   font-weight: 500;
   color: var(--text-primary);
-  animation: float 3s ease-in-out infinite;
 }
 
-.metric-bubble:nth-child(1) { animation-delay: 0s; }
-.metric-bubble:nth-child(2) { animation-delay: 0.5s; }
-.metric-bubble:nth-child(3) { animation-delay: 1s; }
-
-@keyframes float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-5px); }
-}
 
 .metric-bubble svg {
   color: var(--primary-color);

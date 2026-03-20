@@ -68,7 +68,6 @@ const ServerDiagram: React.FC = () => {
         <div className="server-icon">
           <FontAwesomeIcon icon={faServer} />
         </div>
-        <span className="server-label">Your VPS</span>
       </div>
 
       <svg className="connection-lines" viewBox="0 0 400 400" preserveAspectRatio="none">

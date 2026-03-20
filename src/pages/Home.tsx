@@ -280,7 +280,6 @@ const ServerVisualization: React.FC = () => {
             <div className="slot active"></div>
             <div className="slot active"></div>
           </div>
-          <div className="server-label">{t('landing.server.yourVps')}</div>
         </div>
       </div>
       <div className="data-flow">
