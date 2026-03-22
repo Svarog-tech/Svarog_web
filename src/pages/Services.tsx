@@ -61,11 +61,12 @@ const Services: React.FC = () => {
   const fetchServices = async () => {
     try {
       setLoading(true);
-      // Získej hosting služby s HestiaCP údaji
-      const hostingResult = await getAllUserHostingServices({ limit: 100 });
+      // Získej hosting služby a objednávky paralelně
+      const [hostingResult, orders] = await Promise.all([
+        getAllUserHostingServices({ limit: 100 }),
+        getUserOrders(),
+      ]);
       const hostingServices = hostingResult.data;
-      // Získej objednávky pro doplnění údajů
-      const orders = await getUserOrders();
 
       // Spoj data - hosting služby mají HestiaCP údaje
       const servicesData = hostingServices.map((service: HostingService) => {
@@ -94,22 +95,48 @@ const Services: React.FC = () => {
       const response = await fetch(`${API_BASE_URL}/orders/${orderId}/invoice`, {
         method: 'GET',
         headers: {
+          'X-CSRF-Guard': '1',
           ...getAuthHeader(),
         },
+        credentials: 'include',
       });
 
       const html = await response.text();
 
-      const win = window.open('', '_blank');
-      if (win) {
-        win.document.open();
-        win.document.write(html);
-        win.document.close();
-      } else {
-        console.error('Unable to open invoice window');
-      }
+      // SECURITY: Blob URL místo document.write — zabraňuje XSS z nekontrolovaného HTML
+      const blob = new Blob([html], { type: 'text/html' });
+      const blobUrl = URL.createObjectURL(blob);
+      window.open(blobUrl, '_blank');
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
     } catch (error) {
       console.error('Error downloading invoice:', error);
+    }
+  };
+
+  const handleDownloadPdfInvoice = async (orderId: number) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/orders/${orderId}/invoice?format=pdf`, {
+        method: 'GET',
+        headers: {
+          'X-CSRF-Guard': '1',
+          ...getAuthHeader(),
+        },
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to download PDF invoice');
+      }
+
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `faktura-${orderId}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error downloading PDF invoice:', error);
     }
   };
 
@@ -474,13 +501,24 @@ const Services: React.FC = () => {
                     Spravovat
                   </button>
                   {service.order_id && service.status === 'active' && (
-                    <button
-                      className="service-action-btn secondary"
-                      onClick={() => handleDownloadInvoice(service.order_id)}
-                    >
-                      <FontAwesomeIcon icon={faMoneyBill} />
-                      Faktura
-                    </button>
+                    <>
+                      <button
+                        className="service-action-btn secondary"
+                        onClick={() => handleDownloadInvoice(service.order_id)}
+                        title="Faktura (HTML)"
+                      >
+                        <FontAwesomeIcon icon={faMoneyBill} />
+                        Faktura
+                      </button>
+                      <button
+                        className="service-action-btn secondary"
+                        onClick={() => handleDownloadPdfInvoice(service.order_id)}
+                        title="Faktura (PDF)"
+                      >
+                        <FontAwesomeIcon icon={faMoneyBill} />
+                        PDF
+                      </button>
+                    </>
                   )}
                   <button
                     className="service-action-btn primary"

@@ -42,8 +42,8 @@ const DomainsSimple: React.FC = () => {
 
       const results = await searchDomains(searchDomain, extensionsToCheck);
       setSearchResults(results);
-    } catch (error: any) {
-      setError(error.message || 'Došlo k chybě při vyhledávání domén');
+    } catch (error: unknown) {
+      setError(error instanceof Error ? error.message : 'Došlo k chybě při vyhledávání domén');
     } finally {
       setIsSearching(false);
     }

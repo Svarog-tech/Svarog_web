@@ -114,75 +114,34 @@ const AssistantChat: React.FC = () => {
     setIsLoading(true);
 
     try {
-      const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+      const conversationHistory = [
+        ...messages.map(msg => ({
+          role: msg.role,
+          content: msg.content
+        })),
+        { role: 'user' as const, content: userMessage.content }
+      ];
 
-      if (!apiKey) {
-        throw new Error('Gemini API key not configured');
-      }
-
-      const conversationHistory = messages.map(msg => ({
-        role: msg.role === 'user' ? 'user' : 'model',
-        parts: [{ text: msg.content }]
-      }));
-
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            contents: [
-              {
-                role: 'user',
-                parts: [{ text: SYSTEM_PROMPT }]
-              },
-              {
-                role: 'model',
-                parts: [{ text: 'Understood. I am the Alatyr Hosting AI assistant and will help customers with their hosting questions.' }]
-              },
-              ...conversationHistory,
-              {
-                role: 'user',
-                parts: [{ text: userMessage.content }]
-              }
-            ],
-            generationConfig: {
-              temperature: 0.7,
-              topK: 40,
-              topP: 0.95,
-              maxOutputTokens: 1024,
-            },
-            safetySettings: [
-              {
-                category: 'HARM_CATEGORY_HARASSMENT',
-                threshold: 'BLOCK_MEDIUM_AND_ABOVE'
-              },
-              {
-                category: 'HARM_CATEGORY_HATE_SPEECH',
-                threshold: 'BLOCK_MEDIUM_AND_ABOVE'
-              },
-              {
-                category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
-                threshold: 'BLOCK_MEDIUM_AND_ABOVE'
-              },
-              {
-                category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
-                threshold: 'BLOCK_MEDIUM_AND_ABOVE'
-              }
-            ]
-          })
-        }
-      );
+      const response = await fetch('/api/chat/gemini', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-Guard': '1',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          messages: conversationHistory,
+          systemPrompt: SYSTEM_PROMPT,
+        })
+      });
 
       if (!response.ok) {
         throw new Error(`API request failed: ${response.status}`);
       }
 
       const data = await response.json();
-      const assistantContent = data.candidates?.[0]?.content?.parts?.[0]?.text ||
-        (language === 'cs' ? 'Omlouvam se, nepodarilo se mi odpovedet. Zkuste to prosim znovu.' : 'Sorry, I couldn\'t generate a response. Please try again.');
+      const assistantContent = data.text ||
+        (language === 'cs' ? 'Omlouvám se, nepodařilo se mi odpovědět. Zkuste to prosím znovu.' : 'Sorry, I couldn\'t generate a response. Please try again.');
 
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),

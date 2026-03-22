@@ -64,8 +64,8 @@ const DomainManager: React.FC = () => {
       setError(null);
       const data = await getWebDomains(Number(id));
       setDomains(data);
-    } catch (err: any) {
-      setError(err.message || 'Nepodařilo se načíst domény');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Nepodařilo se načíst domény');
     }
   }, [id]);
 
@@ -75,8 +75,8 @@ const DomainManager: React.FC = () => {
       const detail = await getWebDomainInfo(Number(id!), domain.domain);
       setSelectedDomain(detail);
       setShowDomainDetail(true);
-    } catch (err: any) {
-      showError(err.message || 'Nepodařilo se načíst detail domény');
+    } catch (err: unknown) {
+      showError(err instanceof Error ? err.message : 'Nepodařilo se načíst detail domény');
     } finally {
       setLoadingDomain(null);
     }
@@ -117,7 +117,7 @@ const DomainManager: React.FC = () => {
       <div className="dm-topbar">
         <h1 className="dm-topbar-title">Správa Domén</h1>
         <div className="dm-toolbar">
-          <button className="dm-toolbar-btn" onClick={fetchDomains} title="Obnovit">
+          <button className="dm-toolbar-btn" onClick={fetchDomains} title="Obnovit" aria-label="Obnovit seznam domén">
             <FontAwesomeIcon icon={faSync} />
           </button>
         </div>

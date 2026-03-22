@@ -363,10 +363,33 @@ const FAQTerminal: React.FC<{ t: (key: string) => string }> = ({ t }) => {
   const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
 
   const faqItems = [
+    // Hosting
     { question: 'support.faq.q1.question', answer: 'support.faq.q1.answer' },
     { question: 'support.faq.q2.question', answer: 'support.faq.q2.answer' },
     { question: 'support.faq.q3.question', answer: 'support.faq.q3.answer' },
-    { question: 'support.faq.q4.question', answer: 'support.faq.q4.answer' }
+    { question: 'support.faq.q4.question', answer: 'support.faq.q4.answer' },
+    { question: 'support.faq.q5.question', answer: 'support.faq.q5.answer' },
+    { question: 'support.faq.q6.question', answer: 'support.faq.q6.answer' },
+    { question: 'support.faq.q7.question', answer: 'support.faq.q7.answer' },
+    { question: 'support.faq.q8.question', answer: 'support.faq.q8.answer' },
+    { question: 'support.faq.q9.question', answer: 'support.faq.q9.answer' },
+    { question: 'support.faq.q10.question', answer: 'support.faq.q10.answer' },
+    // E-mail
+    { question: 'support.faq.q11.question', answer: 'support.faq.q11.answer' },
+    { question: 'support.faq.q12.question', answer: 'support.faq.q12.answer' },
+    { question: 'support.faq.q13.question', answer: 'support.faq.q13.answer' },
+    // DNS & Domeny
+    { question: 'support.faq.q14.question', answer: 'support.faq.q14.answer' },
+    { question: 'support.faq.q15.question', answer: 'support.faq.q15.answer' },
+    { question: 'support.faq.q16.question', answer: 'support.faq.q16.answer' },
+    // Platby & Fakturace
+    { question: 'support.faq.q17.question', answer: 'support.faq.q17.answer' },
+    { question: 'support.faq.q18.question', answer: 'support.faq.q18.answer' },
+    { question: 'support.faq.q19.question', answer: 'support.faq.q19.answer' },
+    { question: 'support.faq.q20.question', answer: 'support.faq.q20.answer' },
+    // Bezpecnost
+    { question: 'support.faq.q21.question', answer: 'support.faq.q21.answer' },
+    { question: 'support.faq.q22.question', answer: 'support.faq.q22.answer' },
   ];
 
   const toggleFaq = (index: number) => {
@@ -451,6 +474,126 @@ const Support: React.FC = () => {
         title={`${t('support.meta.title')} | Alatyr Hosting`}
         description={t('support.meta.description')}
         path="/support"
+        breadcrumbs={[
+          { name: 'Alatyr Hosting', url: '/' },
+          { name: t('support.meta.title'), url: '/support' }
+        ]}
+        jsonLd={{
+          '@context': 'https://schema.org',
+          '@type': 'FAQPage',
+          'mainEntity': [
+            {
+              '@type': 'Question',
+              'name': 'Jak rychle je můj hosting aktivován?',
+              'acceptedAnswer': { '@type': 'Answer', 'text': 'Hosting je automaticky aktivován během několika minut po dokončení platby.' }
+            },
+            {
+              '@type': 'Question',
+              'name': 'Mohu migrovat svůj existující web?',
+              'acceptedAnswer': { '@type': 'Answer', 'text': 'Ano, poskytujeme bezplatnou migraci vašeho webu z jiného poskytovatele.' }
+            },
+            {
+              '@type': 'Question',
+              'name': 'Jaká je uptime záruka?',
+              'acceptedAnswer': { '@type': 'Answer', 'text': 'Garantujeme 99.9% uptime. V případě neplnění vám vrátíme poměrnou část platby.' }
+            },
+            {
+              '@type': 'Question',
+              'name': 'Mohu upgradovat svůj plán později?',
+              'acceptedAnswer': { '@type': 'Answer', 'text': 'Ano, můžete kdykoliv upgradovat na vyšší plán bez výpadku služeb.' }
+            },
+            {
+              '@type': 'Question',
+              'name': 'Jak nastavím vlastní doménu?',
+              'acceptedAnswer': { '@type': 'Answer', 'text': 'Vlastní doménu nastavíte v sekci Domény v administračním panelu. Stačí přidat doménu a nasměrovat DNS záznamy na naše servery.' }
+            },
+            {
+              '@type': 'Question',
+              'name': 'Jak získám SSL certifikát?',
+              'acceptedAnswer': { '@type': 'Answer', 'text': 'SSL certifikát Let\'s Encrypt je automaticky vydán a obnoven pro všechny domény na našem hostingu zdarma.' }
+            },
+            {
+              '@type': 'Question',
+              'name': 'Jaké PHP verze podporujete?',
+              'acceptedAnswer': { '@type': 'Answer', 'text': 'Podporujeme PHP verze 7.4, 8.0, 8.1, 8.2 a 8.3. Verzi můžete přepínat v administračním panelu.' }
+            },
+            {
+              '@type': 'Question',
+              'name': 'Podporujete Node.js?',
+              'acceptedAnswer': { '@type': 'Answer', 'text': 'Ano, podporujeme Node.js aplikace. Můžete je nasadit přes administrační panel nebo přes SSH přístup.' }
+            },
+            {
+              '@type': 'Question',
+              'name': 'Jak se připojím přes FTP?',
+              'acceptedAnswer': { '@type': 'Answer', 'text': 'FTP přístupové údaje naleznete v detailu vaší služby v panelu. Doporučujeme používat SFTP pro bezpečnější přenos souborů.' }
+            },
+            {
+              '@type': 'Question',
+              'name': 'Jak vytvořím databázi?',
+              'acceptedAnswer': { '@type': 'Answer', 'text': 'Databázi vytvoříte v sekci Databáze v administračním panelu. Podporujeme MySQL/MariaDB a PostgreSQL.' }
+            },
+            {
+              '@type': 'Question',
+              'name': 'Jak vytvořím e-mailový účet?',
+              'acceptedAnswer': { '@type': 'Answer', 'text': 'E-mailový účet vytvoříte v sekci E-maily v administračním panelu. Zadejte požadovanou adresu a heslo.' }
+            },
+            {
+              '@type': 'Question',
+              'name': 'Jaká je maximální velikost přílohy?',
+              'acceptedAnswer': { '@type': 'Answer', 'text': 'Maximální velikost přílohy e-mailu je 25 MB. Pro větší soubory doporučujeme použít sdílení přes odkaz.' }
+            },
+            {
+              '@type': 'Question',
+              'name': 'Mohu přistupovat k e-mailu přes IMAP/POP3?',
+              'acceptedAnswer': { '@type': 'Answer', 'text': 'Ano, podporujeme IMAP i POP3 protokol. Nastavení naleznete v detailu e-mailového účtu v administračním panelu.' }
+            },
+            {
+              '@type': 'Question',
+              'name': 'Jak nastavím DNS záznamy?',
+              'acceptedAnswer': { '@type': 'Answer', 'text': 'DNS záznamy spravujete v sekci DNS v administračním panelu. Můžete přidávat A, AAAA, CNAME, MX, TXT a další záznamy.' }
+            },
+            {
+              '@type': 'Question',
+              'name': 'Jak přenesu doménu k vám?',
+              'acceptedAnswer': { '@type': 'Answer', 'text': 'Pro přenos domény potřebujete autorizační kód (EPP) od současného registrátora. Přenos zadáte v sekci Domény.' }
+            },
+            {
+              '@type': 'Question',
+              'name': 'Jak dlouho trvá registrace domény?',
+              'acceptedAnswer': { '@type': 'Answer', 'text': 'Registrace nové domény je obvykle dokončena do několika minut. Přenos existující domény může trvat 5-7 dní.' }
+            },
+            {
+              '@type': 'Question',
+              'name': 'Jaké platební metody přijímáte?',
+              'acceptedAnswer': { '@type': 'Answer', 'text': 'Přijímáme platby kartou (Visa, Mastercard), PayPal, GoPay a bankovním převodem.' }
+            },
+            {
+              '@type': 'Question',
+              'name': 'Mohu získat fakturu?',
+              'acceptedAnswer': { '@type': 'Answer', 'text': 'Ano, faktury jsou automaticky generovány po zaplacení. Naleznete je v sekci Fakturace ve formátu HTML i PDF.' }
+            },
+            {
+              '@type': 'Question',
+              'name': 'Co se stane po vypršení služby?',
+              'acceptedAnswer': { '@type': 'Answer', 'text': 'Po vypršení služby máte 7denní ochrannou lhůtu, během které můžete službu obnovit. Poté jsou data smazána.' }
+            },
+            {
+              '@type': 'Question',
+              'name': 'Nabízíte vrácení peněz?',
+              'acceptedAnswer': { '@type': 'Answer', 'text': 'Ano, nabízíme 30denní garanci vrácení peněz. Pokud nejste spokojeni, kontaktujte naši podporu.' }
+            },
+            {
+              '@type': 'Question',
+              'name': 'Jak je můj hosting zabezpečen?',
+              'acceptedAnswer': { '@type': 'Answer', 'text': 'Používáme firewall, DDoS ochranu, automatické bezpečnostní aktualizace a izolaci účtů pro maximální bezpečnost.' }
+            },
+            {
+              '@type': 'Question',
+              'name': 'Jak fungují zálohy?',
+              'acceptedAnswer': { '@type': 'Answer', 'text': 'Automatické zálohy probíhají denně a uchováváme je po dobu 7 dní. Zálohu můžete obnovit z administračního panelu.' }
+            }
+          ]
+        }}
       />
       <main className="support-page">
         {/* Hero Section - Command Center Entry */}

@@ -82,7 +82,8 @@ export async function searchDomains(
   try {
     const response = await fetch('/api/domains/check', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'X-CSRF-Guard': '1' },
+      credentials: 'include',
       body: JSON.stringify({ domains }),
     });
 
@@ -93,8 +94,8 @@ export async function searchDomains(
 
     const data = await response.json();
     return { searchedDomain: baseName, results: data.results };
-  } catch (error: any) {
-    if (error.message === 'Failed to fetch') {
+  } catch (error: unknown) {
+    if (error instanceof Error && error.message === 'Failed to fetch') {
       return {
         searchedDomain: baseName,
         results: domains.map((domain) => ({

@@ -8,7 +8,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import './Footer.css';
 
 const Footer: React.FC = () => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
 
   return (
     <footer className="modern-footer">
@@ -80,6 +80,7 @@ const Footer: React.FC = () => {
                   <li><Link to="/hosting" className="footer-link">{t('nav.hosting')}</Link></li>
                   <li><Link to="/domains" className="footer-link">{t('nav.domains')}</Link></li>
                   <li><Link to="/support" className="footer-link">{t('footer.liveSupport')}</Link></li>
+                  <li><Link to="/kb" className="footer-link">Nápověda</Link></li>
                 </ul>
               </div>
 
@@ -92,6 +93,7 @@ const Footer: React.FC = () => {
                     <li><Link to="/terms" className="footer-link">{t('footer.terms')}</Link></li>
                     <li><Link to="/aml" className="footer-link">{t('footer.aml')}</Link></li>
                     <li><Link to="/security-incidents" className="footer-link">{t('footer.securityIncidents')}</Link></li>
+                    <li><Link to="/status" className="footer-link">{language === 'cs' ? 'Stav slu\u017eeb' : 'Service Status'}</Link></li>
                 </ul>
               </div>
 

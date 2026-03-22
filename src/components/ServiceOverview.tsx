@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useState, useEffect } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -19,18 +19,62 @@ import {
   faFolder,
   faShieldAlt,
   faExclamationTriangle,
+  faExclamationCircle,
   faInfoCircle,
   faGlobe,
-  faServer
+  faServer,
+  faBell
 } from '@fortawesome/free-solid-svg-icons';
 import { useCurrency } from '../contexts/CurrencyContext';
 import type { ControlPanelContext } from './ControlPanel';
+import { getServiceAlerts, acknowledgeAlert, type ServiceAlert } from '../lib/api';
+import UsageChart from './UsageChart';
 import '../pages/ServiceDetail.css';
+
+const ALERT_TYPE_LABELS: Record<string, string> = {
+  disk_limit: 'Disk',
+  bandwidth_limit: 'Přenos dat',
+  email_limit: 'E-maily',
+  database_limit: 'Databáze',
+  domain_limit: 'Domény',
+  cpu_high: 'CPU',
+  memory_high: 'Paměť',
+};
 
 const ServiceOverview: React.FC = () => {
   const { service, stats, statsLoading, refreshStats } = useOutletContext<ControlPanelContext>();
   const { formatPrice } = useCurrency();
   const [copiedField, setCopiedField] = useState<string | null>(null);
+  const [alerts, setAlerts] = useState<ServiceAlert[]>([]);
+  const [alertsLoading, setAlertsLoading] = useState(false);
+
+  useEffect(() => {
+    if (!service?.id) return;
+    const controller = new AbortController();
+    setAlertsLoading(true);
+    getServiceAlerts(service.id)
+      .then((result) => {
+        if (!controller.signal.aborted) {
+          setAlerts(result.filter((a) => !a.acknowledged));
+        }
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) setAlerts([]);
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setAlertsLoading(false);
+      });
+    return () => controller.abort();
+  }, [service?.id]);
+
+  const handleAcknowledgeAlert = async (alert: ServiceAlert) => {
+    try {
+      await acknowledgeAlert(service.id, alert.id);
+      setAlerts((prev) => prev.filter((a) => a.id !== alert.id));
+    } catch (err) {
+      console.error('Failed to acknowledge alert:', err);
+    }
+  };
 
   const copyToClipboard = useCallback(async (text: string, fieldName: string) => {
     try {
@@ -105,6 +149,7 @@ const ServiceOverview: React.FC = () => {
             className={`sd-copy-btn ${copiedField === label ? 'copied' : ''}`}
             onClick={() => copyToClipboard(value, label)}
             title="Kopírovat"
+            aria-label={`Kopírovat ${label}`}
           >
             <FontAwesomeIcon icon={copiedField === label ? faCheck : faCopy} />
           </button>
@@ -222,7 +267,7 @@ const ServiceOverview: React.FC = () => {
             <FontAwesomeIcon icon={faHdd} />
             Využití zdrojů
           </h2>
-          <button className="so-refresh-btn" onClick={refreshStats} title="Obnovit statistiky">
+          <button className="so-refresh-btn" onClick={refreshStats} title="Obnovit statistiky" aria-label="Obnovit statistiky">
             <FontAwesomeIcon icon={faSync} />
           </button>
         </div>
@@ -271,6 +316,84 @@ const ServiceOverview: React.FC = () => {
           </div>
         )}
       </motion.div>
+
+      {/* Usage Charts */}
+      {stats && service.hestia_created && (
+        <motion.div
+          className="sd-section"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.15 }}
+        >
+          <h2 className="sd-section-title">
+            <FontAwesomeIcon icon={faHdd} />
+            Historie využití
+          </h2>
+          <div className="sd-stats-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))' }}>
+            <UsageChart serviceId={service.id} metric="disk" title="Diskový prostor" />
+            <UsageChart serviceId={service.id} metric="bandwidth" title="Přenos dat" />
+          </div>
+        </motion.div>
+      )}
+
+      {/* Service Alerts */}
+      {alerts.length > 0 && (
+        <motion.div
+          className="sd-section"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.18 }}
+        >
+          <h2 className="sd-section-title">
+            <FontAwesomeIcon icon={faBell} />
+            Upozornění ({alerts.length})
+          </h2>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+            {alerts.map((alert) => (
+              <div
+                key={alert.id}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.75rem',
+                  padding: '0.75rem 1rem',
+                  background: alert.severity === 'critical' ? 'rgba(239, 68, 68, 0.1)' : 'rgba(245, 158, 11, 0.1)',
+                  border: `1px solid ${alert.severity === 'critical' ? 'rgba(239, 68, 68, 0.3)' : 'rgba(245, 158, 11, 0.3)'}`,
+                  borderRadius: '10px',
+                }}
+              >
+                <FontAwesomeIcon
+                  icon={alert.severity === 'critical' ? faExclamationCircle : faExclamationTriangle}
+                  style={{ color: alert.severity === 'critical' ? 'var(--danger-color)' : 'var(--warning-color)', fontSize: '1.1rem' }}
+                />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--text-primary)' }}>
+                    {ALERT_TYPE_LABELS[alert.alert_type] || alert.alert_type}
+                  </div>
+                  <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                    Aktuální: <strong>{alert.current_value}</strong> / Limit: {alert.threshold_value}
+                  </div>
+                </div>
+                <button
+                  onClick={() => handleAcknowledgeAlert(alert)}
+                  style={{
+                    background: 'none',
+                    border: '1px solid var(--border-light)',
+                    borderRadius: '6px',
+                    padding: '4px 12px',
+                    fontSize: '0.78rem',
+                    fontWeight: 600,
+                    color: 'var(--text-secondary)',
+                    cursor: 'pointer',
+                  }}
+                >
+                  Potvrdit
+                </button>
+              </div>
+            ))}
+          </div>
+        </motion.div>
+      )}
 
       {/* Access Credentials */}
       {service.hestia_created && (

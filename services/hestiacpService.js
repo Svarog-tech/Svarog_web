@@ -494,6 +494,48 @@ class HestiaCP {
   }
 
   /**
+   * SECURITY: Bezpečný zápis obsahu do souboru.
+   * Validuje base64 obsah a shell-safe quotuje cestu. Veškerá sanitizace je zde,
+   * volající nemusí řešit shell escaping.
+   * @param {string} username - HestiaCP username
+   * @param {string} filePath - Cílová cesta k souboru (již sanitizovaná)
+   * @param {Buffer} contentBuffer - Obsah souboru jako Buffer
+   * @returns {Promise<{success: boolean, error?: string}>}
+   */
+  async writeFileContent(username, filePath, contentBuffer) {
+    // SECURITY: Validace username — pouze alfanumerické + underscore/dash
+    if (!/^[a-zA-Z0-9_-]+$/.test(username)) {
+      return { success: false, error: 'Invalid username format' };
+    }
+
+    // SECURITY: Validace filePath — nesmí obsahovat null bytes nebo ..
+    if (filePath.includes('\0') || filePath.includes('..')) {
+      return { success: false, error: 'Invalid file path' };
+    }
+
+    // Base64 encode
+    const base64 = contentBuffer.toString('base64');
+
+    // SECURITY: Validace base64 — smí obsahovat POUZE [A-Za-z0-9+/=]
+    // Tato validace zaručuje že obsah nemůže být zneužit pro shell injection
+    if (!/^[A-Za-z0-9+/=]*$/.test(base64)) {
+      return { success: false, error: 'Internal encoding error' };
+    }
+
+    // SECURITY: Shell-safe path quoting — single quotes + escape apostrofů uvnitř
+    const shellSafePath = "'" + filePath.replace(/'/g, "'\\''") + "'";
+
+    // SECURITY: printf + validated base64 + quoted path
+    // base64 je bezpečný (jen [A-Za-z0-9+/=]), cesta je single-quote quotovaná
+    const result = await this.callAPI('v-run-cmd', [
+      username,
+      `printf '%s' '${base64}' | base64 -d > ${shellSafePath}`
+    ]);
+
+    return result;
+  }
+
+  /**
    * Vytvoří adresář
    * @param {string} username
    * @param {string} dirPath

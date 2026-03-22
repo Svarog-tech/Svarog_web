@@ -212,7 +212,7 @@ const BackupManager: React.FC = () => {
             <span>{creating ? 'Vytváření...' : 'Nová záloha'}</span>
           </button>
           <div className="bkm-toolbar-sep" />
-          <button className="bkm-toolbar-btn" onClick={fetchBackups} title="Obnovit">
+          <button className="bkm-toolbar-btn" onClick={fetchBackups} title="Obnovit" aria-label="Obnovit seznam záloh">
             <FontAwesomeIcon icon={faSync} />
           </button>
         </div>

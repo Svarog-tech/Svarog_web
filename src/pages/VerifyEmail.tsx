@@ -38,7 +38,9 @@ const VerifyEmail: React.FC = () => {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            'X-CSRF-Guard': '1',
           },
+          credentials: 'include',
           body: JSON.stringify({ token }),
         });
 

@@ -10,11 +10,13 @@ import {
   faSignOutAlt,
   faServer,
   faTicket,
-  faUserShield
+  faUserShield,
+  faHandshake
 } from '@fortawesome/free-solid-svg-icons';
 import LanguageSwitcher from './LanguageSwitcher';
 import CurrencySwitcher from './CurrencySwitcher';
 import ThemeToggle from './ThemeToggle';
+import AlertBell from './AlertBell';
 import './MobileMenu.css';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -236,6 +238,7 @@ const Header: React.FC = () => {
                     <span>{t('nav.login')}</span>
                   </motion.button>
                 )}
+                {user && <AlertBell />}
                 <ThemeToggle />
                 <CurrencySwitcher />
                 <LanguageSwitcher />
@@ -379,6 +382,12 @@ const Header: React.FC = () => {
                   </Link>
                 </li>
                 <li>
+                  <Link to="/affiliate" className={isActive('/affiliate') ? 'active' : ''} onClick={() => setIsMobileMenuOpen(false)}>
+                    <FontAwesomeIcon icon={faHandshake} />
+                    Affiliate
+                  </Link>
+                </li>
+                <li>
                   <Link to="/profile" className={isActive('/profile') ? 'active' : ''} onClick={() => setIsMobileMenuOpen(false)}>
                     <FontAwesomeIcon icon={faCog} />
                     {t('header.settings')}
@@ -456,6 +465,10 @@ const Header: React.FC = () => {
             <Link to="/tickets" className="profile-menu-item" onClick={() => setIsProfileOpen(false)}>
               <FontAwesomeIcon icon={faTicket} />
               {t('header.supportTickets')}
+            </Link>
+            <Link to="/affiliate" className="profile-menu-item" onClick={() => setIsProfileOpen(false)}>
+              <FontAwesomeIcon icon={faHandshake} />
+              Affiliate
             </Link>
             <Link to="/profile" className="profile-menu-item" onClick={() => setIsProfileOpen(false)}>
               <FontAwesomeIcon icon={faCog} />

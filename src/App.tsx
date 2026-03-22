@@ -14,6 +14,7 @@ import ScrollToTop from './components/ScrollToTop';
 import TriangularBackground from './components/TriangularBackground';
 import ProtectedRoute from './components/ProtectedRoute';
 import ErrorBoundary from './components/ErrorBoundary';
+import PageErrorBoundary from './components/PageErrorBoundary';
 import Loading from './components/Loading';
 
 // Lazy-loaded pages – každá stránka se načte až když ji uživatel navštíví
@@ -46,6 +47,13 @@ const Admin = lazy(() => import('./pages/Admin'));
 const AdminTickets = lazy(() => import('./pages/AdminTickets'));
 const AdminUsers = lazy(() => import('./pages/AdminUsers'));
 const AdminHestiaCP = lazy(() => import('./pages/AdminHestiaCP'));
+const AdminPromo = lazy(() => import('./pages/AdminPromo'));
+const AdminEmailTemplates = lazy(() => import('./pages/AdminEmailTemplates'));
+const AdminAnalytics = lazy(() => import('./pages/AdminAnalytics'));
+const AdminTax = lazy(() => import('./pages/AdminTax'));
+const Affiliate = lazy(() => import('./pages/Affiliate'));
+const AdminAffiliate = lazy(() => import('./pages/AdminAffiliate'));
+const Billing = lazy(() => import('./pages/Billing'));
 const PaymentSuccess = lazy(() => import('./pages/PaymentSuccess'));
 const VerifyEmail = lazy(() => import('./pages/VerifyEmail'));
 const NotFound = lazy(() => import('./pages/NotFound'));
@@ -54,6 +62,8 @@ const Contact = lazy(() => import('./pages/Contact'));
 const Terms = lazy(() => import('./pages/Terms'));
 const AMLPolicy = lazy(() => import('./pages/AMLPolicy'));
 const SecurityIncidents = lazy(() => import('./pages/SecurityIncidents'));
+const KnowledgeBase = lazy(() => import('./pages/KnowledgeBase'));
+const Status = lazy(() => import('./pages/Status'));
 
 function App() {
   return (
@@ -83,6 +93,10 @@ function App() {
                       <Route path="/aml" element={<AMLPolicy />} />
                       <Route path="/security-incidents" element={<SecurityIncidents />} />
                       <Route path="/contact" element={<Contact />} />
+                      <Route path="/status" element={<Status />} />
+                      <Route path="/kb" element={<KnowledgeBase />} />
+                      <Route path="/kb/:categorySlug" element={<KnowledgeBase />} />
+                      <Route path="/kb/article/:articleSlug" element={<KnowledgeBase />} />
                       <Route path="/register" element={<Register />} />
                       <Route path="/login" element={<Login />} />
                       <Route path="/forgot-password" element={<ForgotPassword />} />
@@ -92,11 +106,11 @@ function App() {
                       <Route path="/verify-email" element={<VerifyEmail />} />
 
                       {/* Protected routes */}
-                      <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-                      <Route path="/services" element={<ProtectedRoute><Services /></ProtectedRoute>} />
-                      <Route path="/services/:id" element={<ProtectedRoute><ControlPanel /></ProtectedRoute>}>
+                      <Route path="/dashboard" element={<ProtectedRoute><PageErrorBoundary pageName="Dashboard"><Dashboard /></PageErrorBoundary></ProtectedRoute>} />
+                      <Route path="/services" element={<ProtectedRoute><PageErrorBoundary pageName="Services"><Services /></PageErrorBoundary></ProtectedRoute>} />
+                      <Route path="/services/:id" element={<ProtectedRoute><PageErrorBoundary pageName="ControlPanel"><ControlPanel /></PageErrorBoundary></ProtectedRoute>}>
                         <Route index element={<ServiceOverview />} />
-                        <Route path="files" element={<FileManager />} />
+                        <Route path="files" element={<PageErrorBoundary pageName="FileManager"><FileManager /></PageErrorBoundary>} />
                         <Route path="emails" element={<EmailManager />} />
                         <Route path="domains" element={<DomainManager />} />
                         <Route path="databases" element={<DatabaseManager />} />
@@ -105,15 +119,22 @@ function App() {
                         <Route path="backups" element={<BackupManager />} />
                         <Route path="cron" element={<CronJobsManager />} />
                       </Route>
-                      <Route path="/tickets" element={<ProtectedRoute allowGuest><Tickets /></ProtectedRoute>} />
-                      <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-                      <Route path="/configurator" element={<ProtectedRoute><Configurator /></ProtectedRoute>} />
+                      <Route path="/tickets" element={<ProtectedRoute allowGuest><PageErrorBoundary pageName="Tickets"><Tickets /></PageErrorBoundary></ProtectedRoute>} />
+                      <Route path="/profile" element={<ProtectedRoute><PageErrorBoundary pageName="Profile"><Profile /></PageErrorBoundary></ProtectedRoute>} />
+                      <Route path="/configurator" element={<ProtectedRoute><PageErrorBoundary pageName="Configurator"><Configurator /></PageErrorBoundary></ProtectedRoute>} />
+                      <Route path="/billing" element={<ProtectedRoute><PageErrorBoundary pageName="Billing"><Billing /></PageErrorBoundary></ProtectedRoute>} />
+                      <Route path="/affiliate" element={<ProtectedRoute><PageErrorBoundary pageName="Affiliate"><Affiliate /></PageErrorBoundary></ProtectedRoute>} />
 
                       {/* Admin routes */}
-                      <Route path="/admin" element={<ProtectedRoute requireAdmin><Admin /></ProtectedRoute>} />
-                      <Route path="/admin/tickets" element={<ProtectedRoute requireAdmin><AdminTickets /></ProtectedRoute>} />
-                      <Route path="/admin/users" element={<ProtectedRoute requireAdmin><AdminUsers /></ProtectedRoute>} />
-                      <Route path="/admin/hestiacp" element={<ProtectedRoute requireAdmin><AdminHestiaCP /></ProtectedRoute>} />
+                      <Route path="/admin" element={<ProtectedRoute requireAdmin><PageErrorBoundary pageName="Admin"><Admin /></PageErrorBoundary></ProtectedRoute>} />
+                      <Route path="/admin/tickets" element={<ProtectedRoute requireAdmin><PageErrorBoundary pageName="AdminTickets"><AdminTickets /></PageErrorBoundary></ProtectedRoute>} />
+                      <Route path="/admin/users" element={<ProtectedRoute requireAdmin><PageErrorBoundary pageName="AdminUsers"><AdminUsers /></PageErrorBoundary></ProtectedRoute>} />
+                      <Route path="/admin/hestiacp" element={<ProtectedRoute requireAdmin><PageErrorBoundary pageName="AdminHestiaCP"><AdminHestiaCP /></PageErrorBoundary></ProtectedRoute>} />
+                      <Route path="/admin/promo" element={<ProtectedRoute requireAdmin><PageErrorBoundary pageName="AdminPromo"><AdminPromo /></PageErrorBoundary></ProtectedRoute>} />
+                      <Route path="/admin/email-templates" element={<ProtectedRoute requireAdmin><PageErrorBoundary pageName="AdminEmailTemplates"><AdminEmailTemplates /></PageErrorBoundary></ProtectedRoute>} />
+                      <Route path="/admin/analytics" element={<ProtectedRoute requireAdmin><PageErrorBoundary pageName="AdminAnalytics"><AdminAnalytics /></PageErrorBoundary></ProtectedRoute>} />
+                      <Route path="/admin/tax" element={<ProtectedRoute requireAdmin><PageErrorBoundary pageName="AdminTax"><AdminTax /></PageErrorBoundary></ProtectedRoute>} />
+                      <Route path="/admin/affiliate" element={<ProtectedRoute requireAdmin><PageErrorBoundary pageName="AdminAffiliate"><AdminAffiliate /></PageErrorBoundary></ProtectedRoute>} />
 
                       {/* 404 catch-all */}
                       <Route path="*" element={<NotFound />} />

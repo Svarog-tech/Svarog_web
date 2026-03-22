@@ -281,6 +281,89 @@ const Hosting: React.FC = () => {
         title={`${t('hosting.title')}${t('hosting.titleHighlight')} – Alatyr Hosting`}
         description="Professional VPS hosting with full root access, NVMe storage, and 24/7 support."
         path="/hosting"
+        breadcrumbs={[
+          { name: 'Alatyr Hosting', url: '/' },
+          { name: 'Hosting', url: '/hosting' }
+        ]}
+        jsonLd={{
+          '@context': 'https://schema.org',
+          '@type': 'ItemList',
+          'name': 'Alatyr Hosting Plans',
+          'itemListElement': [
+            {
+              '@type': 'ListItem',
+              'position': 1,
+              'item': {
+                '@type': 'Product',
+                'name': 'Basic Webhosting',
+                'description': 'Ideální pro malé osobní weby a začátečníky. 5 GB prostoru, SSL zdarma.',
+                'brand': { '@type': 'Brand', 'name': 'Alatyr Hosting' },
+                'offers': {
+                  '@type': 'Offer',
+                  'price': '25',
+                  'priceCurrency': 'CZK',
+                  'priceValidUntil': '2026-12-31',
+                  'availability': 'https://schema.org/InStock',
+                  'url': 'https://alatyrhosting.eu/hosting'
+                }
+              }
+            },
+            {
+              '@type': 'ListItem',
+              'position': 2,
+              'item': {
+                '@type': 'Product',
+                'name': 'Standard Webhosting',
+                'description': 'Pro malé podnikatele a rozšiřující se weby. 10 GB prostoru, SSL zdarma.',
+                'brand': { '@type': 'Brand', 'name': 'Alatyr Hosting' },
+                'offers': {
+                  '@type': 'Offer',
+                  'price': '40',
+                  'priceCurrency': 'CZK',
+                  'priceValidUntil': '2026-12-31',
+                  'availability': 'https://schema.org/InStock',
+                  'url': 'https://alatyrhosting.eu/hosting'
+                }
+              }
+            },
+            {
+              '@type': 'ListItem',
+              'position': 3,
+              'item': {
+                '@type': 'Product',
+                'name': 'Pro Webhosting',
+                'description': 'Pro středně velké projekty s vyšší návštěvností. 15 GB prostoru, SSL zdarma.',
+                'brand': { '@type': 'Brand', 'name': 'Alatyr Hosting' },
+                'offers': {
+                  '@type': 'Offer',
+                  'price': '80',
+                  'priceCurrency': 'CZK',
+                  'priceValidUntil': '2026-12-31',
+                  'availability': 'https://schema.org/InStock',
+                  'url': 'https://alatyrhosting.eu/hosting'
+                }
+              }
+            },
+            {
+              '@type': 'ListItem',
+              'position': 4,
+              'item': {
+                '@type': 'Product',
+                'name': 'Ultimate Webhosting',
+                'description': 'Pro velké weby s maximálním výkonem a funkcemi. 25 GB prostoru, SSL zdarma.',
+                'brand': { '@type': 'Brand', 'name': 'Alatyr Hosting' },
+                'offers': {
+                  '@type': 'Offer',
+                  'price': '200',
+                  'priceCurrency': 'CZK',
+                  'priceValidUntil': '2026-12-31',
+                  'availability': 'https://schema.org/InStock',
+                  'url': 'https://alatyrhosting.eu/hosting'
+                }
+              }
+            }
+          ]
+        }}
       />
 
       {/* Hero Header */}

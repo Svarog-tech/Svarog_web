@@ -20,6 +20,7 @@ import {
 import { useLanguage } from '../contexts/LanguageContext';
 import HostingPlansNew from '../components/HostingPlansNew';
 import PageMeta from '../components/PageMeta';
+import { JsonLd } from '../components/JsonLd';
 import './Home.css';
 
 // Animation variants
@@ -379,7 +380,38 @@ const Home: React.FC = () => {
         title="Alatyr Hosting – Webhosting, domény a serverová řešení"
         description="Alatyr Hosting – profesionální webhosting, domény a serverová řešení. SSL zdarma, podpora 24/7, HestiaCP panel."
         path="/"
+        breadcrumbs={[
+          { name: 'Alatyr Hosting', url: '/' }
+        ]}
       />
+      <JsonLd data={{
+        '@context': 'https://schema.org',
+        '@type': 'Organization',
+        name: 'Alatyr Hosting',
+        url: typeof window !== 'undefined' ? window.location.origin : 'https://alatyrhosting.eu',
+        logo: 'https://alatyrhosting.eu/alatyrlogo-removebg-preview.png',
+        description: 'Profesionální webhosting s HestiaCP panelem. Rychlé SSD servery, SSL certifikáty zdarma, 24/7 podpora.',
+        contactPoint: {
+          '@type': 'ContactPoint',
+          email: 'info@alatyrhosting.eu',
+          contactType: 'customer service',
+          availableLanguage: ['cs', 'en']
+        }
+      }} />
+      <JsonLd data={{
+        '@context': 'https://schema.org',
+        '@type': 'WebSite',
+        name: 'Alatyr Hosting',
+        url: typeof window !== 'undefined' ? window.location.origin : 'https://alatyrhosting.eu',
+        potentialAction: {
+          '@type': 'SearchAction',
+          target: {
+            '@type': 'EntryPoint',
+            urlTemplate: 'https://alatyrhosting.eu/services?q={search_term_string}'
+          },
+          'query-input': 'required name=search_term_string'
+        }
+      }} />
 
       {/* Hero Section */}
       <section className="landing-hero">

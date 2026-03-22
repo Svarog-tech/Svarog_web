@@ -3,6 +3,7 @@ import { motion, useScroll, useTransform, useInView } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../contexts/LanguageContext';
 import PageMeta from '../components/PageMeta';
+import { JsonLd } from '../components/JsonLd';
 import StarfieldCanvas from '../components/about/StarfieldCanvas';
 import './About.css';
 
@@ -170,6 +171,20 @@ const About: React.FC = () => {
         description="Poznejte tým Alatyr Hosting."
         path="/about"
       />
+      <JsonLd data={{
+        '@context': 'https://schema.org',
+        '@type': 'AboutPage',
+        name: 'O nás – Alatyr Hosting',
+        description: 'Poznejte tým Alatyr Hosting. Profesionální webhosting a správa serverů.',
+        url: 'https://alatyrhosting.eu/about',
+        mainEntity: {
+          '@type': 'Organization',
+          name: 'Alatyr Hosting',
+          url: 'https://alatyrhosting.eu',
+          logo: 'https://alatyrhosting.eu/alatyrlogo-removebg-preview.png',
+          description: 'Profesionální webhosting s HestiaCP panelem. Rychlé SSD servery, SSL certifikáty zdarma, 24/7 podpora.'
+        }
+      }} />
 
       <StarfieldCanvas scrollY={scrollValue} />
 

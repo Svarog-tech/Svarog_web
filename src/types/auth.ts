@@ -52,6 +52,7 @@ export interface RegistrationData {
   firstName: string;
   lastName: string;
   agreeToTerms: boolean;
+  referred_by?: string;
 }
 
 // Login Data

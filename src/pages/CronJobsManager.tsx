@@ -201,7 +201,7 @@ const CronJobsManager: React.FC = () => {
             <span>Nový cron job</span>
           </button>
           <div className="cjm-toolbar-sep" />
-          <button className="cjm-toolbar-btn" onClick={fetchCronJobs} title="Obnovit">
+          <button className="cjm-toolbar-btn" onClick={fetchCronJobs} title="Obnovit" aria-label="Obnovit cron úlohy">
             <FontAwesomeIcon icon={faSync} />
           </button>
         </div>

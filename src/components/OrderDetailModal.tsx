@@ -76,8 +76,10 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({ order, isOpen, onCl
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
+          'X-CSRF-Guard': '1',
           ...getAuthHeader()
         },
+        credentials: 'include',
         body: JSON.stringify({
           status,
           payment_status: paymentStatus
@@ -160,7 +162,7 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({ order, isOpen, onCl
                 <FontAwesomeIcon icon={faBox} className="header-icon" />
                 Detail objednávky #{order.id}
               </h2>
-              <button className="close-btn" onClick={onClose}>
+              <button className="close-btn" onClick={onClose} aria-label="Zavřít detail">
                 <FontAwesomeIcon icon={faTimes} />
               </button>
             </div>

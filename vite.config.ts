@@ -1,10 +1,33 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react-swc';
 import path from 'path';
+import vitePrerender from 'vite-plugin-prerender';
+
+// Public routes to prerender for SEO (static HTML with content for crawlers)
+const prerenderRoutes = [
+  '/',
+  '/hosting',
+  '/domains',
+  '/support',
+  '/about',
+  '/contact',
+  '/privacy',
+  '/terms',
+  '/aml',
+  '/security-incidents',
+  '/configurator',
+  '/kb',
+];
 
 export default defineConfig({
   base: '/',
-  plugins: [react()],
+  plugins: [
+    react(),
+    vitePrerender({
+      staticDir: path.join(__dirname, 'build'),
+      routes: prerenderRoutes,
+    }),
+  ],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, 'src'),
@@ -64,4 +87,3 @@ export default defineConfig({
     },
   },
 });
-

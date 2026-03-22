@@ -172,10 +172,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     };
   }, [handleAuthStateChange, updateState]);
 
-  // Listen to auth changes (disabled in dev bypass mode)
+  // Listen to auth changes
   useEffect(() => {
-    const DEV_BYPASS_AUTH = true;
-    if (DEV_BYPASS_AUTH) return; // Skip auth listener in dev mode
 
     const { data: { subscription } } = onAuthStateChange(handleAuthStateChange);
 

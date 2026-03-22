@@ -75,8 +75,8 @@ const DatabaseManager: React.FC = () => {
       setError(null);
       const data = await getDatabases(Number(id));
       setDatabases(data);
-    } catch (err: any) {
-      setError(err.message || 'Nepodařilo se načíst databáze');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Nepodařilo se načíst databáze');
     }
   }, [id]);
 
@@ -120,8 +120,8 @@ const DatabaseManager: React.FC = () => {
       setShowCreateModal(false);
       setCreateForm({ database: '', dbuser: '', password: '', confirmPassword: '' });
       await fetchDatabases();
-    } catch (err: any) {
-      showError(err.message || 'Nepodařilo se vytvořit databázi');
+    } catch (err: unknown) {
+      showError(err instanceof Error ? err.message : 'Nepodařilo se vytvořit databázi');
     } finally {
       setIsSubmitting(false);
     }
@@ -137,8 +137,8 @@ const DatabaseManager: React.FC = () => {
       setShowDeleteModal(false);
       setSelectedDatabase(null);
       await fetchDatabases();
-    } catch (err: any) {
-      showError(err.message || 'Nepodařilo se smazat databázi');
+    } catch (err: unknown) {
+      showError(err instanceof Error ? err.message : 'Nepodařilo se smazat databázi');
     } finally {
       setIsSubmitting(false);
     }
@@ -214,7 +214,7 @@ const DatabaseManager: React.FC = () => {
             <span>Nová databáze</span>
           </button>
           <div className="dbm-toolbar-sep" />
-          <button className="dbm-toolbar-btn" onClick={fetchDatabases} title="Obnovit">
+          <button className="dbm-toolbar-btn" onClick={fetchDatabases} title="Obnovit" aria-label="Obnovit seznam databází">
             <FontAwesomeIcon icon={faSync} />
           </button>
         </div>

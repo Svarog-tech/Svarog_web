@@ -12,12 +12,13 @@ import {
   faPlus,
   faExternalLinkAlt,
   faCreditCard,
-  faCalendarAlt
+  faCalendarAlt,
+  faWallet
 } from '@fortawesome/free-solid-svg-icons';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useCurrency } from '../contexts/CurrencyContext';
-import { getUserOrders, getAllUserHostingServices, HostingService, Order as ApiOrder } from '../lib/api';
+import { getUserOrders, getAllUserHostingServices, getCreditBalance, HostingService, Order as ApiOrder } from '../lib/api';
 import Loading from '../components/Loading';
 import './Dashboard.css';
 
@@ -123,6 +124,7 @@ const Dashboard: React.FC = () => {
   const [orders, setOrders] = useState<Order[]>(DEV_MODE ? mockOrders : []);
   const [stats, setStats] = useState<DashboardStats>(DEV_MODE ? { totalOrders: 3, activeServices: 2, totalSpent: 997 } : { totalOrders: 0, activeServices: 0, totalSpent: 0 });
   const [loading, setLoading] = useState(DEV_MODE ? false : true);
+  const [creditBalance, setCreditBalance] = useState<number>(DEV_MODE ? 250 : 0);
 
   const profile = DEV_MODE ? mockProfile : authProfile;
 
@@ -136,10 +138,13 @@ const Dashboard: React.FC = () => {
     try {
       setLoading(true);
 
-      // Fetch user orders
-      const ordersData = await getUserOrders();
-      // Fetch hosting services with HestiaCP data
-      const hostingResult = await getAllUserHostingServices({ limit: 100 });
+      // Fetch user orders, hosting services, and credit balance in parallel
+      const [ordersData, hostingResult, creditResult] = await Promise.all([
+        getUserOrders(),
+        getAllUserHostingServices({ limit: 100 }),
+        getCreditBalance().catch(() => ({ balance: 0, currency: 'CZK' })),
+      ]);
+      setCreditBalance(creditResult.balance || 0);
       const hostingServices = hostingResult.data;
 
       // Merge data
@@ -233,11 +238,33 @@ const Dashboard: React.FC = () => {
             formatPrice={formatPrice}
           />
 
+          {creditBalance > 0 && (
+            <motion.div
+              className="stat-card stat-card--credit"
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.7 }}
+              viewport={{ once: true }}
+              onClick={() => navigate('/billing')}
+              style={{ cursor: 'pointer' }}
+            >
+              <div className="stat-icon">
+                <FontAwesomeIcon icon={faWallet} />
+              </div>
+              <div className="stat-content">
+                <h3 className="stat-number" style={{ color: 'var(--success-color)' }}>
+                  {formatPrice(creditBalance)}
+                </h3>
+                <p className="stat-label">Kredit na účtu</p>
+              </div>
+            </motion.div>
+          )}
+
           <AnimatedStat
             icon={faCalendarAlt}
             value={profile?.created_at ? new Date(profile.created_at).getFullYear() : new Date().getFullYear()}
             label={t('dashboard.customerSince')}
-            delay={0.7}
+            delay={creditBalance > 0 ? 0.8 : 0.7}
           />
         </motion.div>
 
@@ -413,6 +440,7 @@ const Dashboard: React.FC = () => {
                       onClick={() => navigate('/services')}
                       whileHover={{ scale: 1.1 }}
                       whileTap={{ scale: 0.9 }}
+                      aria-label={t('dashboard.manageService') || 'Spravovat službu'}
                     >
                       <FontAwesomeIcon icon={faCog} />
                     </motion.button>
@@ -421,6 +449,7 @@ const Dashboard: React.FC = () => {
                       onClick={() => navigate('/services')}
                       whileHover={{ scale: 1.1 }}
                       whileTap={{ scale: 0.9 }}
+                      aria-label={t('dashboard.openService') || 'Otevřít službu'}
                     >
                       <FontAwesomeIcon icon={faExternalLinkAlt} />
                     </motion.button>

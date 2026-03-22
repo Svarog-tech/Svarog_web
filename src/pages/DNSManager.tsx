@@ -81,8 +81,8 @@ const DNSManager: React.FC = () => {
         setSelectedDomain(data[0].domain);
         await fetchRecords(data[0].domain);
       }
-    } catch (err: any) {
-      setError(err.message || 'Nepodařilo se načíst DNS domény');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Nepodařilo se načíst DNS domény');
     }
   }, [id, selectedDomain]);
 
@@ -93,8 +93,8 @@ const DNSManager: React.FC = () => {
       setError(null);
       const data = await getDnsRecords(Number(id), domain);
       setRecords(data);
-    } catch (err: any) {
-      setError(err.message || 'Nepodařilo se načíst DNS záznamy');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Nepodařilo se načíst DNS záznamy');
     } finally {
       setRecordsLoading(false);
     }
@@ -138,8 +138,8 @@ const DNSManager: React.FC = () => {
       setShowAddRecordModal(false);
       setRecordForm({ name: '', type: 'A', value: '', priority: '', ttl: '' });
       await fetchRecords(selectedDomain);
-    } catch (err: any) {
-      showError(err.message || 'Nepodařilo se přidat DNS záznam');
+    } catch (err: unknown) {
+      showError(err instanceof Error ? err.message : 'Nepodařilo se přidat DNS záznam');
     } finally {
       setIsSubmitting(false);
     }
@@ -155,8 +155,8 @@ const DNSManager: React.FC = () => {
       setShowDeleteRecordModal(false);
       setSelectedRecord(null);
       await fetchRecords(selectedDomain);
-    } catch (err: any) {
-      showError(err.message || 'Nepodařilo se smazat DNS záznam');
+    } catch (err: unknown) {
+      showError(err instanceof Error ? err.message : 'Nepodařilo se smazat DNS záznam');
     } finally {
       setIsSubmitting(false);
     }
@@ -222,7 +222,7 @@ const DNSManager: React.FC = () => {
               <div className="dnsm-toolbar-sep" />
             </>
           )}
-          <button className="dnsm-toolbar-btn" onClick={fetchDnsDomains} title="Obnovit">
+          <button className="dnsm-toolbar-btn" onClick={fetchDnsDomains} title="Obnovit" aria-label="Obnovit DNS záznamy">
             <FontAwesomeIcon icon={faSync} />
           </button>
         </div>

@@ -18,13 +18,18 @@ import {
   faSignOutAlt,
   faInfoCircle,
   faCheckCircle,
-  faExclamationCircle
+  faExclamationCircle,
+  faHistory,
+  faChevronDown,
+  faChevronLeft,
+  faChevronRight
 } from '@fortawesome/free-solid-svg-icons';
 import { QRCodeSVG } from 'qrcode.react';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import './Profile.css';
-import { API_BASE_URL } from '../lib/api';
+import { API_BASE_URL, getActivityLog } from '../lib/api';
+import type { ActivityLogEntry, PaginationMeta } from '../lib/api';
 import { getAuthHeader } from '../lib/auth';
 import { useToast } from '../components/Toast';
 
@@ -69,6 +74,36 @@ const Profile: React.FC = () => {
   const [passwordData, setPasswordData] = useState({ oldPassword: '', newPassword: '', confirmPassword: '' });
   const [changingPassword, setChangingPassword] = useState(false);
   const [loggingOutAll, setLoggingOutAll] = useState(false);
+  const [showDisable2FAModal, setShowDisable2FAModal] = useState(false);
+  const [disable2FAPassword, setDisable2FAPassword] = useState('');
+  const [disabling2FA, setDisabling2FA] = useState(false);
+
+  // Activity log state
+  const [activityOpen, setActivityOpen] = useState(false);
+  const [activityLog, setActivityLog] = useState<ActivityLogEntry[]>([]);
+  const [activityPagination, setActivityPagination] = useState<PaginationMeta | null>(null);
+  const [activityPage, setActivityPage] = useState(1);
+  const [activityLoading, setActivityLoading] = useState(false);
+
+  // Fetch activity log when section is opened or page changes
+  useEffect(() => {
+    if (!activityOpen) return;
+    let cancelled = false;
+    setActivityLoading(true);
+    getActivityLog(activityPage)
+      .then((res) => {
+        if (cancelled) return;
+        setActivityLog(res.activities || []);
+        setActivityPagination(res.pagination || null);
+      })
+      .catch(() => {
+        if (!cancelled) showError('Nepodařilo se načíst historii aktivit.');
+      })
+      .finally(() => {
+        if (!cancelled) setActivityLoading(false);
+      });
+    return () => { cancelled = true; };
+  }, [activityOpen, activityPage]);
 
   const tabs: Tab[] = [
     { id: 'personal', label: 'Osobní údaje', icon: faUser },
@@ -166,9 +201,16 @@ const Profile: React.FC = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'X-CSRF-Guard': '1',
           ...getAuthHeader(),
         },
+        credentials: 'include',
       });
+      if (response.status === 401 || response.status === 403) {
+        showError('Relace vypršela. Přihlas se znovu.');
+        setEnrolling(false);
+        return;
+      }
       const result = await response.json();
       if (response.ok && result.success) {
         setShow2FAModal(true);
@@ -200,10 +242,17 @@ const Profile: React.FC = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'X-CSRF-Guard': '1',
           ...getAuthHeader(),
         },
+        credentials: 'include',
         body: JSON.stringify({ code: verificationCode }),
       });
+      if (response.status === 401 || response.status === 403) {
+        showError('Relace vypršela. Přihlas se znovu.');
+        setEnrolling(false);
+        return;
+      }
       const result = await response.json();
       if (response.ok && result.success) {
         setMfaEnabled(true);
@@ -225,18 +274,20 @@ const Profile: React.FC = () => {
   };
 
   const disable2FA = async () => {
-    const password = prompt('Pro vypnutí 2FA zadej své heslo:');
-    if (!password) {
+    if (!disable2FAPassword) {
       return;
     }
+    setDisabling2FA(true);
     try {
       const response = await fetch(`${API_BASE_URL}/auth/mfa/disable`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'X-CSRF-Guard': '1',
           ...getAuthHeader(),
         },
-        body: JSON.stringify({ password }),
+        credentials: 'include',
+        body: JSON.stringify({ password: disable2FAPassword }),
       });
       const result = await response.json();
       if (response.ok && result.success) {
@@ -245,6 +296,8 @@ const Profile: React.FC = () => {
         setTotpSecret('');
         setRecoveryCodes([]);
         setVerificationCode('');
+        setShowDisable2FAModal(false);
+        setDisable2FAPassword('');
         showSuccess(result.message || 'Dvoufaktorové ověření bylo vypnuto.');
       } else {
         const msg = result.error || 'Vypnutí 2FA se nezdařilo.';
@@ -252,6 +305,8 @@ const Profile: React.FC = () => {
       }
     } catch (err) {
       showError('Vypnutí 2FA se nezdařilo.');
+    } finally {
+      setDisabling2FA(false);
     }
   };
 
@@ -266,9 +321,16 @@ const Profile: React.FC = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'X-CSRF-Guard': '1',
           ...getAuthHeader(),
         },
+        credentials: 'include',
       });
+
+      if (response.status === 401 || response.status === 403) {
+        showError('Relace vypršela. Přihlas se znovu.');
+        return;
+      }
 
       const result = await response.json();
 
@@ -301,7 +363,7 @@ const Profile: React.FC = () => {
     try {
       const response = await fetch(`${API_BASE_URL}/auth/change-password`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-Guard': '1', ...getAuthHeader() },
         credentials: 'include',
         body: JSON.stringify({
           oldPassword: passwordData.oldPassword,
@@ -592,7 +654,7 @@ const Profile: React.FC = () => {
             <button
               type="button"
               className="profile-btn profile-btn--danger"
-              onClick={disable2FA}
+              onClick={() => { setDisable2FAPassword(''); setShowDisable2FAModal(true); }}
               disabled={enrolling}
             >
               Vypnout 2FA
@@ -849,6 +911,90 @@ const Profile: React.FC = () => {
           </div>
         </div>
       </section>
+
+      {/* Activity Log Section */}
+      <section className="profile-card">
+        <button
+          type="button"
+          className="profile-activity-toggle"
+          onClick={() => setActivityOpen(!activityOpen)}
+          aria-expanded={activityOpen}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <FontAwesomeIcon icon={faHistory} />
+            <span>Historie aktivit</span>
+          </div>
+          <FontAwesomeIcon
+            icon={faChevronDown}
+            className={`profile-activity-toggle__icon ${activityOpen ? 'profile-activity-toggle__icon--open' : ''}`}
+          />
+        </button>
+
+        <AnimatePresence>
+          {activityOpen && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.25 }}
+              style={{ overflow: 'hidden' }}
+            >
+              {activityLoading ? (
+                <div className="profile-activity-loading">Načítám...</div>
+              ) : activityLog.length === 0 ? (
+                <div className="profile-activity-empty">Zatím žádná aktivita.</div>
+              ) : (
+                <>
+                  <div className="profile-activity-table-wrap">
+                    <table className="profile-activity-table">
+                      <thead>
+                        <tr>
+                          <th>Datum</th>
+                          <th>Akce</th>
+                          <th>IP adresa</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {activityLog.map((entry, i) => (
+                          <tr key={i}>
+                            <td>{new Date(entry.created_at).toLocaleString('cs-CZ')}</td>
+                            <td>{entry.action_label}</td>
+                            <td><code>{entry.ip_address || '-'}</code></td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {activityPagination && activityPagination.pages > 1 && (
+                    <div className="profile-activity-pagination">
+                      <button
+                        type="button"
+                        className="profile-btn profile-btn--ghost"
+                        disabled={activityPage <= 1}
+                        onClick={() => setActivityPage(p => p - 1)}
+                      >
+                        <FontAwesomeIcon icon={faChevronLeft} />
+                      </button>
+                      <span className="profile-activity-pagination__info">
+                        {activityPage} / {activityPagination.pages}
+                      </span>
+                      <button
+                        type="button"
+                        className="profile-btn profile-btn--ghost"
+                        disabled={activityPage >= activityPagination.pages}
+                        onClick={() => setActivityPage(p => p + 1)}
+                      >
+                        <FontAwesomeIcon icon={faChevronRight} />
+                      </button>
+                    </div>
+                  )}
+                </>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </section>
     </motion.div>
   );
 
@@ -1053,6 +1199,73 @@ const Profile: React.FC = () => {
                     disabled={enrolling || verificationCode.length !== 6}
                   >
                     {enrolling ? 'Ověřuji...' : 'Ověřit a zapnout'}
+                  </button>
+                </footer>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* SECURITY: Modal pro vypnutí 2FA — nahrazuje window.prompt() */}
+        <AnimatePresence>
+          {showDisable2FAModal && (
+            <motion.div
+              className="profile-modal-overlay"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowDisable2FAModal(false)}
+            >
+              <motion.div
+                className="profile-modal"
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.9, opacity: 0 }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <header className="profile-modal__header">
+                  <h3>
+                    <FontAwesomeIcon icon={faLock} />
+                    {' '}Vypnout dvoufaktorové ověření
+                  </h3>
+                  <button
+                    className="profile-modal__close"
+                    onClick={() => setShowDisable2FAModal(false)}
+                  >
+                    <FontAwesomeIcon icon={faTimes} />
+                  </button>
+                </header>
+                <div className="profile-modal__body">
+                  <p style={{ marginBottom: '1rem' }}>
+                    Pro potvrzení zadej své heslo:
+                  </p>
+                  <input
+                    type="password"
+                    value={disable2FAPassword}
+                    onChange={(e) => setDisable2FAPassword(e.target.value)}
+                    placeholder="Heslo"
+                    className="profile-input"
+                    autoFocus
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && disable2FAPassword) {
+                        disable2FA();
+                      }
+                    }}
+                  />
+                </div>
+                <footer className="profile-modal__footer">
+                  <button
+                    className="profile-btn profile-btn--ghost"
+                    onClick={() => setShowDisable2FAModal(false)}
+                  >
+                    Zrušit
+                  </button>
+                  <button
+                    className="profile-btn profile-btn--danger"
+                    onClick={disable2FA}
+                    disabled={!disable2FAPassword || disabling2FA}
+                  >
+                    {disabling2FA ? 'Vypínám...' : 'Vypnout 2FA'}
                   </button>
                 </footer>
               </motion.div>

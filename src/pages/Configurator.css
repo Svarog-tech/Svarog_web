@@ -1012,6 +1012,85 @@
   color: var(--primary-color);
 }
 
+/* Payment Method Selector */
+.payment-method-section {
+  margin-bottom: 1.25rem;
+}
+
+.payment-method-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.payment-methods {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.payment-method-card {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border: 2px solid var(--border-light);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: var(--surface);
+}
+
+.payment-method-card:hover {
+  border-color: var(--primary);
+  background: rgba(59, 130, 246, 0.04);
+}
+
+.payment-method-card.active {
+  border-color: var(--primary);
+  background: rgba(59, 130, 246, 0.08);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+.payment-method-card input[type="radio"] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--primary);
+  flex-shrink: 0;
+}
+
+.payment-method-info {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.payment-method-name {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.payment-method-desc {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.payment-badge {
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: #fff;
+  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+  padding: 0.2rem 0.5rem;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+
 .summary-total-section {
   position: relative;
   padding: 2rem;
@@ -1332,6 +1411,134 @@
 
 [data-theme="dark"] .logged-in-info {
   background: var(--surface-alt);
+}
+
+/* ============================================
+   PROMO CODE SECTION
+   ============================================ */
+
+.promo-section {
+  margin-bottom: 1rem;
+}
+
+.promo-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.75rem 0;
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 0.8125rem;
+  font-family: inherit;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.promo-toggle:hover {
+  color: var(--primary-color);
+}
+
+.promo-toggle-arrow {
+  margin-left: auto;
+  font-size: 0.75rem;
+}
+
+.promo-input-section {
+  overflow: hidden;
+}
+
+.promo-input-row {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.promo-input-field {
+  flex: 1;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--border-light);
+  border-radius: 8px;
+  background: var(--surface-alt);
+  color: var(--text-primary);
+  font-size: 0.8125rem;
+  font-family: inherit;
+}
+
+.promo-input-field:focus {
+  outline: none;
+  border-color: var(--primary-color);
+}
+
+.promo-apply-btn {
+  padding: 0.5rem 1rem;
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.2s ease;
+}
+
+.promo-apply-btn:hover:not(:disabled) {
+  background: var(--primary-dark);
+}
+
+.promo-apply-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.promo-error {
+  font-size: 0.75rem;
+  color: var(--danger-color);
+  margin: 0;
+}
+
+.promo-success {
+  font-size: 0.75rem;
+  color: var(--success-color);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+/* ============================================
+   CREDIT & PRICE BREAKDOWN IN SUMMARY
+   ============================================ */
+
+.summary-row--discount,
+.summary-row--credit {
+  font-size: 0.8125rem;
+}
+
+.credit-covers-all {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  margin-top: 0.5rem;
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid var(--success-color);
+  border-radius: 8px;
+  color: var(--success-color);
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.credit-info-line {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  margin-top: 0.5rem;
+  font-size: 0.75rem;
+  color: var(--text-muted);
 }
 
 /* ============================================

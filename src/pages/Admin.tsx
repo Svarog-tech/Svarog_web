@@ -22,7 +22,9 @@ import {
   faCheck,
   faTrashAlt,
   faUser,
-  faLink
+  faLink,
+  faEnvelope,
+  faPercent
 } from '@fortawesome/free-solid-svg-icons';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -98,8 +100,7 @@ const Admin: React.FC = () => {
       return;
     }
 
-    fetchOrders();
-    fetchHostingServices();
+    Promise.all([fetchOrders(), fetchHostingServices()]);
   }, [user, profile, navigate]);
 
   const fetchHostingServices = async () => {
@@ -108,8 +109,10 @@ const Admin: React.FC = () => {
       const response = await fetch(`${API_BASE_URL}/hosting-services`, {
         method: 'GET',
         headers: {
+          'X-CSRF-Guard': '1',
           ...getAuthHeader()
-        }
+        },
+        credentials: 'include'
       });
 
       if (!response.ok) {
@@ -133,14 +136,20 @@ const Admin: React.FC = () => {
       setLoadingHestia(true);
       const result = await suspendHostingAccount(service.hestia_username);
       if (result.success) {
-        await fetch(`${API_BASE_URL}/hosting-services/${service.id}`, {
+        const updateRes = await fetch(`${API_BASE_URL}/hosting-services/${service.id}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
+            'X-CSRF-Guard': '1',
             ...getAuthHeader()
           },
+          credentials: 'include',
           body: JSON.stringify({ status: 'suspended' })
         });
+        if (updateRes.status === 401 || updateRes.status === 403) {
+          showError('Relace vypršela. Přihlas se znovu.');
+          return;
+        }
         await fetchHostingServices();
         showSuccess('HestiaCP účet byl suspendován');
       } else {
@@ -162,14 +171,20 @@ const Admin: React.FC = () => {
       setLoadingHestia(true);
       const result = await unsuspendHostingAccount(service.hestia_username);
       if (result.success) {
-        await fetch(`${API_BASE_URL}/hosting-services/${service.id}`, {
+        const updateRes = await fetch(`${API_BASE_URL}/hosting-services/${service.id}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
+            'X-CSRF-Guard': '1',
             ...getAuthHeader()
           },
+          credentials: 'include',
           body: JSON.stringify({ status: 'active' })
         });
+        if (updateRes.status === 401 || updateRes.status === 403) {
+          showError('Relace vypršela. Přihlas se znovu.');
+          return;
+        }
         await fetchHostingServices();
         showSuccess('HestiaCP účet byl obnoven');
       } else {
@@ -191,14 +206,20 @@ const Admin: React.FC = () => {
       setLoadingHestia(true);
       const result = await deleteHostingAccount(service.hestia_username);
       if (result.success) {
-        await fetch(`${API_BASE_URL}/hosting-services/${service.id}`, {
+        const updateRes = await fetch(`${API_BASE_URL}/hosting-services/${service.id}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
+            'X-CSRF-Guard': '1',
             ...getAuthHeader()
           },
+          credentials: 'include',
           body: JSON.stringify({ status: 'cancelled', hestia_created: false })
         });
+        if (updateRes.status === 401 || updateRes.status === 403) {
+          showError('Relace vypršela. Přihlas se znovu.');
+          return;
+        }
         await fetchHostingServices();
         showSuccess('HestiaCP účet byl smazán');
       } else {
@@ -242,8 +263,10 @@ const Admin: React.FC = () => {
       const response = await fetch(`${API_BASE_URL}/orders`, {
         method: 'GET',
         headers: {
+          'X-CSRF-Guard': '1',
           ...getAuthHeader()
-        }
+        },
+        credentials: 'include'
       });
 
       if (!response.ok) {
@@ -369,6 +392,31 @@ const Admin: React.FC = () => {
               <button className="quick-link-btn" onClick={() => navigate('/admin/hestiacp')}>
                 <FontAwesomeIcon icon={faServer} />
                 <span>HestiaCP Live</span>
+                <FontAwesomeIcon icon={faArrowRight} className="arrow" />
+              </button>
+              <button className="quick-link-btn" onClick={() => navigate('/admin/promo')}>
+                <FontAwesomeIcon icon={faTicket} />
+                <span>Promo kódy</span>
+                <FontAwesomeIcon icon={faArrowRight} className="arrow" />
+              </button>
+              <button className="quick-link-btn" onClick={() => navigate('/admin/email-templates')}>
+                <FontAwesomeIcon icon={faEnvelope} />
+                <span>Email šablony</span>
+                <FontAwesomeIcon icon={faArrowRight} className="arrow" />
+              </button>
+              <button className="quick-link-btn" onClick={() => navigate('/admin/analytics')}>
+                <FontAwesomeIcon icon={faChartLine} />
+                <span>Analytika</span>
+                <FontAwesomeIcon icon={faArrowRight} className="arrow" />
+              </button>
+              <button className="quick-link-btn" onClick={() => navigate('/admin/tax')}>
+                <FontAwesomeIcon icon={faPercent} />
+                <span>DPH/Dan\u011b</span>
+                <FontAwesomeIcon icon={faArrowRight} className="arrow" />
+              </button>
+              <button className="quick-link-btn" onClick={() => navigate('/admin/affiliate')}>
+                <FontAwesomeIcon icon={faLink} />
+                <span>Affiliate</span>
                 <FontAwesomeIcon icon={faArrowRight} className="arrow" />
               </button>
             </div>
@@ -598,6 +646,7 @@ const Admin: React.FC = () => {
                                     rel="noopener noreferrer"
                                     className="hestiacp-link"
                                     title="Otevřít Control Panel"
+                                    aria-label="Otevřít Control Panel"
                                   >
                                     <FontAwesomeIcon icon={faLink} />
                                   </a>
@@ -614,6 +663,7 @@ const Admin: React.FC = () => {
                           <button
                             className="action-btn view"
                             title="Zobrazit detail"
+                            aria-label="Zobrazit detail objednávky"
                             onClick={() => {
                               setSelectedOrder(order);
                               setIsModalOpen(true);
@@ -630,6 +680,7 @@ const Admin: React.FC = () => {
                                     <button
                                       className="action-btn suspend"
                                       title="Suspendovat HestiaCP účet"
+                                      aria-label="Suspendovat HestiaCP účet"
                                       onClick={() => handleSuspendAccount(service)}
                                       disabled={loadingHestia}
                                     >
@@ -639,6 +690,7 @@ const Admin: React.FC = () => {
                                     <button
                                       className="action-btn unsuspend"
                                       title="Obnovit HestiaCP účet"
+                                      aria-label="Obnovit HestiaCP účet"
                                       onClick={() => handleUnsuspendAccount(service)}
                                       disabled={loadingHestia}
                                     >
@@ -648,6 +700,7 @@ const Admin: React.FC = () => {
                                   <button
                                     className="action-btn delete"
                                     title="Smazat HestiaCP účet"
+                                    aria-label="Smazat HestiaCP účet"
                                     onClick={() => handleDeleteAccount(service)}
                                     disabled={loadingHestia}
                                   >
@@ -743,15 +796,15 @@ const Admin: React.FC = () => {
                             {service.hestia_username && (
                               <>
                                 {service.status === 'active' ? (
-                                  <button className="action-btn suspend" title="Suspendovat HestiaCP účet" onClick={() => handleSuspendAccount(service)} disabled={loadingHestia}>
+                                  <button className="action-btn suspend" title="Suspendovat HestiaCP účet" aria-label="Suspendovat HestiaCP účet" onClick={() => handleSuspendAccount(service)} disabled={loadingHestia}>
                                     <FontAwesomeIcon icon={faBan} />
                                   </button>
                                 ) : (
-                                  <button className="action-btn unsuspend" title="Obnovit HestiaCP účet" onClick={() => handleUnsuspendAccount(service)} disabled={loadingHestia}>
+                                  <button className="action-btn unsuspend" title="Obnovit HestiaCP účet" aria-label="Obnovit HestiaCP účet" onClick={() => handleUnsuspendAccount(service)} disabled={loadingHestia}>
                                     <FontAwesomeIcon icon={faCheck} />
                                   </button>
                                 )}
-                                <button className="action-btn delete" title="Smazat HestiaCP účet" onClick={() => handleDeleteAccount(service)} disabled={loadingHestia}>
+                                <button className="action-btn delete" title="Smazat HestiaCP účet" aria-label="Smazat HestiaCP účet" onClick={() => handleDeleteAccount(service)} disabled={loadingHestia}>
                                   <FontAwesomeIcon icon={faTrashAlt} />
                                 </button>
                               </>

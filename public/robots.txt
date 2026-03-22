@@ -1,19 +1,16 @@
-# https://www.robotstxt.org/robotstxt.html
 User-agent: *
 Allow: /
-Disallow: /api/
 Disallow: /dashboard
+Disallow: /admin
+Disallow: /profile
+Disallow: /billing
+Disallow: /api/
 Disallow: /services/
 Disallow: /tickets
-Disallow: /profile
-Disallow: /admin
-Disallow: /login
-Disallow: /register
 Disallow: /reset-password
 Disallow: /forgot-password
 Disallow: /auth/
 Disallow: /payment/
-Disallow: /configurator
 Disallow: /verify-email
 
 Sitemap: https://alatyrhosting.eu/sitemap.xml

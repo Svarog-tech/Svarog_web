@@ -104,7 +104,8 @@ const AdminTickets: React.FC = () => {
           'Content-Type': 'application/json',
           'X-CSRF-Guard': '1',
           ...getAuthHeader()
-        }
+        },
+        credentials: 'include'
       });
 
       if (!response.ok) {

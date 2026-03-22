@@ -21,7 +21,7 @@ const dbConfig = {
   password: process.env.MYSQL_PASSWORD || '',
   database: process.env.MYSQL_DATABASE || 'alatyr_hosting',
   waitForConnections: true,
-  connectionLimit: parseInt(process.env.MYSQL_POOL_SIZE || '10'),
+  connectionLimit: parseInt(process.env.MYSQL_POOL_SIZE || '20'),
   queueLimit: 0,
   enableKeepAlive: true,
   keepAliveInitialDelay: 0,

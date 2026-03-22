@@ -17,6 +17,7 @@ import {
   faGithub as faGithubBrand
 } from '@fortawesome/free-brands-svg-icons';
 import PageMeta from '../components/PageMeta';
+import { JsonLd } from '../components/JsonLd';
 import './Contact.css';
 
 interface FormData {
@@ -187,6 +188,25 @@ const Contact: React.FC = () => {
         description="Kontaktujte Alatyr Hosting: e-mail, telefon, podpora. Jsme tu pro vás 24/7."
         path="/contact"
       />
+      <JsonLd data={{
+        '@context': 'https://schema.org',
+        '@type': 'ContactPage',
+        name: 'Kontakt – Alatyr Hosting',
+        description: 'Kontaktujte Alatyr Hosting: e-mail, telefon, podpora.',
+        url: 'https://alatyrhosting.eu/contact',
+        mainEntity: {
+          '@type': 'Organization',
+          name: 'Alatyr Hosting',
+          email: 'info@alatyrhosting.eu',
+          url: 'https://alatyrhosting.eu',
+          contactPoint: {
+            '@type': 'ContactPoint',
+            email: 'info@alatyrhosting.eu',
+            contactType: 'customer service',
+            availableLanguage: ['cs', 'en']
+          }
+        }
+      }} />
 
       {/* Hero Section */}
       <section className="contact-hero">

@@ -1,5 +1,12 @@
 import { getCurrentSession, getAuthHeader } from '../lib/auth';
 import { createHostingAccountForOrder } from './hestiacpService';
+import { API_ROOT_URL } from '../lib/api';
+
+// ============================================
+// Types
+// ============================================
+
+export type PaymentProvider = 'stripe' | 'paypal' | 'gopay';
 
 export interface PaymentData {
   orderId: number;
@@ -12,10 +19,23 @@ export interface PaymentData {
   notifyUrl: string;
 }
 
+export interface CreatePaymentOptions {
+  orderId: number;
+  amount: number;
+  currency: string;
+  description: string;
+  customerEmail: string;
+  customerName: string;
+  provider: PaymentProvider;
+  isSubscription?: boolean;
+  priceId?: string;
+}
+
 export interface PaymentResult {
   success: boolean;
   paymentUrl?: string;
   paymentId?: string;
+  provider?: PaymentProvider;
   error?: string;
 }
 
@@ -23,10 +43,9 @@ export interface PaymentStatusResult {
   success: boolean;
   status?: string;
   isPaid?: boolean;
+  provider?: PaymentProvider;
   error?: string;
 }
-
-import { API_ROOT_URL } from '../lib/api';
 
 /**
  * Helper: autentizovaný fetch s CSRF headerem
@@ -106,6 +125,193 @@ export const createGoPayPayment = async (data: PaymentData): Promise<PaymentResu
     };
   }
 };
+
+// ============================================
+// STRIPE
+// ============================================
+
+/**
+ * Create Stripe Checkout Session
+ */
+export const createStripeCheckout = async (options: {
+  orderId: number;
+  isSubscription?: boolean;
+  priceId?: string;
+}): Promise<PaymentResult> => {
+  try {
+    const session = await getCurrentSession();
+    if (!session || !session.access_token) {
+      return { success: false, error: 'Authentication required' };
+    }
+
+    const response = await authFetch(`${API_ROOT_URL}/api/stripe/create-checkout-session`, {
+      method: 'POST',
+      body: JSON.stringify(options)
+    });
+
+    const result = await response.json();
+
+    if (!result.success) {
+      throw new Error(result.error || 'Stripe checkout creation failed');
+    }
+
+    return {
+      success: true,
+      paymentUrl: result.paymentUrl,
+      paymentId: result.sessionId,
+      provider: 'stripe'
+    };
+  } catch (error) {
+    console.error('Error creating Stripe checkout:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Nepodařilo se vytvořit Stripe platbu'
+    };
+  }
+};
+
+// ============================================
+// PAYPAL
+// ============================================
+
+/**
+ * Create PayPal Order
+ */
+export const createPayPalOrder = async (orderId: number): Promise<PaymentResult> => {
+  try {
+    const session = await getCurrentSession();
+    if (!session || !session.access_token) {
+      return { success: false, error: 'Authentication required' };
+    }
+
+    const response = await authFetch(`${API_ROOT_URL}/api/paypal/create-order`, {
+      method: 'POST',
+      body: JSON.stringify({ orderId })
+    });
+
+    const result = await response.json();
+
+    if (!result.success) {
+      throw new Error(result.error || 'PayPal order creation failed');
+    }
+
+    return {
+      success: true,
+      paymentUrl: result.paymentUrl,
+      paymentId: result.paypalOrderId,
+      provider: 'paypal'
+    };
+  } catch (error) {
+    console.error('Error creating PayPal order:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Nepodařilo se vytvořit PayPal platbu'
+    };
+  }
+};
+
+/**
+ * Capture PayPal Order (after user approves)
+ */
+export const capturePayPalOrder = async (paypalOrderId: string): Promise<PaymentStatusResult> => {
+  try {
+    const response = await authFetch(`${API_ROOT_URL}/api/paypal/capture-order`, {
+      method: 'POST',
+      body: JSON.stringify({ paypalOrderId })
+    });
+
+    const result = await response.json();
+    return {
+      success: result.success,
+      status: result.status,
+      isPaid: result.isPaid,
+      provider: 'paypal'
+    };
+  } catch (error) {
+    console.error('Error capturing PayPal order:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'PayPal capture failed'
+    };
+  }
+};
+
+// ============================================
+// UNIFIED DISPATCHER
+// ============================================
+
+/**
+ * Create payment via any provider
+ */
+export const createPayment = async (options: CreatePaymentOptions): Promise<PaymentResult> => {
+  switch (options.provider) {
+    case 'stripe':
+      return createStripeCheckout({
+        orderId: options.orderId,
+        isSubscription: options.isSubscription,
+        priceId: options.priceId
+      });
+
+    case 'paypal':
+      return createPayPalOrder(options.orderId);
+
+    case 'gopay':
+    default:
+      return createGoPayPayment({
+        orderId: options.orderId,
+        amount: options.amount,
+        currency: options.currency,
+        description: options.description,
+        customerEmail: options.customerEmail,
+        customerName: options.customerName,
+        returnUrl: `${window.location.origin}/payment/success?provider=gopay`,
+        notifyUrl: `${API_ROOT_URL}/api/gopay/webhook`
+      });
+  }
+};
+
+// ============================================
+// UNIFIED STATUS CHECK
+// ============================================
+
+/**
+ * Check payment status across any provider
+ */
+export const checkPaymentStatusUnified = async (
+  paymentId: string,
+  provider: PaymentProvider
+): Promise<PaymentStatusResult> => {
+  try {
+    const session = await getCurrentSession();
+    if (!session || !session.access_token) {
+      return { success: false, error: 'Authentication required' };
+    }
+
+    const response = await authFetch(`${API_ROOT_URL}/api/payments/check-status`, {
+      method: 'POST',
+      body: JSON.stringify({ paymentId, provider })
+    });
+
+    const result = await response.json();
+
+    return {
+      success: result.success,
+      status: result.status,
+      isPaid: result.isPaid,
+      provider
+    };
+  } catch (error) {
+    console.error('Error checking payment status:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Nepodařilo se zkontrolovat status platby'
+    };
+  }
+};
+
+// ============================================
+// LEGACY: GoPay-specific status check (kept for backward compat)
+// ============================================
 
 /**
  * Kontrola statusu platby - přes lokální proxy server

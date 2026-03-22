@@ -1,6 +1,9 @@
 // Jednoduchý email service pro odesílání transakčních emailů (reset hesla, atd.)
 // Používá nodemailer, ale pokud není SMTP správně nastaveno, pouze loguje URL do konzole,
 // aby se aplikace nerozbila v developmentu.
+//
+// Templates are loaded from the DB via TemplateService when available.
+// If the DB template is missing or inactive, each function falls back to its hardcoded HTML.
 
 const nodemailer = require('nodemailer');
 
@@ -18,6 +21,13 @@ function escapeHtml(str) {
 }
 
 let transporter = null;
+
+// TemplateService instance — set via setTemplateService() from server.js
+let templateService = null;
+
+function setTemplateService(svc) {
+  templateService = svc;
+}
 
 function getTransporter() {
   if (transporter) return transporter;
@@ -48,11 +58,52 @@ function getTransporter() {
   return transporter;
 }
 
-async function sendPasswordResetEmail(to, resetUrl) {
+/**
+ * Internal helper: send an email. Tries DB template first, then falls back to provided defaults.
+ */
+async function sendEmail(to, templateKey, variables, fallbackSubject, fallbackHtml, fallbackText) {
   const transport = getTransporter();
 
-  const subject = 'Alatyr Hosting – reset hesla';
-  const text = [
+  let subject = fallbackSubject;
+  let html = fallbackHtml;
+  let text = fallbackText;
+
+  // Try to render from DB template
+  if (templateService) {
+    try {
+      const rendered = await templateService.renderByKey(templateKey, variables);
+      if (rendered) {
+        subject = rendered.subject;
+        html = rendered.html;
+        text = rendered.text || text;
+      }
+    } catch (err) {
+      console.error(`[Email] Template render failed for "${templateKey}", using fallback:`, err.message);
+    }
+  }
+
+  if (!transport) {
+    console.log(`[Email] ${templateKey} (SMTP není nastaveno):`, { to, ...variables });
+    return;
+  }
+
+  const from =
+    process.env.SMTP_FROM ||
+    process.env.MAIL_FROM ||
+    'no-reply@localhost';
+
+  await transport.sendMail({
+    from,
+    to,
+    subject,
+    text,
+    html,
+  });
+}
+
+async function sendPasswordResetEmail(to, resetUrl) {
+  const fallbackSubject = 'Alatyr Hosting – reset hesla';
+  const fallbackText = [
     'Dobrý den,',
     '',
     'obdrželi jsme žádost o resetování hesla k Vašemu účtu na Alatyr Hosting.',
@@ -67,7 +118,7 @@ async function sendPasswordResetEmail(to, resetUrl) {
     'Alatyr Hosting',
   ].join('\n');
 
-  const html = `
+  const fallbackHtml = `
     <p>Dobrý den,</p>
     <p>obdrželi jsme žádost o resetování hesla k Vašemu účtu na <strong>Alatyr Hosting</strong>.</p>
     <p>Pokud jste o reset nežádali, můžete tento email ignorovat.</p>
@@ -79,31 +130,12 @@ async function sendPasswordResetEmail(to, resetUrl) {
     <p>S pozdravem,<br />Alatyr Hosting</p>
   `;
 
-  // Pokud není SMTP nakonfigurované, vypiš URL do logu a nevyhazuj chybu
-  if (!transport) {
-    console.log('[Email] Password reset link (SMTP není nastaveno):', { to, resetUrl });
-    return;
-  }
-
-  const from =
-    process.env.SMTP_FROM ||
-    process.env.MAIL_FROM ||
-    'no-reply@localhost';
-
-  await transport.sendMail({
-    from,
-    to,
-    subject,
-    text,
-    html,
-  });
+  await sendEmail(to, 'password_reset', { reset_url: resetUrl }, fallbackSubject, fallbackHtml, fallbackText);
 }
 
 async function sendEmailVerificationEmail(to, verifyUrl) {
-  const transport = getTransporter();
-
-  const subject = 'Alatyr Hosting – ověření emailu';
-  const text = [
+  const fallbackSubject = 'Alatyr Hosting – ověření emailu';
+  const fallbackText = [
     'Dobrý den,',
     '',
     'děkujeme za registraci na Alatyr Hosting.',
@@ -118,7 +150,7 @@ async function sendEmailVerificationEmail(to, verifyUrl) {
     'Alatyr Hosting',
   ].join('\n');
 
-  const html = `
+  const fallbackHtml = `
     <p>Dobrý den,</p>
     <p>děkujeme za registraci na <strong>Alatyr Hosting</strong>.</p>
     <p>Pro dokončení registrace je potřeba ověřit vaši emailovou adresu.</p>
@@ -130,30 +162,12 @@ async function sendEmailVerificationEmail(to, verifyUrl) {
     <p>S pozdravem,<br />Alatyr Hosting</p>
   `;
 
-  if (!transport) {
-    console.log('[Email] Email verification link (SMTP není nastaveno):', { to, verifyUrl });
-    return;
-  }
-
-  const from =
-    process.env.SMTP_FROM ||
-    process.env.MAIL_FROM ||
-    'no-reply@localhost';
-
-  await transport.sendMail({
-    from,
-    to,
-    subject,
-    text,
-    html,
-  });
+  await sendEmail(to, 'email_verification', { verify_url: verifyUrl }, fallbackSubject, fallbackHtml, fallbackText);
 }
 
 async function sendPaymentConfirmationEmail(to, invoiceUrl, amount, currency, orderId) {
-  const transport = getTransporter();
-
-  const subject = 'Alatyr Hosting – potvrzení platby';
-  const text = [
+  const fallbackSubject = 'Alatyr Hosting – potvrzení platby';
+  const fallbackText = [
     'Dobrý den,',
     '',
     'děkujeme za vaši platbu za hostingovou službu na Alatyr Hosting.',
@@ -167,7 +181,7 @@ async function sendPaymentConfirmationEmail(to, invoiceUrl, amount, currency, or
     'Alatyr Hosting',
   ].join('\n');
 
-  const html = `
+  const fallbackHtml = `
     <p>Dobrý den,</p>
     <p>děkujeme za vaši platbu za hostingovou službu na <strong>Alatyr Hosting</strong>.</p>
     <p><strong>Částka:</strong> ${escapeHtml(String(amount))} ${escapeHtml(String(currency))}<br/>
@@ -178,39 +192,20 @@ async function sendPaymentConfirmationEmail(to, invoiceUrl, amount, currency, or
     <p>S pozdravem,<br />Alatyr Hosting</p>
   `;
 
-  if (!transport) {
-    console.log('[Email] Payment confirmation (SMTP není nastaveno):', {
-      to,
-      invoiceUrl,
-      amount,
-      currency,
-      orderId,
-    });
-    return;
-  }
-
-  const from =
-    process.env.SMTP_FROM ||
-    process.env.MAIL_FROM ||
-    'no-reply@localhost';
-
-  await transport.sendMail({
-    from,
-    to,
-    subject,
-    text,
-    html,
-  });
+  await sendEmail(to, 'payment_confirmation', {
+    invoice_url: invoiceUrl,
+    amount: String(amount),
+    currency: String(currency),
+    order_id: String(orderId),
+  }, fallbackSubject, fallbackHtml, fallbackText);
 }
 
 async function sendTicketNotificationEmail(to, subjectSuffix, messagePreview, ticketId) {
-  const transport = getTransporter();
-
-  const subject = `Alatyr Hosting – ${subjectSuffix}`;
   const appUrl = process.env.APP_URL || 'http://localhost:3000';
   const ticketUrl = `${appUrl.replace(/\/+$/, '')}/tickets`;
 
-  const text = [
+  const fallbackSubject = `Alatyr Hosting – ${subjectSuffix}`;
+  const fallbackText = [
     'Dobrý den,',
     '',
     subjectSuffix,
@@ -224,7 +219,7 @@ async function sendTicketNotificationEmail(to, subjectSuffix, messagePreview, ti
     'Alatyr Hosting',
   ].join('\n');
 
-  const html = `
+  const fallbackHtml = `
     <p>Dobrý den,</p>
     <p>${escapeHtml(subjectSuffix)}</p>
     <p><strong>Náhled zprávy:</strong><br/>${escapeHtml(messagePreview)}</p>
@@ -234,45 +229,29 @@ async function sendTicketNotificationEmail(to, subjectSuffix, messagePreview, ti
     <p>S pozdravem,<br />Alatyr Hosting</p>
   `;
 
-  if (!transport) {
-    console.log('[Email] Ticket notification (SMTP není nastaveno):', {
-      to,
-      subjectSuffix,
-      messagePreview,
-      ticketId,
-    });
-    return;
-  }
-
-  const from =
-    process.env.SMTP_FROM ||
-    process.env.MAIL_FROM ||
-    'no-reply@localhost';
-
-  await transport.sendMail({
-    from,
-    to,
-    subject,
-    text,
-    html,
-  });
+  await sendEmail(to, 'ticket_notification', {
+    subject_suffix: subjectSuffix,
+    message_preview: messagePreview,
+    ticket_url: ticketUrl,
+    ticket_id: String(ticketId),
+  }, fallbackSubject, fallbackHtml, fallbackText);
 }
 
 /**
  * Notifikace o aktivaci hosting služby
  */
 async function sendServiceActivatedEmail(to, planName, domain, expiresAt) {
-  const transport = getTransporter();
   const appUrl = process.env.APP_URL || 'http://localhost:3000';
   const dashUrl = `${appUrl.replace(/\/+$/, '')}/services`;
+  const expiryDate = expiresAt ? new Date(expiresAt).toLocaleDateString('cs-CZ') : '';
 
-  const subject = 'Alatyr Hosting – služba aktivována';
-  const text = [
+  const fallbackSubject = 'Alatyr Hosting – služba aktivována';
+  const fallbackText = [
     'Dobrý den,',
     '',
     `vaše hostingová služba "${planName}" byla úspěšně aktivována.`,
     domain ? `Doména: ${domain}` : '',
-    expiresAt ? `Platnost do: ${new Date(expiresAt).toLocaleDateString('cs-CZ')}` : '',
+    expiresAt ? `Platnost do: ${expiryDate}` : '',
     '',
     `Správu služby najdete v klientské sekci: ${dashUrl}`,
     '',
@@ -280,35 +259,33 @@ async function sendServiceActivatedEmail(to, planName, domain, expiresAt) {
     'Alatyr Hosting',
   ].filter(Boolean).join('\n');
 
-  const html = `
+  const fallbackHtml = `
     <p>Dobrý den,</p>
     <p>vaše hostingová služba <strong>${escapeHtml(planName)}</strong> byla úspěšně aktivována.</p>
     ${domain ? `<p><strong>Doména:</strong> ${escapeHtml(domain)}</p>` : ''}
-    ${expiresAt ? `<p><strong>Platnost do:</strong> ${new Date(expiresAt).toLocaleDateString('cs-CZ')}</p>` : ''}
+    ${expiresAt ? `<p><strong>Platnost do:</strong> ${expiryDate}</p>` : ''}
     <p>Správu služby najdete v <a href="${dashUrl}" target="_blank" rel="noopener noreferrer">klientské sekci</a>.</p>
     <p>S pozdravem,<br />Alatyr Hosting</p>
   `;
 
-  if (!transport) {
-    console.log('[Email] Service activated (SMTP není nastaveno):', { to, planName, domain });
-    return;
-  }
-
-  const from = process.env.SMTP_FROM || process.env.MAIL_FROM || 'no-reply@localhost';
-  await transport.sendMail({ from, to, subject, text, html });
+  await sendEmail(to, 'service_activated', {
+    plan_name: planName,
+    domain: domain || '',
+    expires_at: expiryDate,
+    dashboard_url: dashUrl,
+  }, fallbackSubject, fallbackHtml, fallbackText);
 }
 
 /**
  * Notifikace o blížící se expiraci služby
  */
 async function sendServiceExpiringEmail(to, planName, domain, expiresAt) {
-  const transport = getTransporter();
   const appUrl = process.env.APP_URL || 'http://localhost:3000';
   const dashUrl = `${appUrl.replace(/\/+$/, '')}/services`;
-
-  const subject = 'Alatyr Hosting – služba brzy vyprší';
   const expiryDate = new Date(expiresAt).toLocaleDateString('cs-CZ');
-  const text = [
+
+  const fallbackSubject = 'Alatyr Hosting – služba brzy vyprší';
+  const fallbackText = [
     'Dobrý den,',
     '',
     `vaše hostingová služba "${planName}"${domain ? ` (${domain})` : ''} vyprší ${expiryDate}.`,
@@ -320,7 +297,7 @@ async function sendServiceExpiringEmail(to, planName, domain, expiresAt) {
     'Alatyr Hosting',
   ].join('\n');
 
-  const html = `
+  const fallbackHtml = `
     <p>Dobrý den,</p>
     <p>vaše hostingová služba <strong>${escapeHtml(planName)}</strong>${domain ? ` (${escapeHtml(domain)})` : ''} vyprší <strong>${expiryDate}</strong>.</p>
     <p>Pokud máte zapnuté automatické prodlužování, služba bude obnovena automaticky.</p>
@@ -328,23 +305,20 @@ async function sendServiceExpiringEmail(to, planName, domain, expiresAt) {
     <p>S pozdravem,<br />Alatyr Hosting</p>
   `;
 
-  if (!transport) {
-    console.log('[Email] Service expiring (SMTP není nastaveno):', { to, planName, expiresAt });
-    return;
-  }
-
-  const from = process.env.SMTP_FROM || process.env.MAIL_FROM || 'no-reply@localhost';
-  await transport.sendMail({ from, to, subject, text, html });
+  await sendEmail(to, 'service_expiring', {
+    plan_name: planName,
+    domain: domain || '',
+    expires_at: expiryDate,
+    dashboard_url: dashUrl,
+  }, fallbackSubject, fallbackHtml, fallbackText);
 }
 
 /**
  * Notifikace o změně hesla (bezpečnostní upozornění)
  */
 async function sendPasswordChangedEmail(to) {
-  const transport = getTransporter();
-
-  const subject = 'Alatyr Hosting – heslo bylo změněno';
-  const text = [
+  const fallbackSubject = 'Alatyr Hosting – heslo bylo změněno';
+  const fallbackText = [
     'Dobrý den,',
     '',
     'vaše heslo k účtu na Alatyr Hosting bylo právě změněno.',
@@ -354,23 +328,18 @@ async function sendPasswordChangedEmail(to) {
     'Alatyr Hosting',
   ].join('\n');
 
-  const html = `
+  const fallbackHtml = `
     <p>Dobrý den,</p>
     <p>vaše heslo k účtu na <strong>Alatyr Hosting</strong> bylo právě změněno.</p>
     <p>Pokud jste tuto změnu neprovedli vy, kontaktujte nás <strong>ihned</strong> na support.</p>
     <p>S pozdravem,<br />Alatyr Hosting</p>
   `;
 
-  if (!transport) {
-    console.log('[Email] Password changed notification (SMTP není nastaveno):', { to });
-    return;
-  }
-
-  const from = process.env.SMTP_FROM || process.env.MAIL_FROM || 'no-reply@localhost';
-  await transport.sendMail({ from, to, subject, text, html });
+  await sendEmail(to, 'password_changed', {}, fallbackSubject, fallbackHtml, fallbackText);
 }
 
 module.exports = {
+  setTemplateService,
   sendPasswordResetEmail,
   sendEmailVerificationEmail,
   sendPaymentConfirmationEmail,
@@ -379,4 +348,3 @@ module.exports = {
   sendServiceExpiringEmail,
   sendPasswordChangedEmail,
 };
-

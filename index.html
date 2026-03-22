@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="cs">
-  <head><meta charset="UTF-8" />
+  <head>
+    <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#1a1a2e" />
     <meta
@@ -11,23 +12,28 @@
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Alatyr Hosting" />
-    <meta property="og:title" content="Alatyr Hosting – Webhosting a domény" />
-    <meta property="og:description" content="Profesionální webhosting, domény a serverová řešení. SSL zdarma, podpora 24/7." />
+    <meta property="og:title" content="Alatyr Hosting - Webhosting a správa serverů" />
+    <meta property="og:description" content="Profesionální webhosting s HestiaCP panelem. Rychlé SSD servery, SSL certifikáty zdarma, 24/7 podpora." />
+    <meta property="og:url" content="https://alatyrhosting.eu" />
     <meta property="og:locale" content="cs_CZ" />
-    <meta property="og:image" content="https://alatyrhosting.eu/alatyrlogo-removebg-preview.png" />
+    <!-- TODO: Consider converting og-image.svg to a 1200x630 PNG for maximum social platform compatibility -->
+    <meta property="og:image" content="https://alatyrhosting.eu/og-image.svg" />
+    <meta property="og:image:type" content="image/svg+xml" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
 
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="Alatyr Hosting – Webhosting a domény" />
-    <meta name="twitter:description" content="Profesionální webhosting, domény a serverová řešení. SSL zdarma, podpora 24/7." />
-    <meta name="twitter:image" content="https://alatyrhosting.eu/alatyrlogo-removebg-preview.png" />
+    <meta name="twitter:title" content="Alatyr Hosting - Webhosting a správa serverů" />
+    <meta name="twitter:description" content="Profesionální webhosting s HestiaCP panelem. Rychlé SSD servery, SSL certifikáty zdarma, 24/7 podpora." />
+    <meta name="twitter:image" content="https://alatyrhosting.eu/og-image.svg" />
 
-    <!-- Security headers (nasměrují se přes nginx/HTTP, tady jen informativně) -->
-    <meta http-equiv="X-Content-Type-Options" content="nosniff" />
-    <meta http-equiv="X-Frame-Options" content="DENY" />
+    <!-- Security: referrer policy (X-Frame-Options a X-Content-Type-Options se nastavují přes HTTP hlavičky v nginx) -->
     <meta name="referrer" content="strict-origin-when-cross-origin" />
 
     <link rel="canonical" href="https://alatyrhosting.eu/" />
+    <link rel="alternate" hreflang="cs" href="https://alatyrhosting.eu" />
+    <link rel="alternate" hreflang="x-default" href="https://alatyrhosting.eu" />
     <link rel="icon" href="/favicon.ico" />
     <link rel="apple-touch-icon" href="/logo192.png" />
     <link rel="manifest" href="/manifest.json" />
@@ -43,12 +49,7 @@
       "name": "Alatyr Hosting",
       "alternateName": "Alatyr Hosting - Webhosting a domény",
       "url": "https://alatyrhosting.eu/",
-      "description": "Profesionální webhosting, domény a serverová řešení. SSL zdarma, podpora 24/7.",
-      "potentialAction": {
-        "@type": "SearchAction",
-        "target": "/hosting",
-        "query-input": "required name=search_term_string"
-      }
+      "description": "Profesionální webhosting, domény a serverová řešení. SSL zdarma, podpora 24/7."
     }
     </script>
     <script type="application/ld+json">
@@ -58,7 +59,16 @@
       "name": "Alatyr Hosting",
       "url": "https://alatyrhosting.eu/",
       "logo": "https://alatyrhosting.eu/alatyrlogo-removebg-preview.png",
-      "description": "Profesionální webhosting, domény a serverová řešení."
+      "description": "Profesionální webhosting, domény a serverová řešení.",
+      "contactPoint": {
+        "@type": "ContactPoint",
+        "email": "info@alatyrhosting.eu",
+        "contactType": "customer service",
+        "availableLanguage": ["cs", "en"]
+      },
+      "sameAs": [
+        "https://alatyr.cz"
+      ]
     }
     </script>
   </head>

@@ -79,8 +79,8 @@ const EmailManager: React.FC = () => {
       setError(null);
       const data = await getEmailAccounts(Number(id));
       setEmails(data);
-    } catch (err: any) {
-      setError(err.message || 'Nepodařilo se načíst emaily');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Nepodařilo se načíst emaily');
     }
   }, [id]);
 
@@ -112,8 +112,8 @@ const EmailManager: React.FC = () => {
       setShowCreateModal(false);
       setCreateForm({ domain: '', email: '', password: '', confirmPassword: '' });
       await fetchEmails();
-    } catch (err: any) {
-      showError(err.message || 'Nepodařilo se vytvořit email účet');
+    } catch (err: unknown) {
+      showError(err instanceof Error ? err.message : 'Nepodařilo se vytvořit email účet');
     } finally {
       setIsSubmitting(false);
     }
@@ -143,8 +143,8 @@ const EmailManager: React.FC = () => {
       setShowPasswordModal(false);
       setSelectedEmail(null);
       setPasswordForm({ password: '', confirmPassword: '' });
-    } catch (err: any) {
-      showError(err.message || 'Nepodařilo se změnit heslo');
+    } catch (err: unknown) {
+      showError(err instanceof Error ? err.message : 'Nepodařilo se změnit heslo');
     } finally {
       setIsSubmitting(false);
     }
@@ -160,8 +160,8 @@ const EmailManager: React.FC = () => {
       setShowDeleteModal(false);
       setSelectedEmail(null);
       await fetchEmails();
-    } catch (err: any) {
-      showError(err.message || 'Nepodařilo se smazat email účet');
+    } catch (err: unknown) {
+      showError(err instanceof Error ? err.message : 'Nepodařilo se smazat email účet');
     } finally {
       setIsSubmitting(false);
     }
@@ -231,7 +231,7 @@ const EmailManager: React.FC = () => {
             <span>Nový email</span>
           </button>
           <div className="em-toolbar-sep" />
-          <button className="em-toolbar-btn" onClick={fetchEmails} title="Obnovit">
+          <button className="em-toolbar-btn" onClick={fetchEmails} title="Obnovit" aria-label="Obnovit emailové schránky">
             <FontAwesomeIcon icon={faSync} />
           </button>
         </div>

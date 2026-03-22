@@ -119,6 +119,7 @@ export async function downloadFile(serviceId: number, filePath: string): Promise
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
+      'X-CSRF-Guard': '1',
       ...getAuthHeader(),
     },
     credentials: 'include',

@@ -100,8 +100,10 @@ const AdminUsers: React.FC = () => {
       const response = await fetch(`${API_BASE_URL}/admin/users`, {
         method: 'GET',
         headers: {
+          'X-CSRF-Guard': '1',
           ...getAuthHeader()
-        }
+        },
+        credentials: 'include'
       });
 
       if (!response.ok) {
@@ -136,10 +138,16 @@ const AdminUsers: React.FC = () => {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
+          'X-CSRF-Guard': '1',
           ...getAuthHeader()
         },
+        credentials: 'include',
         body: JSON.stringify({ is_admin: !currentIsAdmin })
       });
+      if (response.status === 401 || response.status === 403) {
+        showError('Relace vypršela. Přihlas se znovu.');
+        return;
+      }
 
       if (!response.ok) {
         const result = await response.json();
@@ -161,7 +169,7 @@ const AdminUsers: React.FC = () => {
     setHestiaPackages([]);
     setLoadingPackages(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/admin/hestiacp-packages`, { headers: getAuthHeader() });
+      const res = await fetch(`${API_BASE_URL}/admin/hestiacp-packages`, { headers: { 'X-CSRF-Guard': '1', ...getAuthHeader() }, credentials: 'include' });
       const data = await res.json();
       if (data.success && Array.isArray(data.packages) && data.packages.length > 0) {
         setHestiaPackages(data.packages);
@@ -199,8 +207,10 @@ const AdminUsers: React.FC = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'X-CSRF-Guard': '1',
           ...getAuthHeader()
         },
+        credentials: 'include',
         body: JSON.stringify({
           userId: target.id,
           domain: trimmedDomain,
@@ -210,6 +220,11 @@ const AdminUsers: React.FC = () => {
           hestiaPackage: createWebPackage || 'default'
         })
       });
+
+      if (response.status === 401 || response.status === 403) {
+        showError('Relace vypršela. Přihlas se znovu.');
+        return;
+      }
 
       const result = await response.json();
 
@@ -249,9 +264,16 @@ const AdminUsers: React.FC = () => {
       const response = await fetch(`${API_BASE_URL}/admin/users/${userId}/unlock`, {
         method: 'POST',
         headers: {
+          'X-CSRF-Guard': '1',
           ...getAuthHeader()
-        }
+        },
+        credentials: 'include',
       });
+
+      if (response.status === 401 || response.status === 403) {
+        showError('Relace vypršela. Přihlas se znovu.');
+        return;
+      }
 
       const result = await response.json();
 

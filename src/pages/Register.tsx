@@ -32,6 +32,12 @@ const Register: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [passwordStrength, setPasswordStrength] = useState<'weak' | 'medium' | 'strong' | null>(null);
 
+  // Read affiliate referral code from cookie
+  const getAffiliateCookie = (): string | null => {
+    const match = document.cookie.match(/affiliate_ref=([a-zA-Z0-9]+)/);
+    return match ? match[1] : null;
+  };
+
   // Redirect if already logged in
   useEffect(() => {
     if (user) {
@@ -126,14 +132,18 @@ const Register: React.FC = () => {
     setError('');
 
     try {
-      const result = await signUp(formData);
+      const referralCode = getAffiliateCookie();
+      const registrationData = referralCode
+        ? { ...formData, referred_by: referralCode }
+        : formData;
+      const result = await signUp(registrationData);
 
       if (result.success) {
         navigate('/dashboard');
       } else {
         setError(result.error || t('auth.loginFailed'));
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       setError(t('profile.error.unexpected'));
     } finally {
       setIsSubmitting(false);
@@ -149,7 +159,7 @@ const Register: React.FC = () => {
   const handleOAuthLogin = async (provider: OAuthProvider) => {
     try {
       await signInWithOAuth(provider);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error(`OAuth ${provider} registration failed:`, error);
       setError(t('auth.loginFailed'));
     }

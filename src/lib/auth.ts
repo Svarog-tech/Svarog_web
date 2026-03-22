@@ -15,32 +15,16 @@ import { API_BASE_URL } from './apiConfig';
 // SECURITY: Access token v paměti (ne localStorage), refresh token v httpOnly cookie
 // ==============================================
 
-// Access token uložený v paměti + localStorage jako fallback pro page refresh
+// SECURITY: Access token POUZE v paměti — nikdy v localStorage
+// Po page refresh se token obnoví přes refreshAccessToken() (httpOnly cookie)
 let accessTokenInMemory: string | null = null;
-const TOKEN_STORAGE_KEY = 'alatyr_access_token';
 
 function setAccessToken(token: string): void {
   accessTokenInMemory = token;
-  try {
-    localStorage.setItem(TOKEN_STORAGE_KEY, token);
-  } catch {
-    // localStorage nedostupný (private mode apod.)
-  }
 }
 
 function getAccessToken(): string | null {
-  if (accessTokenInMemory) return accessTokenInMemory;
-  // Fallback: obnov z localStorage po page refresh / HMR
-  try {
-    const stored = localStorage.getItem(TOKEN_STORAGE_KEY);
-    if (stored) {
-      accessTokenInMemory = stored;
-      return stored;
-    }
-  } catch {
-    // localStorage nedostupný
-  }
-  return null;
+  return accessTokenInMemory;
 }
 
 /**
@@ -49,11 +33,8 @@ function getAccessToken(): string | null {
  */
 function clearTokens(): void {
   accessTokenInMemory = null;
-  try {
-    localStorage.removeItem(TOKEN_STORAGE_KEY);
-  } catch {
-    // localStorage nedostupný
-  }
+  // Vyčisti i starý localStorage klíč (migrace z předchozí verze)
+  try { localStorage.removeItem('alatyr_access_token'); } catch { /* */ }
   // Refresh token cookie se smaže přes /api/auth/logout endpoint
 }
 
@@ -190,6 +171,7 @@ export const signUp = async (data: RegistrationData) => {
         password: data.password,
         firstName: data.firstName,
         lastName: data.lastName,
+        ...(data.referred_by ? { referred_by: data.referred_by } : {}),
       }),
     });
 
@@ -224,7 +206,7 @@ export const signUp = async (data: RegistrationData) => {
       success: false,
       error: result.error || 'Registrace se nezdařila',
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Sign up error:', error);
     return { success: false, error: 'Nastala neočekávaná chyba při registraci' };
   }
@@ -259,7 +241,15 @@ export const signIn = async (data: LoginData) => {
     });
 
     // Bezpečné parsování odpovědi – zkus JSON i při chybových status kódech
-    let result: any = null;
+    interface LoginResult {
+      success?: boolean;
+      accessToken?: string;
+      user?: { id: string; email: string; first_name: string; last_name: string; email_verified: boolean };
+      error?: string;
+      message?: string;
+      mfaRequired?: boolean;
+    }
+    let result: LoginResult = { success: false };
     const contentType = response.headers.get('content-type') || '';
     
     try {
@@ -291,7 +281,7 @@ export const signIn = async (data: LoginData) => {
       result.error = result.message || `Chyba serveru (${response.status})`;
     }
 
-    if (result.success && result.accessToken) {
+    if (result.success && result.accessToken && result.user) {
       // Access token do paměti, refresh token přijde jako httpOnly cookie
       setAccessToken(result.accessToken);
 
@@ -332,11 +322,11 @@ export const signIn = async (data: LoginData) => {
       error: result.error || 'Nesprávný email nebo heslo',
       mfaRequired: !!result.mfaRequired,
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Sign in error:', error);
-    return { 
-      success: false, 
-      error: error.message || 'Nastala neočekávaná chyba při přihlášení' 
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Nastala neočekávaná chyba při přihlášení'
     };
   }
 };
@@ -382,7 +372,7 @@ export const signOut = async () => {
     clearTokens();
 
     return { success: true };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Sign out error:', error);
     clearTokens();
     return { success: false, error: 'Nastala chyba při odhlašování' };
@@ -453,7 +443,7 @@ export const resetPassword = async (email: string) => {
       success: false,
       error: result.error || 'Zaslání emailu se nezdařilo',
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Reset password error:', error);
     return { success: false, error: 'Nastala chyba při resetování hesla' };
   }
@@ -495,7 +485,7 @@ export const updatePassword = async (newPassword: string, oldPassword: string) =
       success: false,
       error: result.error || 'Změna hesla se nezdařila',
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Update password error:', error);
     return { success: false, error: 'Nastala chyba při změně hesla' };
   }
@@ -566,8 +556,7 @@ export const getCurrentUser = async (): Promise<AppUser | null> => {
     }
 
     return null;
-  } catch (error) {
-    console.error('Get user error:', error);
+  } catch {
     return null;
   }
 };
@@ -654,8 +643,7 @@ export const getUserProfile = async (userId: string): Promise<UserProfile | null
     }
 
     return null;
-  } catch (error) {
-    console.error('Get user profile error:', error);
+  } catch {
     return null;
   }
 };
@@ -680,7 +668,7 @@ export const updateProfile = async (userId: string, updates: Partial<UserProfile
     }
 
     return { success: false, error: result.error || 'Aktualizace profilu se nezdařila' };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Update profile error:', error);
     return { success: false, error: 'Nastala chyba při aktualizaci profilu' };
   }

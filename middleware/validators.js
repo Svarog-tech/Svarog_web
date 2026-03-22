@@ -61,21 +61,7 @@ const validateCreatePayment = [
     .optional()
     .isEmail()
     .withMessage('Customer email must be a valid email'),
-  // BUG FIX: returnUrl a notifyUrl jsou povinné pro GoPay API callback
-  body('returnUrl')
-    .notEmpty()
-    .isURL({ 
-      protocols: ['http', 'https'],
-      require_protocol: true 
-    })
-    .withMessage('Return URL is required and must be a valid HTTP/HTTPS URL'),
-  body('notifyUrl')
-    .notEmpty()
-    .isURL({ 
-      protocols: ['http', 'https'],
-      require_protocol: true 
-    })
-    .withMessage('Notification URL is required and must be a valid HTTP/HTTPS URL'),
+  // SECURITY: returnUrl a notifyUrl se generují server-side — klient je nesmí posílat
   validate
 ];
 
@@ -139,11 +125,68 @@ const validateCheckPayment = [
   validate
 ];
 
+/**
+ * Validátory pro Stripe checkout session
+ */
+const validateCreateStripeCheckout = [
+  body('orderId')
+    .isInt({ min: 1 })
+    .withMessage('Valid orderId is required'),
+  body('isSubscription')
+    .optional()
+    .isBoolean()
+    .withMessage('isSubscription must be boolean'),
+  body('priceId')
+    .optional()
+    .isString()
+    .withMessage('priceId must be a string'),
+  validate
+];
+
+/**
+ * Validátory pro PayPal order creation
+ */
+const validateCreatePayPalOrder = [
+  body('orderId')
+    .isInt({ min: 1 })
+    .withMessage('Valid orderId is required'),
+  validate
+];
+
+/**
+ * Validátory pro PayPal capture
+ */
+const validateCapturePayPalOrder = [
+  body('paypalOrderId')
+    .isString()
+    .notEmpty()
+    .withMessage('paypalOrderId is required'),
+  validate
+];
+
+/**
+ * Validátory pro unified payment status check
+ */
+const validatePaymentStatusCheck = [
+  body('paymentId')
+    .isString()
+    .notEmpty()
+    .withMessage('paymentId is required'),
+  body('provider')
+    .isIn(['stripe', 'paypal', 'gopay'])
+    .withMessage('provider must be stripe, paypal, or gopay'),
+  validate
+];
+
 module.exports = {
   validate,
   validateCreatePayment,
   validateCreateAccount,
   validateWebhook,
   validateUsername,
-  validateCheckPayment
+  validateCheckPayment,
+  validateCreateStripeCheckout,
+  validateCreatePayPalOrder,
+  validateCapturePayPalOrder,
+  validatePaymentStatusCheck
 };

@@ -85,8 +85,8 @@ export function useFileManager(serviceId: number, hestiaUsername: string): UseFi
       setSelectedItems(new Set());
       // Cache pro strom
       setTreeCache(prev => ({ ...prev, [result.path]: result.entries }));
-    } catch (err: any) {
-      setError(err.message || 'Nepodařilo se načíst adresář');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Nepodařilo se načíst adresář');
     } finally {
       setLoading(false);
     }
@@ -125,8 +125,8 @@ export function useFileManager(serviceId: number, hestiaUsername: string): UseFi
         setActiveFileIndex(updated.length - 1);
         return updated;
       });
-    } catch (err: any) {
-      setError(err.message || 'Nepodařilo se otevřít soubor');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Nepodařilo se otevřít soubor');
     } finally {
       setLoading(false);
     }
@@ -172,8 +172,8 @@ export function useFileManager(serviceId: number, hestiaUsername: string): UseFi
       setOpenFiles(prev => prev.map((f, i) =>
         i === activeFileIndex ? { ...f, originalContent: f.content, isDirty: false } : f
       ));
-    } catch (err: any) {
-      setError(err.message || 'Nepodařilo se uložit soubor');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Nepodařilo se uložit soubor');
     } finally {
       savingRef.current = false;
     }
@@ -200,8 +200,8 @@ export function useFileManager(serviceId: number, hestiaUsername: string): UseFi
     try {
       await createFile(serviceId, filePath);
       await navigateTo(currentPath);
-    } catch (err: any) {
-      setError(err.message || 'Nepodařilo se vytvořit soubor');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Nepodařilo se vytvořit soubor');
     }
   }, [serviceId, currentPath, navigateTo, validateName]);
 
@@ -216,8 +216,8 @@ export function useFileManager(serviceId: number, hestiaUsername: string): UseFi
     try {
       await createDirectory(serviceId, dirPath);
       await navigateTo(currentPath);
-    } catch (err: any) {
-      setError(err.message || 'Nepodařilo se vytvořit složku');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Nepodařilo se vytvořit složku');
     }
   }, [serviceId, currentPath, navigateTo, validateName]);
 
@@ -231,8 +231,8 @@ export function useFileManager(serviceId: number, hestiaUsername: string): UseFi
         closeFile(openIndex);
       }
       await navigateTo(currentPath);
-    } catch (err: any) {
-      setError(err.message || 'Nepodařilo se smazat');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Nepodařilo se smazat');
     }
   }, [serviceId, currentPath, navigateTo, openFiles, closeFile]);
 
@@ -252,8 +252,8 @@ export function useFileManager(serviceId: number, hestiaUsername: string): UseFi
         f.path === fromPath ? { ...f, path: toPath } : f
       ));
       await navigateTo(currentPath);
-    } catch (err: any) {
-      setError(err.message || 'Nepodařilo se přejmenovat');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Nepodařilo se přejmenovat');
     }
   }, [serviceId, currentPath, navigateTo, validateName]);
 
@@ -264,8 +264,8 @@ export function useFileManager(serviceId: number, hestiaUsername: string): UseFi
         await uploadFile(serviceId, currentPath, files[i]);
       }
       await navigateTo(currentPath);
-    } catch (err: any) {
-      setError(err.message || 'Nepodařilo se nahrát soubor');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Nepodařilo se nahrát soubor');
     }
   }, [serviceId, currentPath, navigateTo]);
 

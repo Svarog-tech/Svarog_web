@@ -17,10 +17,11 @@ import {
   faCircle,
   faHdd,
   faExclamationTriangle,
-  faArrowLeft
+  faArrowLeft,
+  faWallet
 } from '@fortawesome/free-solid-svg-icons';
 import { useAuth } from '../contexts/AuthContext';
-import { getHostingService, getHostingServiceStats, HostingService, HostingServiceStats } from '../lib/api';
+import { getHostingService, getHostingServiceStats, getCreditBalance, HostingService, HostingServiceStats } from '../lib/api';
 import Loading from './Loading';
 import './ControlPanel.css';
 
@@ -53,6 +54,7 @@ const ControlPanel: React.FC = () => {
   const [statsLoading, setStatsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [creditBalance, setCreditBalance] = useState<number>(0);
 
   const fetchService = useCallback(async () => {
     if (!id) return;
@@ -84,6 +86,9 @@ const ControlPanel: React.FC = () => {
   useEffect(() => {
     if (user && id) {
       fetchService();
+      getCreditBalance()
+        .then(result => setCreditBalance(result.balance || 0))
+        .catch(() => {});
     }
   }, [user, id, fetchService]);
 
@@ -225,6 +230,17 @@ const ControlPanel: React.FC = () => {
                 </span>
               </div>
             </div>
+            {creditBalance > 0 && (
+              <Link to="/billing" className="cp-mini-stat cp-mini-stat--credit" style={{ textDecoration: 'none' }}>
+                <FontAwesomeIcon icon={faWallet} />
+                <div className="cp-mini-stat-info">
+                  <span className="cp-mini-stat-label">Kredit</span>
+                  <span className="cp-mini-stat-value" style={{ color: 'var(--success-color)' }}>
+                    {creditBalance.toLocaleString('cs-CZ')} Kč
+                  </span>
+                </div>
+              </Link>
+            )}
           </div>
         )}
 

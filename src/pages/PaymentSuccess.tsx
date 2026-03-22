@@ -12,7 +12,7 @@ import {
   faRocket,
   faFileInvoice
 } from '@fortawesome/free-solid-svg-icons';
-import { checkPaymentStatus } from '../services/paymentService';
+import { checkPaymentStatus, checkPaymentStatusUnified, capturePayPalOrder, type PaymentProvider } from '../services/paymentService';
 import './PaymentSuccess.css';
 
 // Confetti Component - Enhanced
@@ -76,6 +76,26 @@ const AnimatedCheckmark: React.FC = () => {
   );
 };
 
+/**
+ * Normalize provider-specific status to unified status
+ */
+function normalizeStatus(status: string, provider: PaymentProvider): 'success' | 'failed' | 'pending' {
+  if (provider === 'stripe') {
+    if (status === 'paid' || status === 'complete') return 'success';
+    if (status === 'expired' || status === 'canceled') return 'failed';
+    return 'pending';
+  }
+  if (provider === 'paypal') {
+    if (status === 'COMPLETED' || status === 'APPROVED') return 'success';
+    if (status === 'VOIDED' || status === 'PAYER_ACTION_REQUIRED') return 'failed';
+    return 'pending';
+  }
+  // GoPay
+  if (status === 'PAID') return 'success';
+  if (['CANCELED', 'TIMEOUTED', 'REFUNDED', 'PAYMENT_METHOD_DISABLED', 'AUTHORIZATION_DECLINED'].includes(status)) return 'failed';
+  return 'pending';
+}
+
 const PaymentSuccess: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -85,68 +105,81 @@ const PaymentSuccess: React.FC = () => {
   const [countdown, setCountdown] = useState(10);
   const confettiTriggered = useRef(false);
 
-  // Zkus získat payment ID z různých parametrů (id nebo payment_id)
-  const paymentId = searchParams.get('payment_id') || searchParams.get('id');
+  // SECURITY: Validate provider param against known values
+  const rawProvider = searchParams.get('provider') || 'gopay';
+  const provider: PaymentProvider = (['gopay', 'stripe', 'paypal'].includes(rawProvider) ? rawProvider : 'gopay') as PaymentProvider;
+  const urlStatus = searchParams.get('status');
+
+  // Provider-specific IDs — validate format
+  const stripeSessionId = searchParams.get('session_id');
+  const paypalToken = searchParams.get('token');
+  const gopayPaymentId = searchParams.get('payment_id') || searchParams.get('id');
+
+  // SECURITY: Basic format validation of payment IDs
+  const paymentId = (() => {
+    const raw = stripeSessionId || paypalToken || gopayPaymentId;
+    if (!raw) return null;
+    // Only allow alphanumeric, dashes, underscores (covers Stripe cs_xxx, PayPal tokens, GoPay numeric)
+    if (!/^[\w-]+$/.test(raw)) return null;
+    if (raw.length > 200) return null;
+    return raw;
+  })();
+
+  // Ref to track current status for polling (avoids stale closure)
+  const paymentStatusRef = useRef(paymentStatus);
+  paymentStatusRef.current = paymentStatus;
 
   useEffect(() => {
+    // If URL says cancelled, show failed immediately
+    if (urlStatus === 'cancelled' || urlStatus === 'canceled') {
+      setPaymentStatus('failed');
+      setLoading(false);
+      return;
+    }
+
     if (!paymentId) {
       setError('Chybí ID platby v URL. Zkontrolujte odkaz.');
       setLoading(false);
       return;
     }
 
-    // Kontrola statusu platby
     const checkStatus = async () => {
       try {
         setLoading(true);
-        const result = await checkPaymentStatus(paymentId);
 
-        if (result.success) {
-          // Úspěšné stavy - platba je zaplacená
-          if (result.status === 'PAID') {
+        // PayPal: need to capture first if user just approved
+        if (provider === 'paypal' && paypalToken) {
+          const captureResult = await capturePayPalOrder(paypalToken);
+          if (captureResult.isPaid) {
             setPaymentStatus('success');
-          }
-          // Neúspěšné stavy - platba selhala
-          else if (
-            result.status === 'CANCELED' ||
-            result.status === 'TIMEOUTED' ||
-            result.status === 'PAYMENT_METHOD_DISABLED' ||
-            result.status === 'AUTHORIZATION_DECLINED' ||
-            result.status === 'REFUNDED'
-          ) {
+            setLoading(false);
+            return;
+          } else if (captureResult.error) {
             setPaymentStatus('failed');
+            setError(captureResult.error);
+            setLoading(false);
+            return;
           }
-          // Čekající stavy - platba se zpracovává
-          else if (
-            result.status === 'CREATED' ||
-            result.status === 'PAYMENT_METHOD_CHOSEN' ||
-            result.status === 'AUTHORIZED' ||
-            result.status === 'PARTIALLY_REFUNDED'
-          ) {
-            setPaymentStatus('pending');
-          }
-          // Neznámý stav - považuj za pending
-          else {
-            console.warn('Unknown payment status:', result.status);
-            setPaymentStatus('pending');
-          }
+        }
+
+        // Use unified check for Stripe/PayPal, legacy for GoPay
+        let result;
+        if (provider === 'gopay' && gopayPaymentId) {
+          result = await checkPaymentStatus(gopayPaymentId);
         } else {
-          // Lepší zpracování error objektu
-          let errorMsg = 'Nepodařilo se zkontrolovat status platby';
-          if (typeof result.error === 'string') {
-            errorMsg = result.error;
-          } else if (result.error && typeof result.error === 'object') {
-            errorMsg = JSON.stringify(result.error, null, 2);
-          }
-          setError(errorMsg);
+          result = await checkPaymentStatusUnified(paymentId, provider);
+        }
+
+        if (result.success && result.status) {
+          setPaymentStatus(normalizeStatus(result.status, provider));
+        } else if (result.isPaid) {
+          setPaymentStatus('success');
+        } else if (result.error) {
+          setError(typeof result.error === 'string' ? result.error : 'Nepodařilo se zkontrolovat status platby');
         }
       } catch (err) {
         console.error('Error checking payment:', err);
-        let errorMsg = 'Nastala chyba při kontrole platby';
-        if (err instanceof Error) {
-          errorMsg = err.message;
-        }
-        setError(errorMsg);
+        setError(err instanceof Error ? err.message : 'Nastala chyba při kontrole platby');
       } finally {
         setLoading(false);
       }
@@ -154,15 +187,15 @@ const PaymentSuccess: React.FC = () => {
 
     checkStatus();
 
-    // Automatická kontrola každých 5 sekund (pokud status není finální)
+    // Auto-check every 5s if still pending — uses ref to avoid stale closure
     const interval = setInterval(() => {
-      if (paymentStatus === 'pending') {
+      if (paymentStatusRef.current === 'pending') {
         checkStatus();
       }
     }, 5000);
 
     return () => clearInterval(interval);
-  }, [paymentId]);
+  }, [paymentId, provider]);
 
   // Auto-redirect countdown for success
   useEffect(() => {

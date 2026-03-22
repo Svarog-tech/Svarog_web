@@ -21,8 +21,9 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import { useCurrency } from '../contexts/CurrencyContext';
 import { useAuth } from '../contexts/AuthContext';
-import { createOrder, Order, API_ROOT_URL } from '../lib/api';
-import { createGoPayPayment } from '../services/paymentService';
+import { createOrder, Order, API_ROOT_URL, getCreditBalance, validatePromoCode, PromoValidationResult } from '../lib/api';
+import { createPayment, createGoPayPayment, type PaymentProvider } from '../services/paymentService';
+import { faCreditCard, faWallet, faTag, faChevronDown, faChevronUp } from '@fortawesome/free-solid-svg-icons';
 import MultiStateButton from '../components/MultiStateButton';
 import TwoFactorModal from '../components/TwoFactorModal';
 import './Configurator.css';
@@ -51,7 +52,7 @@ interface Addon {
 const Configurator: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { formatPrice } = useCurrency();
+  const { formatPrice, currency: activeCurrency } = useCurrency();
   const { user, profile } = useAuth();
   const [selectedPlan, setSelectedPlan] = useState<HostingPlan | null>(null);
   const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'yearly'>('monthly');
@@ -116,11 +117,23 @@ const Configurator: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [orderSuccess, setOrderSuccess] = useState(false);
   const [buttonState, setButtonState] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [paymentProvider, setPaymentProvider] = useState<PaymentProvider>('stripe');
   const [show2FA, setShow2FA] = useState(false);
   const [twoFactorCode, setTwoFactorCode] = useState('');
   const [mfaEnabled, setMfaEnabled] = useState(false);
   const [factorId, setFactorId] = useState('');
   const [challengeId, setChallengeId] = useState('');
+
+  // Credit state
+  const [creditBalance, setCreditBalance] = useState<number>(0);
+  const [creditLoaded, setCreditLoaded] = useState(false);
+
+  // Promo code state
+  const [promoOpen, setPromoOpen] = useState(false);
+  const [promoCode, setPromoCode] = useState('');
+  const [promoResult, setPromoResult] = useState<PromoValidationResult | null>(null);
+  const [promoError, setPromoError] = useState('');
+  const [promoLoading, setPromoLoading] = useState(false);
 
   useEffect(() => {
     // Get plan from location state
@@ -150,6 +163,20 @@ const Configurator: React.FC = () => {
     setMfaEnabled(false);
   }, [user]);
 
+  // Fetch credit balance
+  useEffect(() => {
+    if (user && !creditLoaded) {
+      getCreditBalance()
+        .then(result => {
+          setCreditBalance(result.balance || 0);
+          setCreditLoaded(true);
+        })
+        .catch(() => {
+          setCreditLoaded(true);
+        });
+    }
+  }, [user, creditLoaded]);
+
   const updateAddonQuantity = (addonId: string, change: number) => {
     setAddons(addons.map(addon => {
       if (addon.id === addonId) {
@@ -175,6 +202,48 @@ const Configurator: React.FC = () => {
     }, 0);
 
     return billingPeriod === 'yearly' ? planPrice + (addonsTotal * 12) : planPrice + addonsTotal;
+  };
+
+  const getPromoDiscount = () => {
+    if (!promoResult || !promoResult.valid) return 0;
+    return promoResult.discount_amount || 0;
+  };
+
+  const getCreditApplied = () => {
+    const totalAfterPromo = calculateTotal() - getPromoDiscount();
+    return Math.min(creditBalance, Math.max(0, totalAfterPromo));
+  };
+
+  const getFinalTotal = () => {
+    const total = calculateTotal();
+    const discount = getPromoDiscount();
+    const credit = getCreditApplied();
+    return Math.max(0, total - discount - credit);
+  };
+
+  const handleApplyPromo = async () => {
+    if (!promoCode.trim()) return;
+    try {
+      setPromoLoading(true);
+      setPromoError('');
+      const result = await validatePromoCode(
+        promoCode.trim(),
+        selectedPlan?.id,
+        calculateTotal()
+      );
+      if (result.valid) {
+        setPromoResult(result);
+        setPromoError('');
+      } else {
+        setPromoResult(null);
+        setPromoError('Neplatný promo kód');
+      }
+    } catch (error: unknown) {
+      setPromoResult(null);
+      setPromoError(error instanceof Error ? error.message : 'Nepodařilo se ověřit promo kód');
+    } finally {
+      setPromoLoading(false);
+    }
   };
 
   const handleSubmit = async (e?: React.FormEvent) => {
@@ -203,20 +272,20 @@ const Configurator: React.FC = () => {
 
       const order = await createOrder(orderData);
 
-      // Vytvoření platby v GoPay
-      const payment = await createGoPayPayment({
-        orderId: order.id,
+      // Vytvoření platby přes zvolenou platební bránu
+      const payment = await createPayment({
+        orderId: order.id!,
         amount: calculateTotal(),
-        currency: 'CZK',
+        currency: paymentProvider === 'gopay' ? 'CZK' : (activeCurrency || 'EUR'),
         description: `Hosting ${selectedPlan.name}`,
         customerEmail: formData.customerEmail,
         customerName: formData.customerName,
-        returnUrl: `${window.location.origin}/payment/success`,
-        notifyUrl: `${API_ROOT_URL}/api/gopay/webhook`
+        provider: paymentProvider,
+        isSubscription: billingPeriod === 'monthly' && paymentProvider === 'stripe'
       });
 
       if (payment.success && payment.paymentUrl) {
-        // Přesměrování na platební bránu GoPay
+        // Přesměrování na platební bránu
         window.location.href = payment.paymentUrl;
       } else {
         throw new Error(payment.error || 'Nepodařilo se vytvořit platbu');
@@ -621,6 +690,69 @@ const Configurator: React.FC = () => {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.6, delay: 0.4 }}
               >
+                {/* Payment Method Selector */}
+                <div className="payment-method-section">
+                  <h4 className="payment-method-title">
+                    <FontAwesomeIcon icon={faCreditCard} />
+                    Platební metoda
+                  </h4>
+                  <div className="payment-methods">
+                    <label
+                      className={`payment-method-card${paymentProvider === 'stripe' ? ' active' : ''}`}
+                      onClick={() => setPaymentProvider('stripe')}
+                    >
+                      <input
+                        type="radio"
+                        name="paymentProvider"
+                        value="stripe"
+                        checked={paymentProvider === 'stripe'}
+                        onChange={() => setPaymentProvider('stripe')}
+                      />
+                      <div className="payment-method-info">
+                        <span className="payment-method-name">💳 Platba kartou</span>
+                        <span className="payment-method-desc">Visa, Mastercard, AMEX</span>
+                      </div>
+                      {billingPeriod === 'monthly' && (
+                        <span className="payment-badge">Auto-renewal</span>
+                      )}
+                    </label>
+
+                    <label
+                      className={`payment-method-card${paymentProvider === 'paypal' ? ' active' : ''}`}
+                      onClick={() => setPaymentProvider('paypal')}
+                    >
+                      <input
+                        type="radio"
+                        name="paymentProvider"
+                        value="paypal"
+                        checked={paymentProvider === 'paypal'}
+                        onChange={() => setPaymentProvider('paypal')}
+                      />
+                      <div className="payment-method-info">
+                        <span className="payment-method-name">🅿️ PayPal</span>
+                        <span className="payment-method-desc">Platba přes PayPal účet</span>
+                      </div>
+                    </label>
+
+                    <label
+                      className={`payment-method-card${paymentProvider === 'gopay' ? ' active' : ''}`}
+                      onClick={() => setPaymentProvider('gopay')}
+                    >
+                      <input
+                        type="radio"
+                        name="paymentProvider"
+                        value="gopay"
+                        checked={paymentProvider === 'gopay'}
+                        onChange={() => setPaymentProvider('gopay')}
+                      />
+                      <div className="payment-method-info">
+                        <span className="payment-method-name">🏦 GoPay</span>
+                        <span className="payment-method-desc">Česká platební brána (CZK)</span>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+
                 <h3 className="summary-title">Shrnutí objednávky</h3>
 
                 <div className="summary-section">
@@ -637,6 +769,61 @@ const Configurator: React.FC = () => {
                   ))}
                 </div>
 
+                {/* Promo code section */}
+                <div className="promo-section">
+                  <button
+                    type="button"
+                    className="promo-toggle"
+                    onClick={() => setPromoOpen(!promoOpen)}
+                  >
+                    <FontAwesomeIcon icon={faTag} />
+                    <span>Máte promo kód?</span>
+                    <FontAwesomeIcon icon={promoOpen ? faChevronUp : faChevronDown} className="promo-toggle-arrow" />
+                  </button>
+                  {promoOpen && (
+                    <motion.div
+                      className="promo-input-section"
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                    >
+                      <div className="promo-input-row">
+                        <input
+                          type="text"
+                          placeholder="Zadejte kód"
+                          value={promoCode}
+                          onChange={(e) => {
+                            setPromoCode(e.target.value);
+                            if (promoResult) {
+                              setPromoResult(null);
+                              setPromoError('');
+                            }
+                          }}
+                          className="promo-input-field"
+                          disabled={promoLoading}
+                        />
+                        <button
+                          type="button"
+                          className="promo-apply-btn"
+                          onClick={handleApplyPromo}
+                          disabled={promoLoading || !promoCode.trim()}
+                        >
+                          {promoLoading ? 'Ověřuji...' : 'Použít'}
+                        </button>
+                      </div>
+                      {promoError && (
+                        <p className="promo-error">{promoError}</p>
+                      )}
+                      {promoResult && promoResult.valid && (
+                        <p className="promo-success">
+                          <FontAwesomeIcon icon={faCheck} /> Sleva: -{promoResult.discount_type === 'percent'
+                            ? `${promoResult.discount_value}%`
+                            : formatPrice(promoResult.discount_amount)}
+                        </p>
+                      )}
+                    </motion.div>
+                  )}
+                </div>
+
                 <div className="summary-divider"></div>
 
                 <div className="summary-period-info">
@@ -645,10 +832,44 @@ const Configurator: React.FC = () => {
                 </div>
 
                 <div className="summary-total-section">
+                  <div className="summary-row">
+                    <span>Cena</span>
+                    <span>{formatPrice(calculateTotal())}</span>
+                  </div>
+
+                  {promoResult && promoResult.valid && (
+                    <div className="summary-row summary-row--discount">
+                      <span>Sleva ({promoResult.code})</span>
+                      <span style={{ color: 'var(--success-color)' }}>-{formatPrice(getPromoDiscount())}</span>
+                    </div>
+                  )}
+
+                  {user && creditBalance > 0 && (
+                    <div className="summary-row summary-row--credit">
+                      <span><FontAwesomeIcon icon={faWallet} /> Kredit</span>
+                      <span style={{ color: 'var(--success-color)' }}>-{formatPrice(getCreditApplied())}</span>
+                    </div>
+                  )}
+
+                  <div className="summary-divider"></div>
+
                   <div className="total-row">
                     <span>Celkem</span>
-                    <span className="total-amount">{formatPrice(calculateTotal())}</span>
+                    <span className="total-amount">{formatPrice(getFinalTotal())}</span>
                   </div>
+
+                  {user && creditBalance > 0 && getFinalTotal() === 0 && (
+                    <p className="credit-covers-all">
+                      <FontAwesomeIcon icon={faWallet} /> Bude zaplaceno kreditem
+                    </p>
+                  )}
+
+                  {user && creditBalance > 0 && getFinalTotal() > 0 && (
+                    <p className="credit-info-line">
+                      <FontAwesomeIcon icon={faWallet} /> Dostupný kredit: {formatPrice(creditBalance)}
+                    </p>
+                  )}
+
                   <p className="total-period">
                     {billingPeriod === 'yearly' ? 'Fakturováno jednou ročně' : 'Fakturováno měsíčně'}
                   </p>

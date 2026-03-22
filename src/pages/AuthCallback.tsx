@@ -110,7 +110,7 @@ const AuthCallback: React.FC = () => {
             setStatus('error');
           }
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('Auth callback error:', err);
         if (isMounted) {
           setError('Nastala chyba při ověřování.');
