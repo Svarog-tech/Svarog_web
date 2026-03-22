@@ -1,0 +1,132 @@
+/* AdminTax - dědí z Admin.css a AdminPromo.css */
+
+.tax-header {
+  background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%) !important;
+  box-shadow: 0 20px 50px rgba(220, 38, 38, 0.3) !important;
+}
+
+.country-code-cell {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-weight: 700;
+  font-size: 0.9rem;
+  background: rgba(37, 99, 235, 0.08);
+  padding: 0.3rem 0.65rem;
+  border-radius: 5px;
+  color: var(--primary-color);
+  border: 1px solid rgba(37, 99, 235, 0.15);
+}
+
+.tax-type-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.35rem 0.85rem;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  border: 1px solid;
+}
+
+.tax-rate-value {
+  font-weight: 700;
+  font-size: 1.05rem;
+  color: var(--text-primary);
+  cursor: pointer;
+  padding: 0.3rem 0.6rem;
+  border-radius: 6px;
+  transition: all 0.2s;
+  border: 2px solid transparent;
+}
+
+.tax-rate-value:hover {
+  background: rgba(37, 99, 235, 0.06);
+  border-color: rgba(37, 99, 235, 0.2);
+}
+
+.eu-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.85rem;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  border: 1px solid;
+}
+
+.eu-badge.yes {
+  background: rgba(16, 185, 129, 0.12);
+  color: #10b981;
+  border-color: rgba(16, 185, 129, 0.25);
+}
+
+.eu-badge.no {
+  background: rgba(107, 114, 128, 0.1);
+  color: #6b7280;
+  border-color: rgba(107, 114, 128, 0.2);
+}
+
+/* Inline edit */
+.inline-edit-cell {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.inline-edit-input {
+  width: 70px;
+  padding: 0.35rem 0.5rem;
+  border: 2px solid var(--primary-color);
+  border-radius: 6px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  background: var(--surface);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.inline-edit-suffix {
+  font-weight: 600;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.inline-edit-save,
+.inline-edit-cancel {
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  font-size: 0.85rem;
+}
+
+.inline-edit-save {
+  background: rgba(16, 185, 129, 0.12);
+  color: #10b981;
+}
+
+.inline-edit-save:hover {
+  background: #10b981;
+  color: white;
+}
+
+.inline-edit-cancel {
+  background: rgba(239, 68, 68, 0.12);
+  color: #ef4444;
+}
+
+.inline-edit-cancel:hover {
+  background: #ef4444;
+  color: white;
+}
+
+@media (max-width: 768px) {
+  .tax-table {
+    min-width: 700px;
+  }
+}

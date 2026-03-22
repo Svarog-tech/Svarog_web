@@ -1,0 +1,723 @@
+/* ============================================
+   ADMIN AFFILIATE PAGE - Mobile First Design
+   ============================================ */
+
+.adminaff-page {
+  min-height: calc(100vh - 80px);
+  padding: 5rem 1rem 2rem;
+  background: var(--surface-solid);
+}
+
+.adminaff-container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.adminaff-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 4rem 2rem;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+}
+
+/* ============================================
+   HEADER
+   ============================================ */
+
+.adminaff-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 2rem;
+  background: var(--surface);
+  border: 1px solid var(--border-light);
+  border-radius: 16px;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.adminaff-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  border: 1px solid var(--border-light);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 0.8125rem;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.adminaff-back-btn:hover {
+  background: var(--surface-alt);
+  color: var(--text-primary);
+}
+
+.adminaff-header__icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  background: var(--gradient-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.adminaff-header__info {
+  flex: 1;
+  min-width: 0;
+}
+
+.adminaff-header__title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.adminaff-header__subtitle {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  margin: 0.25rem 0 0;
+}
+
+/* ============================================
+   TABS
+   ============================================ */
+
+.adminaff-tabs {
+  display: flex;
+  gap: 0.25rem;
+  padding: 0.25rem;
+  background: var(--surface);
+  border: 1px solid var(--border-light);
+  border-radius: 12px;
+  margin-bottom: 1.5rem;
+  overflow-x: auto;
+}
+
+.adminaff-tab {
+  flex: 1;
+  min-width: 80px;
+  padding: 0.75rem 1rem;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.adminaff-tab:hover {
+  color: var(--text-primary);
+  background: var(--surface-alt);
+}
+
+.adminaff-tab--active {
+  background: var(--gradient-primary);
+  color: white;
+}
+
+.adminaff-tab--active:hover {
+  color: white;
+}
+
+/* ============================================
+   STATS GRID
+   ============================================ */
+
+.adminaff-stats-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+.adminaff-stat-card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.25rem;
+  background: var(--surface);
+  border: 1px solid var(--border-light);
+  border-radius: 12px;
+}
+
+.adminaff-stat-card__icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 1.125rem;
+  flex-shrink: 0;
+}
+
+.adminaff-stat-card__content h3 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.adminaff-stat-card__content p {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin: 0.125rem 0 0;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+/* ============================================
+   SECTION / TOOLBAR
+   ============================================ */
+
+.adminaff-section {
+  background: var(--surface);
+  border: 1px solid var(--border-light);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.adminaff-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.adminaff-search {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 1;
+  min-width: 200px;
+  padding: 0 1rem;
+  border: 1px solid var(--border-light);
+  border-radius: 8px;
+  background: var(--surface-alt);
+  color: var(--text-secondary);
+}
+
+.adminaff-search input {
+  flex: 1;
+  padding: 0.625rem 0;
+  border: none;
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 0.875rem;
+  font-family: inherit;
+  outline: none;
+}
+
+.adminaff-filter-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  color: var(--text-secondary);
+}
+
+.adminaff-filter-btn {
+  padding: 0.375rem 0.75rem;
+  border: 1px solid var(--border-light);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.adminaff-filter-btn:hover {
+  background: var(--surface-alt);
+  color: var(--text-primary);
+}
+
+.adminaff-filter-btn.active {
+  background: var(--primary-color);
+  color: white;
+  border-color: var(--primary-color);
+}
+
+/* ============================================
+   TABLE
+   ============================================ */
+
+.adminaff-table-wrapper {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.adminaff-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.adminaff-table thead {
+  display: none;
+}
+
+.adminaff-table tbody tr {
+  display: block;
+  padding: 1rem;
+  background: var(--surface-alt);
+  border: 1px solid var(--border-light);
+  border-radius: 10px;
+  margin: 0.75rem;
+}
+
+.adminaff-table tbody td {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.375rem 0;
+  color: var(--text-primary);
+}
+
+.adminaff-table tbody td::before {
+  content: attr(data-label);
+  font-weight: 600;
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  margin-right: 1rem;
+}
+
+.adminaff-table tbody td:first-child:empty::before,
+.adminaff-table tbody td:first-child:has(input)::before {
+  content: '';
+}
+
+.adminaff-empty-cell {
+  text-align: center;
+  color: var(--text-muted);
+  padding: 2rem !important;
+}
+
+.adminaff-table code {
+  font-family: 'Fira Code', 'Consolas', monospace;
+  font-size: 0.8125rem;
+  color: var(--primary-color);
+}
+
+/* ============================================
+   ACTION BUTTONS
+   ============================================ */
+
+.adminaff-action-buttons {
+  display: flex;
+  gap: 0.375rem;
+}
+
+.adminaff-action-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  border: 1px solid var(--border-light);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 0.8125rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.adminaff-action-btn:hover {
+  background: var(--surface-alt);
+  color: var(--text-primary);
+}
+
+.adminaff-action-btn.approve {
+  color: var(--success-color);
+  border-color: var(--success-color);
+}
+
+.adminaff-action-btn.approve:hover {
+  background: var(--success-color);
+  color: white;
+}
+
+.adminaff-action-btn.reject {
+  color: var(--danger-color);
+  border-color: var(--danger-color);
+}
+
+.adminaff-action-btn.reject:hover {
+  background: var(--danger-color);
+  color: white;
+}
+
+/* ============================================
+   BADGES
+   ============================================ */
+
+.adminaff-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 100px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.adminaff-badge--success {
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid var(--success-color);
+  color: var(--success-color);
+}
+
+.adminaff-badge--warning {
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid var(--warning-color);
+  color: var(--warning-color);
+}
+
+.adminaff-badge--danger {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid var(--danger-color);
+  color: var(--danger-color);
+}
+
+.adminaff-badge--info {
+  background: rgba(59, 130, 246, 0.1);
+  border: 1px solid #3b82f6;
+  color: #3b82f6;
+}
+
+.adminaff-badge--neutral {
+  background: var(--surface-alt);
+  border: 1px solid var(--border-medium);
+  color: var(--text-muted);
+}
+
+/* ============================================
+   BUTTONS
+   ============================================ */
+
+.adminaff-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.25rem;
+  border-radius: 8px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+  min-height: 40px;
+}
+
+.adminaff-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.adminaff-btn--primary {
+  background: var(--gradient-primary);
+  color: white;
+}
+
+.adminaff-btn--primary:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.adminaff-btn--ghost {
+  background: transparent;
+  color: var(--primary-color);
+  padding: 0.375rem 0.75rem;
+  min-height: auto;
+}
+
+.adminaff-btn--ghost:hover:not(:disabled) {
+  background: var(--surface-alt);
+}
+
+.adminaff-btn--success {
+  background: rgba(16, 185, 129, 0.1);
+  color: var(--success-color);
+  border: 1px solid var(--success-color);
+}
+
+.adminaff-btn--success:hover:not(:disabled) {
+  background: var(--success-color);
+  color: white;
+}
+
+/* ============================================
+   PAGINATION
+   ============================================ */
+
+.adminaff-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 1rem;
+  border-top: 1px solid var(--border-light);
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+}
+
+/* ============================================
+   MODAL
+   ============================================ */
+
+.adminaff-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.adminaff-modal {
+  width: 100%;
+  max-width: 480px;
+  background: var(--surface);
+  border: 1px solid var(--border-light);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.adminaff-modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.adminaff-modal__header h3 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.adminaff-modal__close {
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 1rem;
+  cursor: pointer;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.adminaff-modal__close:hover {
+  background: var(--surface-alt);
+  color: var(--text-primary);
+}
+
+.adminaff-modal__body {
+  padding: 1.5rem;
+}
+
+.adminaff-modal__info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 1rem;
+  background: var(--surface-alt);
+  border: 1px solid var(--border-light);
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+}
+
+.adminaff-modal__info strong {
+  color: var(--text-primary);
+  font-size: 0.875rem;
+}
+
+.adminaff-modal__info span {
+  color: var(--text-muted);
+  font-size: 0.8125rem;
+}
+
+.adminaff-form-group {
+  margin-bottom: 1rem;
+}
+
+.adminaff-form-group label {
+  display: block;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 0.375rem;
+}
+
+.adminaff-input {
+  width: 100%;
+  padding: 0.625rem 1rem;
+  border: 1px solid var(--border-light);
+  border-radius: 8px;
+  background: var(--surface-alt);
+  color: var(--text-primary);
+  font-size: 0.875rem;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.2s ease;
+  box-sizing: border-box;
+}
+
+.adminaff-input:focus {
+  border-color: var(--primary-color);
+}
+
+.adminaff-checkbox-label {
+  display: flex !important;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+}
+
+.adminaff-checkbox-label input {
+  width: 16px;
+  height: 16px;
+}
+
+.adminaff-modal__footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  padding: 1rem 1.5rem;
+  border-top: 1px solid var(--border-light);
+}
+
+/* ============================================
+   TABLET (768px+)
+   ============================================ */
+
+@media (min-width: 768px) {
+  .adminaff-page {
+    padding: 6rem 1.5rem 3rem;
+  }
+
+  .adminaff-header__title {
+    font-size: 1.75rem;
+  }
+
+  .adminaff-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .adminaff-table thead {
+    display: table-header-group;
+  }
+
+  .adminaff-table thead th {
+    text-align: left;
+    padding: 0.75rem 1rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    border-bottom: 1px solid var(--border-light);
+    white-space: nowrap;
+  }
+
+  .adminaff-table tbody tr {
+    display: table-row;
+    padding: 0;
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    margin: 0;
+  }
+
+  .adminaff-table tbody tr:hover {
+    background: var(--surface-alt);
+  }
+
+  .adminaff-table tbody td {
+    display: table-cell;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--border-light);
+    white-space: nowrap;
+  }
+
+  .adminaff-table tbody td::before {
+    display: none;
+  }
+}
+
+/* ============================================
+   DESKTOP (1024px+)
+   ============================================ */
+
+@media (min-width: 1024px) {
+  .adminaff-stats-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* ============================================
+   REDUCED MOTION
+   ============================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  .adminaff-btn,
+  .adminaff-action-btn,
+  .adminaff-tab,
+  .adminaff-filter-btn {
+    transition: none;
+  }
+}
+
+/* ============================================
+   DARK MODE
+   ============================================ */
+
+[data-theme="dark"] .adminaff-stat-card {
+  background: var(--surface-light);
+}
+
+[data-theme="dark"] .adminaff-table tbody tr {
+  background: var(--surface-light);
+}
+
+@media (min-width: 768px) {
+  [data-theme="dark"] .adminaff-table tbody tr {
+    background: transparent;
+  }
+
+  [data-theme="dark"] .adminaff-table tbody tr:hover {
+    background: var(--surface-light);
+  }
+}

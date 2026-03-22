@@ -1,0 +1,181 @@
+/* AdminAnalytics - dědí z Admin.css */
+
+.analytics-header {
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%) !important;
+  box-shadow: 0 20px 50px rgba(99, 102, 241, 0.3) !important;
+}
+
+.analytics-section-title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 2.5rem 0 1.25rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 2px solid var(--border-light);
+}
+
+.analytics-section-title svg {
+  font-size: 1.5rem;
+  color: var(--primary-color);
+}
+
+.analytics-section-title h2 {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.analytics-stats {
+  margin-bottom: 1.5rem;
+}
+
+.churn-card .stat-content h3 {
+  color: #ef4444;
+}
+
+/* CSS Bar chart */
+.css-bar-chart {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.bar-chart-item {
+  display: grid;
+  grid-template-columns: 80px 1fr 120px;
+  align-items: center;
+  gap: 1rem;
+}
+
+.bar-chart-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-align: right;
+}
+
+.bar-chart-bar-container {
+  height: 28px;
+  background: var(--surface-alt);
+  border-radius: 8px;
+  overflow: hidden;
+  position: relative;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.06);
+}
+
+.bar-chart-bar {
+  height: 100%;
+  border-radius: 8px;
+  transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.bar-chart-bar::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 50%;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.3), transparent);
+  border-radius: 8px 8px 0 0;
+}
+
+.bar-chart-bar.revenue-bar {
+  background: linear-gradient(90deg, #10b981 0%, #059669 100%);
+}
+
+.bar-chart-bar.customers-bar {
+  background: linear-gradient(90deg, #2563eb 0%, #06b6d4 100%);
+}
+
+.bar-chart-value {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+/* Breakdown list */
+.breakdown-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.breakdown-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.breakdown-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.breakdown-name {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.breakdown-count {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: var(--surface-alt);
+  padding: 0.15rem 0.5rem;
+  border-radius: 6px;
+}
+
+.breakdown-value {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  text-align: right;
+  margin-top: -0.2rem;
+}
+
+/* Two-column grid for breakdowns */
+.analytics-grid-2col {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.charts-section.compact {
+  padding: 1.75rem;
+  margin-bottom: 0;
+}
+
+.charts-section.compact h2 {
+  font-size: 1.2rem;
+  margin-bottom: 1.25rem;
+}
+
+@media (max-width: 768px) {
+  .analytics-grid-2col {
+    grid-template-columns: 1fr;
+  }
+
+  .bar-chart-item {
+    grid-template-columns: 60px 1fr 80px;
+    gap: 0.5rem;
+  }
+
+  .bar-chart-label {
+    font-size: 0.75rem;
+  }
+
+  .bar-chart-value {
+    font-size: 0.8rem;
+  }
+
+  .bar-chart-bar-container {
+    height: 22px;
+  }
+}

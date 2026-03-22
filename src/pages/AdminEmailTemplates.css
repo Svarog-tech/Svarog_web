@@ -1,0 +1,233 @@
+/* AdminEmailTemplates - dědí z Admin.css a AdminPromo.css */
+
+.email-header {
+  background: linear-gradient(135deg, #059669 0%, #10b981 100%) !important;
+  box-shadow: 0 20px 50px rgba(5, 150, 105, 0.3) !important;
+}
+
+.template-key {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 0.8rem;
+  background: rgba(107, 114, 128, 0.08);
+  padding: 0.3rem 0.6rem;
+  border-radius: 5px;
+  color: var(--text-secondary);
+  border: 1px solid rgba(107, 114, 128, 0.15);
+}
+
+.category-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.35rem 0.85rem;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  border: 1px solid;
+}
+
+.clickable-row {
+  cursor: pointer;
+}
+
+.clickable-row:hover {
+  background: var(--surface-alt) !important;
+}
+
+/* Editor */
+.email-editor-container {
+  background: var(--surface);
+  border-radius: 16px;
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--border-light);
+  padding: 2rem;
+}
+
+.editor-section {
+  margin-bottom: 1.5rem;
+}
+
+.editor-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.editor-subject-input {
+  width: 100%;
+  padding: 0.85rem 1rem;
+  border: 2px solid var(--border-light);
+  border-radius: 10px;
+  font-size: 1rem;
+  color: var(--text-primary);
+  background: var(--surface);
+  transition: border-color 0.2s, box-shadow 0.2s;
+  box-sizing: border-box;
+}
+
+.editor-subject-input:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+  outline: none;
+}
+
+.variables-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.variable-chip {
+  padding: 0.4rem 0.85rem;
+  border: 1px solid rgba(139, 92, 246, 0.25);
+  border-radius: 8px;
+  background: rgba(139, 92, 246, 0.08);
+  color: #8b5cf6;
+  font-size: 0.8rem;
+  font-weight: 600;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.variable-chip:hover {
+  background: #8b5cf6;
+  color: white;
+  transform: translateY(-1px);
+  box-shadow: 0 3px 8px rgba(139, 92, 246, 0.3);
+}
+
+.editor-html-textarea {
+  width: 100%;
+  padding: 1rem;
+  border: 2px solid var(--border-light);
+  border-radius: 10px;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+  font-size: 0.85rem;
+  line-height: 1.6;
+  color: var(--text-primary);
+  background: var(--surface-alt);
+  resize: vertical;
+  min-height: 400px;
+  box-sizing: border-box;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  tab-size: 2;
+}
+
+.editor-html-textarea:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+  outline: none;
+}
+
+.editor-actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-light);
+}
+
+.editor-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.7rem 1.25rem;
+  border-radius: 10px;
+  border: none;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.editor-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.editor-btn.save {
+  background: linear-gradient(135deg, #2563eb 0%, #06b6d4 100%);
+  color: white;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+}
+
+.editor-btn.save:hover:not(:disabled) {
+  box-shadow: 0 6px 18px rgba(37, 99, 235, 0.4);
+  transform: translateY(-1px);
+}
+
+.editor-btn.preview {
+  background: rgba(139, 92, 246, 0.1);
+  color: #8b5cf6;
+  border: 2px solid rgba(139, 92, 246, 0.25);
+}
+
+.editor-btn.preview:hover:not(:disabled) {
+  background: #8b5cf6;
+  color: white;
+}
+
+.editor-btn.test {
+  background: rgba(16, 185, 129, 0.1);
+  color: #10b981;
+  border: 2px solid rgba(16, 185, 129, 0.25);
+}
+
+.editor-btn.test:hover:not(:disabled) {
+  background: #10b981;
+  color: white;
+}
+
+.editor-btn.reset {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  border: 2px solid rgba(239, 68, 68, 0.25);
+}
+
+.editor-btn.reset:hover:not(:disabled) {
+  background: #ef4444;
+  color: white;
+}
+
+/* Preview modal */
+.preview-modal {
+  max-width: 800px !important;
+  max-height: 85vh;
+}
+
+.preview-frame-container {
+  padding: 0;
+}
+
+.preview-iframe {
+  width: 100%;
+  height: 500px;
+  border: none;
+  border-radius: 0 0 16px 16px;
+  background: white;
+}
+
+@media (max-width: 768px) {
+  .email-editor-container {
+    padding: 1rem;
+  }
+
+  .editor-actions {
+    flex-direction: column;
+  }
+
+  .editor-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .editor-html-textarea {
+    min-height: 250px;
+  }
+}

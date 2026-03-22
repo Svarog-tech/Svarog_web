@@ -1,0 +1,118 @@
+# Alatyr Hosting
+
+> Profesionalni webhosting, domeny a serverova reseni pro cesky trh. Postaveno na HestiaCP s modernim React frontendem.
+
+## O nas
+
+Alatyr Hosting je cesky poskytovatel webhostingu se sidlem v Ceske republice. Nabizime profesionalni hostingove sluzby s durazem na vykon, bezpecnost a zakaznicku podporu. Nase infrastruktura bezi na serverech AMD EPYC s NVMe disky, DDR4 ECC pameti a 10Gb sitovym pripojenim.
+
+- Web: https://alatyrhosting.eu
+- Kontakt: info@alatyrhosting.eu
+- Jazyky: cestina (primarni), anglictina
+
+## Hostingove plany
+
+### Basic (25 CZK/mesic)
+- 5 GB SSD uloziste
+- 50 GB prenos dat
+- 5 e-mailovych uctu
+- 2 databaze
+- SSL certifikat zdarma
+- HestiaCP panel
+
+### Standard (40 CZK/mesic)
+- 15 GB SSD uloziste
+- 150 GB prenos dat
+- 20 e-mailovych uctu
+- 5 databazi
+- SSL certifikat zdarma
+- HestiaCP panel
+
+### Premium (80 CZK/mesic)
+- 30 GB SSD uloziste
+- 300 GB prenos dat
+- 50 e-mailovych uctu
+- 10 databazi
+- SSL certifikat zdarma
+- HestiaCP panel
+- Prioritni podpora
+
+### Business (200 CZK/mesic)
+- 100 GB SSD uloziste
+- 1 TB prenos dat
+- Neomezene e-maily
+- Neomezene databaze
+- SSL certifikat zdarma
+- HestiaCP panel
+- Prioritni podpora
+- Denni zalohy
+
+## Technologie
+
+- **Ovladaci panel**: HestiaCP (open-source, moderni alternativa k cPanel)
+- **Webovy server**: LiteSpeed / Apache
+- **PHP**: Verze 8.x s OPcache
+- **Databaze**: MariaDB
+- **Runtime**: Node.js podpora
+- **SSL**: Automaticke Let's Encrypt certifikaty zdarma
+- **Zalohovani**: Automaticke denni zalohy
+- **Monitoring**: 24/7 server monitoring s alertingem
+
+## Klicove vlastnosti
+
+- **Dostupnost**: 99% SLA garancovana dostupnost
+- **Rychlost**: Prumerna odezva 45ms
+- **Sit**: 10 Gbps sitove pripojeni
+- **Bezpecnost**: DDoS ochrana, firewall, automaticke aktualizace
+- **Podpora**: 24/7 podpora pres tikety, chat a e-mail
+- **Sprava**: Kompletni sprava pres webovy panel — soubory, e-maily, DNS, FTP, databaze, zalohy, cron
+
+## Platebni metody
+
+- Stripe (kreditni/debetni karty)
+- PayPal
+- GoPay (cesky platebni brana)
+
+## Dalsi sluzby
+
+- **Registrace domen**: Kontrola dostupnosti a registrace domen (.cz, .com, .eu, .org a dalsi)
+- **Konfigurator**: Interaktivni konfigurator hostingu na miru
+- **AI Asistent**: Inteligentni chatbot pro rychlou pomoc
+- **Ticketovy system**: Podpora s integraci do Discordu
+
+## Pravni informace
+
+- [Obchodni podminky](https://alatyrhosting.eu/terms)
+- [Zasady ochrany soukromi](https://alatyrhosting.eu/privacy)
+- [AML politika](https://alatyrhosting.eu/aml)
+- [Bezpecnostni incidenty](https://alatyrhosting.eu/security-incidents)
+
+## Verejne stranky
+
+- [Hlavni stranka](https://alatyrhosting.eu/)
+- [Hosting / Cennik](https://alatyrhosting.eu/hosting)
+- [Domeny](https://alatyrhosting.eu/domains)
+- [Konfigurator](https://alatyrhosting.eu/configurator)
+- [Podpora](https://alatyrhosting.eu/support)
+- [O nas](https://alatyrhosting.eu/about)
+- [Kontakt](https://alatyrhosting.eu/contact)
+
+## FAQ
+
+### Jak rychle je hosting aktivovan?
+Po uspesne platbe je hosting aktivovan automaticky behem nekolika minut. HestiaCP ucet je vytvoren okamzite.
+
+### Mohu migrovat svuj existujici web?
+Ano, nabizime pomoc s migraci. Kontaktujte nasi podporu a pomuzeme vam s presunem webu, databazi i e-mailu.
+
+### Jaka je garancovana dostupnost?
+Garancujeme 99% dostupnost serveru. V pripade vyssiho vypadku poskytujeme kompenzaci.
+
+### Mohu upgradovat plan pozdeji?
+Ano, muzete kdykoli prejit na vyssi plan. Zmena se projevi okamzite.
+
+### Jake platebni metody podporujete?
+Prijimame platby kartou (Visa, Mastercard) pres Stripe, PayPal a ceskou platebni branu GoPay.
+
+### Je SSL certifikat opravdu zdarma?
+Ano, vsechny plany zahrnuji automaticky Let's Encrypt SSL certifikat zdarma. Certifikat se automaticky obnovuje.
