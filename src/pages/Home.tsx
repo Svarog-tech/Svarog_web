@@ -429,11 +429,6 @@ const Home: React.FC = () => {
               animate="visible"
               variants={staggerContainer}
             >
-              <motion.div className="hero-badge" variants={fadeInUp}>
-                <span className="badge-dot"></span>
-                <span>{t('landing.hero.badgeVps')}</span>
-              </motion.div>
-
               <motion.h1 className="hero-main-title" variants={fadeInUp}>
                 {t('landing.hero.title')}{' '}
                 <span className="gradient-text-animated">{t('landing.hero.titleHighlight')}</span>
