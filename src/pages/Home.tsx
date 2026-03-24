@@ -8,9 +8,6 @@ import {
   faTerminal,
   faServer,
   faChartLine,
-  faMicrochip,
-  faMemory,
-  faHdd,
   faShieldHalved,
   faGlobe,
   faClock,
@@ -239,72 +236,107 @@ const CircularGauge: React.FC<{ value: number; label: string; color?: string }> 
   );
 };
 
-// Server Visualization Component
-const ServerVisualization: React.FC = () => {
-  const { t } = useLanguage();
+// Server Visualization Component — Pure CSS 3D
+const ServerVisualization: React.FC = () => (
+  <div className="sv-scene">
+    <div className="sv-tower">
+      {/* Front face */}
+      <div className="sv-face sv-front">
+        <div className="sv-accent sv-accent-top"></div>
+        {/* Glass window */}
+        <div className="sv-glass">
+          <div className="sv-traces">
+            {[...Array(5)].map((_, i) => <div key={i} className="sv-trace" />)}
+          </div>
+          <div className="sv-chips">
+            <div className="sv-chip" />
+            <div className="sv-chip" />
+            <div className="sv-chip sv-chip-lg" />
+          </div>
+          <div className="sv-glow-internal" />
+        </div>
+        {/* Drive bays */}
+        <div className="sv-section">
+          <div className="sv-sep" />
+          <div className="sv-drives">
+            {[...Array(8)].map((_, i) => (
+              <div key={i} className={`sv-drive ${i < 6 ? 'active' : ''}`}>
+                <div className="sv-drive-handle" />
+                {i < 6 && <div className="sv-drive-led" />}
+              </div>
+            ))}
+          </div>
+        </div>
+        {/* Network ports */}
+        <div className="sv-section">
+          <div className="sv-sep" />
+          <div className="sv-ports">
+            {[...Array(8)].map((_, i) => (
+              <div key={i} className={`sv-port ${i < 5 ? 'linked' : ''}`}>
+                <div className="sv-port-led" />
+              </div>
+            ))}
+          </div>
+        </div>
+        {/* OLED display */}
+        <div className="sv-section">
+          <div className="sv-sep" />
+          <div className="sv-oled">
+            <div className="sv-oled-bars">
+              {[...Array(12)].map((_, i) => (
+                <div key={i} className="sv-oled-bar" style={{ animationDelay: `${i * 0.12}s` }} />
+              ))}
+            </div>
+            <div className="sv-oled-text">
+              <div className="sv-oled-line w60" />
+              <div className="sv-oled-line w40" />
+              <div className="sv-oled-line w75" />
+            </div>
+          </div>
+        </div>
+        {/* Power area */}
+        <div className="sv-section sv-power-area">
+          <div className="sv-sep" />
+          <div className="sv-power-row">
+            <div className="sv-power-btn"><div className="sv-power-ring" /></div>
+            <div className="sv-power-leds">
+              {[...Array(6)].map((_, i) => (
+                <div key={i} className={`sv-pwr-led ${i < 4 ? 'on' : ''}`} />
+              ))}
+            </div>
+          </div>
+        </div>
+        <div className="sv-accent sv-accent-bottom"></div>
+        <div className="sv-accent sv-accent-left"></div>
+        <div className="sv-accent sv-accent-right"></div>
+      </div>
 
-  return (
-    <div className="server-visual">
-      <div className="server-rack">
-        <div className="server-unit">
-          <div className="server-leds">
-            <span className="led led-green active"></span>
-            <span className="led led-green active"></span>
-            <span className="led led-blue"></span>
-          </div>
-          <div className="server-slots">
-            <div className="slot"></div>
-            <div className="slot"></div>
-            <div className="slot active"></div>
-          </div>
+      {/* Right face */}
+      <div className="sv-face sv-right">
+        <div className="sv-vents">
+          {[...Array(18)].map((_, i) => <div key={i} className="sv-vent" />)}
         </div>
-        <div className="server-unit">
-          <div className="server-leds">
-            <span className="led led-green active"></span>
-            <span className="led led-orange"></span>
-            <span className="led led-blue active"></span>
-          </div>
-          <div className="server-slots">
-            <div className="slot active"></div>
-            <div className="slot"></div>
-            <div className="slot active"></div>
-          </div>
-        </div>
-        <div className="server-unit primary">
-          <div className="server-leds">
-            <span className="led led-green active pulse"></span>
-            <span className="led led-green active"></span>
-            <span className="led led-blue active"></span>
-          </div>
-          <div className="server-slots">
-            <div className="slot active"></div>
-            <div className="slot active"></div>
-            <div className="slot active"></div>
-          </div>
+        <div className="sv-fans">
+          <div className="sv-fan"><div className="sv-fan-inner" /></div>
+          <div className="sv-fan"><div className="sv-fan-inner" /></div>
+          <div className="sv-fan"><div className="sv-fan-inner" /></div>
         </div>
       </div>
-      <div className="data-flow">
-        <div className="flow-line"></div>
-        <div className="flow-line"></div>
-        <div className="flow-line"></div>
-      </div>
-      <div className="server-metrics">
-        <div className="metric-bubble">
-          <FontAwesomeIcon icon={faMicrochip} />
-          <span>{t('landing.server.vcpu')}</span>
-        </div>
-        <div className="metric-bubble">
-          <FontAwesomeIcon icon={faMemory} />
-          <span>{t('landing.server.ram')}</span>
-        </div>
-        <div className="metric-bubble">
-          <FontAwesomeIcon icon={faHdd} />
-          <span>{t('landing.server.storage')}</span>
+
+      {/* Top face */}
+      <div className="sv-face sv-top">
+        <div className="sv-top-vents">
+          {[...Array(6)].map((_, i) => <div key={i} className="sv-top-vent" />)}
         </div>
       </div>
     </div>
-  );
-};
+    {/* Orbit rings */}
+    <div className="sv-ring sv-ring-1" />
+    <div className="sv-ring sv-ring-2" />
+    {/* Reflection */}
+    <div className="sv-reflection" />
+  </div>
+);
 
 const Home: React.FC = () => {
   const { t } = useLanguage();
