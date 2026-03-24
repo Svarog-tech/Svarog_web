@@ -416,8 +416,6 @@ const Home: React.FC = () => {
       {/* Hero Section */}
       <section className="landing-hero">
         <div className="hero-background">
-          <div className="hero-gradient-orb hero-gradient-orb-1"></div>
-          <div className="hero-gradient-orb hero-gradient-orb-2"></div>
           <div className="hero-grid-pattern"></div>
         </div>
 
