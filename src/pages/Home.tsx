@@ -340,55 +340,47 @@ const ServerVisualization: React.FC = () => (
             </div>
           </div>
         </div>
-        {/* Second row of drives */}
-        <div className="sv-section">
+        {/* Dashboard panel */}
+        <div className="sv-section sv-dashboard">
           <div className="sv-sep" />
-          <div className="sv-drives">
-            {[...Array(8)].map((_, i) => (
-              <div key={i} className={`sv-drive ${i < 4 ? 'active' : ''}`}>
-                <div className="sv-drive-handle" />
-                {i < 4 && <div className="sv-drive-led" />}
+          <div className="sv-stats-row">
+            <div className="sv-stat-card">
+              <div className="sv-stat-icon">⚡</div>
+              <div className="sv-stat-info">
+                <span className="sv-stat-value">99.9%</span>
+                <span className="sv-stat-label">Uptime</span>
               </div>
-            ))}
-          </div>
-        </div>
-        {/* USB & Ports row */}
-        <div className="sv-section">
-          <div className="sv-sep" />
-          <div className="sv-usb-row">
-            <div className="sv-usb-ports">
-              {[...Array(4)].map((_, i) => (
-                <div key={i} className={`sv-usb ${i < 2 ? 'active' : ''}`} />
-              ))}
             </div>
-            <div className="sv-status-leds">
-              <div className="sv-status-led green" />
-              <div className="sv-status-led green" />
-              <div className="sv-status-led orange" />
-              <div className="sv-status-led off" />
+            <div className="sv-stat-card">
+              <div className="sv-stat-icon">🌐</div>
+              <div className="sv-stat-info">
+                <span className="sv-stat-value">24ms</span>
+                <span className="sv-stat-label">Latency</span>
+              </div>
+            </div>
+            <div className="sv-stat-card">
+              <div className="sv-stat-icon">🔒</div>
+              <div className="sv-stat-info">
+                <span className="sv-stat-value">SSL</span>
+                <span className="sv-stat-label">Active</span>
+              </div>
             </div>
           </div>
         </div>
-        {/* Activity monitor */}
-        <div className="sv-section">
+        {/* Bottom status bar */}
+        <div className="sv-section sv-status-bar">
           <div className="sv-sep" />
-          <div className="sv-activity">
-            <div className="sv-activity-graph">
-              {[...Array(16)].map((_, i) => (
-                <div key={i} className="sv-activity-bar" style={{ animationDelay: `${i * 0.08}s` }} />
-              ))}
+          <div className="sv-bottom-row">
+            <div className="sv-status-indicator">
+              <span className="sv-pulse-dot"></span>
+              <span className="sv-status-text">Online</span>
             </div>
-          </div>
-        </div>
-        {/* Power area */}
-        <div className="sv-section sv-power-area">
-          <div className="sv-sep" />
-          <div className="sv-power-row">
-            <div className="sv-power-btn"><div className="sv-power-ring" /></div>
-            <div className="sv-power-leds">
-              {[...Array(6)].map((_, i) => (
-                <div key={i} className={`sv-pwr-led ${i < 4 ? 'on' : ''}`} />
-              ))}
+            <div className="sv-bottom-stats">
+              <span>8 cores</span>
+              <span>•</span>
+              <span>32GB RAM</span>
+              <span>•</span>
+              <span>1TB NVMe</span>
             </div>
           </div>
         </div>
@@ -885,38 +877,54 @@ const Home: React.FC = () => {
       {/* Hosting Plans */}
       <HostingPlansNew />
 
-      {/* Trust/CTA Section */}
+      {/* Trust/CTA Section - Dark Theme */}
       <AnimatedSection className="landing-cta-section">
+        <div className="cta-background">
+          <div className="cta-grid-pattern"></div>
+          <div className="cta-glow cta-glow-1"></div>
+          <div className="cta-glow cta-glow-2"></div>
+        </div>
         <div className="container">
           <div className="cta-content">
-            <motion.div className="cta-text" variants={fadeInLeft}>
-              <FontAwesomeIcon icon={faShieldHalved} className="cta-shield" />
-              <h2 className="cta-title">{t('landing.cta.title')}</h2>
-              <p className="cta-description">{t('landing.cta.description')}</p>
-              <div className="cta-features">
-                <div className="cta-feature">
-                  <FontAwesomeIcon icon={faCheck} />
-                  <span>{t('landing.cta.feature1')}</span>
+            <motion.h2 className="cta-title" variants={fadeInUp}>
+              {t('landing.cta.title')}
+            </motion.h2>
+
+            <motion.p className="cta-description" variants={fadeInUp}>
+              {t('landing.cta.description')}
+            </motion.p>
+
+            <motion.div className="cta-features-grid" variants={staggerContainer}>
+              <motion.div className="cta-feature-card" variants={fadeInUp}>
+                <div className="cta-feature-icon">
+                  <FontAwesomeIcon icon={faShieldHalved} />
                 </div>
-                <div className="cta-feature">
-                  <FontAwesomeIcon icon={faCheck} />
-                  <span>{t('landing.cta.feature2')}</span>
+                <span>{t('landing.cta.feature1')}</span>
+              </motion.div>
+              <motion.div className="cta-feature-card" variants={fadeInUp}>
+                <div className="cta-feature-icon">
+                  <FontAwesomeIcon icon={faRocket} />
                 </div>
-                <div className="cta-feature">
-                  <FontAwesomeIcon icon={faCheck} />
-                  <span>{t('landing.cta.feature3')}</span>
+                <span>{t('landing.cta.feature2')}</span>
+              </motion.div>
+              <motion.div className="cta-feature-card" variants={fadeInUp}>
+                <div className="cta-feature-icon">
+                  <FontAwesomeIcon icon={faClock} />
                 </div>
-              </div>
+                <span>{t('landing.cta.feature3')}</span>
+              </motion.div>
             </motion.div>
-            <motion.div className="cta-action" variants={fadeInRight}>
-              <button className="primary-btn large" onClick={scrollToPlans}>
-                <span>
+
+            <motion.div className="cta-action" variants={fadeInUp}>
+              <button className="cta-primary-btn" onClick={scrollToPlans}>
+                <span className="cta-btn-content">
                   {t('landing.cta.button')}
                   <FontAwesomeIcon icon={faArrowRight} />
                 </span>
+                <span className="cta-btn-glow"></span>
               </button>
               <p className="cta-guarantee">
-                <FontAwesomeIcon icon={faClock} />
+                <FontAwesomeIcon icon={faCheck} />
                 {t('landing.cta.guarantee')}
               </p>
             </motion.div>
