@@ -232,6 +232,137 @@ const JourneyPath: React.FC<{ t: (key: string) => string }> = ({ t }) => {
   );
 };
 
+// Chaotic Network Visualization
+const NetworkDisplay: React.FC = () => {
+  const nodes = [
+    // Main cluster
+    { id: 'a', x: 185, y: 175, size: 18, primary: true },
+    { id: 'b', x: 255, y: 145, size: 12 },
+    { id: 'c', x: 145, y: 120, size: 10 },
+    { id: 'd', x: 95, y: 185, size: 11 },
+    { id: 'e', x: 130, y: 255, size: 9 },
+    { id: 'f', x: 220, y: 235, size: 13 },
+    { id: 'g', x: 290, y: 210, size: 10 },
+    // Scattered nodes
+    { id: 'h', x: 320, y: 95, size: 8 },
+    { id: 'i', x: 355, y: 175, size: 7 },
+    { id: 'j', x: 340, y: 290, size: 9 },
+    { id: 'k', x: 270, y: 340, size: 8 },
+    { id: 'l', x: 160, y: 350, size: 7 },
+    { id: 'm', x: 65, y: 310, size: 8 },
+    { id: 'n', x: 45, y: 240, size: 6 },
+    { id: 'o', x: 55, y: 130, size: 7 },
+    { id: 'p', x: 95, y: 65, size: 8 },
+    { id: 'q', x: 195, y: 55, size: 7 },
+    { id: 'r', x: 280, y: 50, size: 6 },
+    // Tiny outer nodes
+    { id: 't1', x: 380, y: 130, size: 4 },
+    { id: 't2', x: 375, y: 250, size: 5 },
+    { id: 't3', x: 310, y: 370, size: 4 },
+    { id: 't4', x: 85, y: 365, size: 5 },
+    { id: 't5', x: 25, y: 175, size: 4 },
+    { id: 't6', x: 35, y: 75, size: 5 },
+    { id: 't7', x: 175, y: 25, size: 4 },
+    { id: 't8', x: 350, y: 45, size: 5 },
+  ];
+
+  const connections = [
+    // Core connections
+    { from: 'a', to: 'b' }, { from: 'a', to: 'c' }, { from: 'a', to: 'd' },
+    { from: 'a', to: 'e' }, { from: 'a', to: 'f' }, { from: 'a', to: 'g' },
+    { from: 'b', to: 'c' }, { from: 'b', to: 'f' }, { from: 'b', to: 'g' },
+    { from: 'c', to: 'd' }, { from: 'd', to: 'e' }, { from: 'e', to: 'f' },
+    { from: 'f', to: 'g' },
+    // Branches out
+    { from: 'b', to: 'h' }, { from: 'g', to: 'i' }, { from: 'g', to: 'j' },
+    { from: 'f', to: 'k' }, { from: 'e', to: 'l' }, { from: 'e', to: 'm' },
+    { from: 'd', to: 'n' }, { from: 'd', to: 'o' }, { from: 'c', to: 'p' },
+    { from: 'c', to: 'q' }, { from: 'b', to: 'r' },
+    // Cross connections
+    { from: 'h', to: 'r' }, { from: 'i', to: 'j' }, { from: 'j', to: 'k' },
+    { from: 'k', to: 'l' }, { from: 'l', to: 'm' }, { from: 'm', to: 'n' },
+    { from: 'n', to: 'o' }, { from: 'o', to: 'p' }, { from: 'p', to: 'q' },
+    { from: 'q', to: 'r' },
+    // Tiny node connections
+    { from: 'h', to: 't1' }, { from: 'i', to: 't1' }, { from: 'i', to: 't2' },
+    { from: 'j', to: 't2' }, { from: 'j', to: 't3' }, { from: 'k', to: 't3' },
+    { from: 'l', to: 't4' }, { from: 'm', to: 't4' }, { from: 'n', to: 't5' },
+    { from: 'o', to: 't5' }, { from: 'o', to: 't6' }, { from: 'p', to: 't6' },
+    { from: 'q', to: 't7' }, { from: 'r', to: 't7' }, { from: 'r', to: 't8' },
+    { from: 'h', to: 't8' },
+  ];
+
+  const getNode = (id: string) => nodes.find(n => n.id === id)!;
+
+  return (
+    <div className="network-display">
+      <svg className="network-svg" viewBox="0 0 400 400">
+        <defs>
+          <linearGradient id="lineGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.15" />
+            <stop offset="50%" stopColor="#3b82f6" stopOpacity="0.5" />
+            <stop offset="100%" stopColor="#3b82f6" stopOpacity="0.15" />
+          </linearGradient>
+          <filter id="nodeGlow">
+            <feGaussianBlur stdDeviation="2" result="blur" />
+            <feMerge>
+              <feMergeNode in="blur" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+        </defs>
+
+        {/* Connection lines */}
+        {connections.map((conn, i) => {
+          const from = getNode(conn.from);
+          const to = getNode(conn.to);
+          return (
+            <line
+              key={i}
+              x1={from.x}
+              y1={from.y}
+              x2={to.x}
+              y2={to.y}
+              stroke="url(#lineGrad)"
+              strokeWidth="1"
+              className="network-line"
+              style={{ animationDelay: `${i * 0.03}s` }}
+            />
+          );
+        })}
+
+        {/* Nodes */}
+        {nodes.map((node, i) => (
+          <g key={node.id}>
+            {node.size >= 9 && (
+              <circle
+                cx={node.x}
+                cy={node.y}
+                r={node.size}
+                className={`node-pulse ${node.primary ? 'primary' : ''}`}
+                style={{ animationDelay: `${i * 0.2}s` }}
+              />
+            )}
+            <circle
+              cx={node.x}
+              cy={node.y}
+              r={node.size}
+              className={`network-node ${node.primary ? 'primary' : ''}`}
+              filter={node.size >= 8 ? 'url(#nodeGlow)' : undefined}
+            />
+            <circle
+              cx={node.x}
+              cy={node.y}
+              r={node.size * 0.35}
+              className="node-core"
+            />
+          </g>
+        ))}
+      </svg>
+    </div>
+  );
+};
+
 // Tech Stack Flow
 const TechFlow: React.FC = () => {
   const techs = [
@@ -371,52 +502,61 @@ const Hosting: React.FC = () => {
         {/* Animated Background */}
         <div className="hero-bg">
           <div className="hero-grid"></div>
-          <div className="hero-orb hero-orb-1"></div>
-          <div className="hero-orb hero-orb-2"></div>
-          <div className="hero-orb hero-orb-3"></div>
-          <div className="hero-glow"></div>
-          <svg className="hero-lines" viewBox="0 0 1200 600" preserveAspectRatio="xMidYMid slice">
-            <defs>
-              <linearGradient id="heroLineGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor="var(--primary-color)" stopOpacity="0" />
-                <stop offset="50%" stopColor="var(--primary-color)" stopOpacity="0.3" />
-                <stop offset="100%" stopColor="var(--primary-color)" stopOpacity="0" />
-              </linearGradient>
-            </defs>
-            <path d="M0,300 Q300,250 600,300 T1200,300" stroke="url(#heroLineGrad)" strokeWidth="1" fill="none" className="hero-wave-line" />
-            <path d="M0,350 Q300,300 600,350 T1200,350" stroke="url(#heroLineGrad)" strokeWidth="1" fill="none" className="hero-wave-line delay-1" />
-            <path d="M0,400 Q300,350 600,400 T1200,400" stroke="url(#heroLineGrad)" strokeWidth="1" fill="none" className="hero-wave-line delay-2" />
-          </svg>
-          <div className="hero-particles">
-            {[...Array(20)].map((_, i) => (
-              <span key={i} className="particle" style={{
-                left: `${Math.random() * 100}%`,
-                top: `${Math.random() * 100}%`,
-                animationDelay: `${Math.random() * 5}s`,
-                animationDuration: `${3 + Math.random() * 4}s`
-              }} />
-            ))}
-          </div>
         </div>
 
         <div className="container">
-          <div className="hero-content">
-            <motion.h1
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0 }}
+          <div className="hero-layout">
+            <motion.div
+              className="hero-content"
+              initial={{ opacity: 0, x: -30 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.6 }}
             >
-              {t('hosting.title')}{' '}
-              <span className="gradient-text">{t('hosting.titleHighlight')}</span>
-            </motion.h1>
-            <motion.p
-              className="hero-lead"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.15 }}
+              <motion.h1
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.1 }}
+              >
+                {t('hosting.title')}{' '}
+                <span className="gradient-text">{t('hosting.titleHighlight')}</span>
+              </motion.h1>
+              <motion.p
+                className="hero-lead"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.2 }}
+              >
+                {t('hosting.description')}
+              </motion.p>
+              <motion.div
+                className="hero-features"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.3 }}
+              >
+                <div className="hero-feature">
+                  <FontAwesomeIcon icon={faCheck} />
+                  <span>NVMe SSD Storage</span>
+                </div>
+                <div className="hero-feature">
+                  <FontAwesomeIcon icon={faCheck} />
+                  <span>99.9% Uptime</span>
+                </div>
+                <div className="hero-feature">
+                  <FontAwesomeIcon icon={faCheck} />
+                  <span>24/7 Support</span>
+                </div>
+              </motion.div>
+            </motion.div>
+
+            <motion.div
+              className="hero-visual"
+              initial={{ opacity: 0, x: 30 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
             >
-              {t('hosting.description')}
-            </motion.p>
+              <NetworkDisplay />
+            </motion.div>
           </div>
         </div>
       </section>
