@@ -195,7 +195,7 @@
 .sv-tower {
   position: relative;
   width: 300px;
-  height: 420px;
+  height: 520px;
   margin: 0 auto;
   transform-style: preserve-3d;
   transform: rotateX(-6deg) rotateY(-25deg);
@@ -216,7 +216,7 @@
 /* ============ FRONT FACE ============ */
 .sv-front {
   width: 300px;
-  height: 420px;
+  height: 520px;
   background: linear-gradient(180deg, #0f172a 0%, #0c1222 100%);
   border-radius: 10px;
   transform: translateZ(65px);
@@ -493,6 +493,153 @@
 .sv-oled-line.w40 { width: 40%; }
 .sv-oled-line.w75 { width: 75%; }
 
+/* ---- Glass metrics ---- */
+.sv-glass-metrics {
+  position: absolute;
+  top: 50px;
+  left: 12px;
+  right: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sv-metric-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 4px;
+  border: 1px solid rgba(59, 130, 246, 0.15);
+}
+
+.sv-metric-label {
+  font-size: 8px;
+  font-weight: 600;
+  color: rgba(59, 130, 246, 0.8);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  width: 24px;
+}
+
+.sv-metric-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  flex: 1;
+  height: 14px;
+}
+
+.sv-metric-bar {
+  flex: 1;
+  background: linear-gradient(180deg, #3b82f6, #22d3ee);
+  border-radius: 1px;
+  animation: sv-metric-dance 1.8s ease-in-out infinite;
+  min-height: 3px;
+}
+
+.sv-metric-bar.memory {
+  background: linear-gradient(180deg, #8b5cf6, #a855f7);
+}
+
+@keyframes sv-metric-dance {
+  0%, 100% { height: 25%; opacity: 0.5; }
+  50% { height: 85%; opacity: 1; }
+}
+
+.sv-metric-value {
+  font-size: 9px;
+  font-weight: 700;
+  color: #22d3ee;
+  text-shadow: 0 0 6px rgba(34, 211, 238, 0.5);
+  min-width: 26px;
+  text-align: right;
+}
+
+/* ---- Secondary OLED (Disk I/O) ---- */
+.sv-oled.secondary {
+  background: #020617;
+  height: 32px;
+  padding: 4px 6px;
+}
+
+.sv-oled.secondary .sv-oled-bars {
+  gap: 3px;
+}
+
+.sv-oled-bar.disk {
+  background: linear-gradient(180deg, #f59e0b, #d97706);
+}
+
+.sv-oled-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: center;
+  flex: 0.8;
+}
+
+.sv-oled-label {
+  font-size: 6px;
+  color: rgba(245, 158, 11, 0.7);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.sv-oled-stat {
+  font-size: 8px;
+  font-weight: 700;
+  color: #f59e0b;
+  text-shadow: 0 0 4px rgba(245, 158, 11, 0.4);
+}
+
+/* ---- Tertiary OLED (Temperature) ---- */
+.sv-oled.tertiary {
+  background: #020617;
+  height: 28px;
+  padding: 4px 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sv-temp-display {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.sv-temp-icon {
+  font-size: 10px;
+}
+
+.sv-temp-value {
+  font-size: 10px;
+  font-weight: 700;
+  color: #10b981;
+  text-shadow: 0 0 4px rgba(16, 185, 129, 0.4);
+}
+
+.sv-temp-bars {
+  display: flex;
+  gap: 3px;
+  flex: 1;
+}
+
+.sv-temp-bar {
+  flex: 1;
+  height: 8px;
+  background: rgba(30, 41, 59, 0.6);
+  border-radius: 2px;
+  transition: all 0.3s ease;
+}
+
+.sv-temp-bar.active {
+  background: linear-gradient(180deg, #10b981, #059669);
+  box-shadow: 0 0 4px rgba(16, 185, 129, 0.3);
+}
+
 /* ---- Power area ---- */
 .sv-power-area {
   margin-top: auto;
@@ -551,7 +698,7 @@
 /* ============ RIGHT FACE ============ */
 .sv-right {
   width: 130px;
-  height: 420px;
+  height: 520px;
   background: linear-gradient(180deg, #0c1425 0%, #0a101e 100%);
   border-radius: 0 10px 10px 0;
   transform: rotateY(90deg) translateZ(65px) translateX(-65px);
@@ -1593,16 +1740,16 @@
 
   .sv-tower {
     width: 340px;
-    height: 470px;
+    height: 570px;
   }
 
   .sv-front {
     width: 340px;
-    height: 470px;
+    height: 570px;
   }
 
   .sv-right {
-    height: 470px;
+    height: 570px;
     width: 145px;
   }
 

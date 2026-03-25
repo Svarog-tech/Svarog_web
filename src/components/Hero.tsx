@@ -147,6 +147,181 @@ const Hero: React.FC = () => {
                 </div>
 
                 <div className="preview-content">
+                  {/* Server Status Header */}
+                  <div className="server-header">
+                    <div className="server-indicator">
+                      <span className="indicator-dot online"></span>
+                      <span className="indicator-label">Server Active</span>
+                    </div>
+                    <div className="server-uptime">
+                      <span className="uptime-value">99.9%</span>
+                      <span className="uptime-label">uptime</span>
+                    </div>
+                  </div>
+
+                  {/* Server Metrics Grid */}
+                  <div className="server-metrics-grid">
+                    <div className="metric-card">
+                      <div className="metric-header">
+                        <span className="metric-icon">⚡</span>
+                        <span className="metric-name">CPU</span>
+                      </div>
+                      <div className="metric-chart">
+                        <motion.div
+                          className="chart-bar"
+                          initial={{ height: 0 }}
+                          animate={{ height: '45%' }}
+                          transition={{ delay: 0.3, duration: 0.6 }}
+                        />
+                        <motion.div
+                          className="chart-bar"
+                          initial={{ height: 0 }}
+                          animate={{ height: '65%' }}
+                          transition={{ delay: 0.4, duration: 0.6 }}
+                        />
+                        <motion.div
+                          className="chart-bar"
+                          initial={{ height: 0 }}
+                          animate={{ height: '35%' }}
+                          transition={{ delay: 0.5, duration: 0.6 }}
+                        />
+                        <motion.div
+                          className="chart-bar"
+                          initial={{ height: 0 }}
+                          animate={{ height: '55%' }}
+                          transition={{ delay: 0.6, duration: 0.6 }}
+                        />
+                        <motion.div
+                          className="chart-bar"
+                          initial={{ height: 0 }}
+                          animate={{ height: '40%' }}
+                          transition={{ delay: 0.7, duration: 0.6 }}
+                        />
+                      </div>
+                      <div className="metric-value">23%</div>
+                    </div>
+
+                    <div className="metric-card">
+                      <div className="metric-header">
+                        <span className="metric-icon">💾</span>
+                        <span className="metric-name">RAM</span>
+                      </div>
+                      <div className="metric-chart">
+                        <motion.div
+                          className="chart-bar memory"
+                          initial={{ height: 0 }}
+                          animate={{ height: '70%' }}
+                          transition={{ delay: 0.35, duration: 0.6 }}
+                        />
+                        <motion.div
+                          className="chart-bar memory"
+                          initial={{ height: 0 }}
+                          animate={{ height: '75%' }}
+                          transition={{ delay: 0.45, duration: 0.6 }}
+                        />
+                        <motion.div
+                          className="chart-bar memory"
+                          initial={{ height: 0 }}
+                          animate={{ height: '68%' }}
+                          transition={{ delay: 0.55, duration: 0.6 }}
+                        />
+                        <motion.div
+                          className="chart-bar memory"
+                          initial={{ height: 0 }}
+                          animate={{ height: '72%' }}
+                          transition={{ delay: 0.65, duration: 0.6 }}
+                        />
+                        <motion.div
+                          className="chart-bar memory"
+                          initial={{ height: 0 }}
+                          animate={{ height: '65%' }}
+                          transition={{ delay: 0.75, duration: 0.6 }}
+                        />
+                      </div>
+                      <div className="metric-value">2.1 GB</div>
+                    </div>
+
+                    <div className="metric-card">
+                      <div className="metric-header">
+                        <span className="metric-icon">📊</span>
+                        <span className="metric-name">Disk</span>
+                      </div>
+                      <div className="metric-chart">
+                        <motion.div
+                          className="chart-bar disk"
+                          initial={{ height: 0 }}
+                          animate={{ height: '30%' }}
+                          transition={{ delay: 0.4, duration: 0.6 }}
+                        />
+                        <motion.div
+                          className="chart-bar disk"
+                          initial={{ height: 0 }}
+                          animate={{ height: '32%' }}
+                          transition={{ delay: 0.5, duration: 0.6 }}
+                        />
+                        <motion.div
+                          className="chart-bar disk"
+                          initial={{ height: 0 }}
+                          animate={{ height: '35%' }}
+                          transition={{ delay: 0.6, duration: 0.6 }}
+                        />
+                        <motion.div
+                          className="chart-bar disk"
+                          initial={{ height: 0 }}
+                          animate={{ height: '33%' }}
+                          transition={{ delay: 0.7, duration: 0.6 }}
+                        />
+                        <motion.div
+                          className="chart-bar disk"
+                          initial={{ height: 0 }}
+                          animate={{ height: '38%' }}
+                          transition={{ delay: 0.8, duration: 0.6 }}
+                        />
+                      </div>
+                      <div className="metric-value">12.4 GB</div>
+                    </div>
+
+                    <div className="metric-card">
+                      <div className="metric-header">
+                        <span className="metric-icon">🌐</span>
+                        <span className="metric-name">Network</span>
+                      </div>
+                      <div className="metric-chart">
+                        <motion.div
+                          className="chart-bar network"
+                          initial={{ height: 0 }}
+                          animate={{ height: '85%' }}
+                          transition={{ delay: 0.45, duration: 0.6 }}
+                        />
+                        <motion.div
+                          className="chart-bar network"
+                          initial={{ height: 0 }}
+                          animate={{ height: '60%' }}
+                          transition={{ delay: 0.55, duration: 0.6 }}
+                        />
+                        <motion.div
+                          className="chart-bar network"
+                          initial={{ height: 0 }}
+                          animate={{ height: '90%' }}
+                          transition={{ delay: 0.65, duration: 0.6 }}
+                        />
+                        <motion.div
+                          className="chart-bar network"
+                          initial={{ height: 0 }}
+                          animate={{ height: '55%' }}
+                          transition={{ delay: 0.75, duration: 0.6 }}
+                        />
+                        <motion.div
+                          className="chart-bar network"
+                          initial={{ height: 0 }}
+                          animate={{ height: '75%' }}
+                          transition={{ delay: 0.85, duration: 0.6 }}
+                        />
+                      </div>
+                      <div className="metric-value">1.2 Gb/s</div>
+                    </div>
+                  </div>
+
                   {/* Plan Selector with Smooth Tabs */}
                   <div className="plan-selector">
                     {plans.map((plan) => (

@@ -1113,6 +1113,145 @@ body:has(.about-page) .modern-header .dropdown-arrow {
   padding: 1.5rem;
 }
 
+/* Server Header */
+.server-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  background: rgba(16, 185, 129, 0.08);
+  border-radius: 10px;
+  margin-bottom: 1rem;
+  border: 1px solid rgba(16, 185, 129, 0.15);
+}
+
+.server-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.indicator-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--success-color);
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
+  animation: pulse-dot 2s infinite;
+}
+
+.indicator-dot.online {
+  background: #10b981;
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.7; transform: scale(1.1); }
+}
+
+.indicator-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--success-color);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.server-uptime {
+  display: flex;
+  align-items: baseline;
+  gap: 0.25rem;
+}
+
+.uptime-value {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.uptime-label {
+  font-size: 0.65rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+}
+
+/* Server Metrics Grid */
+.server-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.metric-card {
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 10px;
+  padding: 0.75rem;
+  border: 1px solid var(--border-light);
+  transition: all 0.3s ease;
+}
+
+.metric-card:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: var(--primary-color);
+  transform: translateY(-2px);
+}
+
+.metric-header {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-bottom: 0.5rem;
+}
+
+.metric-icon {
+  font-size: 0.75rem;
+}
+
+.metric-name {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.metric-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 40px;
+  margin-bottom: 0.5rem;
+  padding: 0 2px;
+}
+
+.metric-chart .chart-bar {
+  flex: 1;
+  background: var(--gradient-primary);
+  border-radius: 2px 2px 0 0;
+  min-height: 4px;
+  transition: all 0.3s ease;
+}
+
+.metric-chart .chart-bar.memory {
+  background: linear-gradient(180deg, #8b5cf6, #6366f1);
+}
+
+.metric-chart .chart-bar.disk {
+  background: linear-gradient(180deg, #f59e0b, #d97706);
+}
+
+.metric-chart .chart-bar.network {
+  background: linear-gradient(180deg, #10b981, #059669);
+}
+
+.metric-value {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  text-align: center;
+}
+
 .server-status {
   display: flex;
   flex-direction: column;
@@ -3600,6 +3739,37 @@ body:has(.about-page) .modern-header .dropdown-arrow {
     padding: 1rem;
   }
 
+  .server-header {
+    padding: 0.5rem 0.75rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .indicator-label {
+    font-size: 0.65rem;
+  }
+
+  .uptime-value {
+    font-size: 0.85rem;
+  }
+
+  .server-metrics-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .metric-card {
+    padding: 0.5rem;
+  }
+
+  .metric-chart {
+    height: 30px;
+  }
+
+  .metric-value {
+    font-size: 0.75rem;
+  }
+
   .plan-display-header {
     flex-direction: column;
     align-items: flex-start;
@@ -3871,6 +4041,57 @@ body:has(.about-page) .modern-header .dropdown-arrow {
     padding: 0.85rem;
   }
 
+  /* Server metrics mobile */
+  .server-header {
+    padding: 0.4rem 0.6rem;
+    margin-bottom: 0.5rem;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .indicator-label {
+    font-size: 0.6rem;
+  }
+
+  .uptime-value {
+    font-size: 0.75rem;
+  }
+
+  .uptime-label {
+    font-size: 0.55rem;
+  }
+
+  .server-metrics-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.4rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .metric-card {
+    padding: 0.4rem;
+  }
+
+  .metric-header {
+    margin-bottom: 0.3rem;
+  }
+
+  .metric-icon {
+    font-size: 0.65rem;
+  }
+
+  .metric-name {
+    font-size: 0.55rem;
+  }
+
+  .metric-chart {
+    height: 25px;
+    margin-bottom: 0.3rem;
+  }
+
+  .metric-value {
+    font-size: 0.65rem;
+  }
+
   /* Code editor mobile */
   .code-editor-visual {
     gap: 0.35rem;
@@ -4024,6 +4245,43 @@ body:has(.about-page) .modern-header .dropdown-arrow {
 
   .preview-content {
     padding: 0.65rem;
+  }
+
+  /* Server metrics tiny screens */
+  .server-header {
+    padding: 0.35rem 0.5rem;
+    margin-bottom: 0.4rem;
+  }
+
+  .indicator-dot {
+    width: 6px;
+    height: 6px;
+  }
+
+  .indicator-label {
+    font-size: 0.55rem;
+  }
+
+  .uptime-value {
+    font-size: 0.7rem;
+  }
+
+  .server-metrics-grid {
+    gap: 0.3rem;
+    margin-bottom: 0.4rem;
+  }
+
+  .metric-card {
+    padding: 0.35rem;
+  }
+
+  .metric-chart {
+    height: 20px;
+    gap: 2px;
+  }
+
+  .metric-value {
+    font-size: 0.6rem;
   }
 
   .plan-display-header h4 {

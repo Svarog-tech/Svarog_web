@@ -243,10 +243,26 @@ const ServerVisualization: React.FC = () => (
       {/* Front face */}
       <div className="sv-face sv-front">
         <div className="sv-accent sv-accent-top"></div>
-        {/* Glass window */}
+        {/* Glass window with metrics */}
         <div className="sv-glass">
           <div className="sv-traces">
             {[...Array(5)].map((_, i) => <div key={i} className="sv-trace" />)}
+          </div>
+          <div className="sv-glass-metrics">
+            <div className="sv-metric-item">
+              <div className="sv-metric-label">CPU</div>
+              <div className="sv-metric-bars">
+                {[...Array(6)].map((_, i) => <div key={i} className="sv-metric-bar" style={{ animationDelay: `${i * 0.15}s` }} />)}
+              </div>
+              <div className="sv-metric-value">23%</div>
+            </div>
+            <div className="sv-metric-item">
+              <div className="sv-metric-label">RAM</div>
+              <div className="sv-metric-bars">
+                {[...Array(6)].map((_, i) => <div key={i} className="sv-metric-bar memory" style={{ animationDelay: `${i * 0.12}s` }} />)}
+              </div>
+              <div className="sv-metric-value">4.2G</div>
+            </div>
           </div>
           <div className="sv-chips">
             <div className="sv-chip" />
@@ -278,7 +294,7 @@ const ServerVisualization: React.FC = () => (
             ))}
           </div>
         </div>
-        {/* OLED display */}
+        {/* OLED display - Network throughput */}
         <div className="sv-section">
           <div className="sv-sep" />
           <div className="sv-oled">
@@ -291,6 +307,36 @@ const ServerVisualization: React.FC = () => (
               <div className="sv-oled-line w60" />
               <div className="sv-oled-line w40" />
               <div className="sv-oled-line w75" />
+            </div>
+          </div>
+        </div>
+        {/* Second OLED - Disk I/O */}
+        <div className="sv-section">
+          <div className="sv-sep" />
+          <div className="sv-oled secondary">
+            <div className="sv-oled-bars">
+              {[...Array(10)].map((_, i) => (
+                <div key={i} className="sv-oled-bar disk" style={{ animationDelay: `${i * 0.1}s` }} />
+              ))}
+            </div>
+            <div className="sv-oled-info">
+              <div className="sv-oled-label">I/O</div>
+              <div className="sv-oled-stat">1.2 GB/s</div>
+            </div>
+          </div>
+        </div>
+        {/* Third OLED - Temperature */}
+        <div className="sv-section">
+          <div className="sv-sep" />
+          <div className="sv-oled tertiary">
+            <div className="sv-temp-display">
+              <div className="sv-temp-icon">🌡</div>
+              <div className="sv-temp-value">42°C</div>
+            </div>
+            <div className="sv-temp-bars">
+              {[...Array(8)].map((_, i) => (
+                <div key={i} className={`sv-temp-bar ${i < 4 ? 'active' : ''}`} />
+              ))}
             </div>
           </div>
         </div>
