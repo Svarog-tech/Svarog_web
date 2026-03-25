@@ -340,6 +340,46 @@ const ServerVisualization: React.FC = () => (
             </div>
           </div>
         </div>
+        {/* Second row of drives */}
+        <div className="sv-section">
+          <div className="sv-sep" />
+          <div className="sv-drives">
+            {[...Array(8)].map((_, i) => (
+              <div key={i} className={`sv-drive ${i < 4 ? 'active' : ''}`}>
+                <div className="sv-drive-handle" />
+                {i < 4 && <div className="sv-drive-led" />}
+              </div>
+            ))}
+          </div>
+        </div>
+        {/* USB & Ports row */}
+        <div className="sv-section">
+          <div className="sv-sep" />
+          <div className="sv-usb-row">
+            <div className="sv-usb-ports">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className={`sv-usb ${i < 2 ? 'active' : ''}`} />
+              ))}
+            </div>
+            <div className="sv-status-leds">
+              <div className="sv-status-led green" />
+              <div className="sv-status-led green" />
+              <div className="sv-status-led orange" />
+              <div className="sv-status-led off" />
+            </div>
+          </div>
+        </div>
+        {/* Activity monitor */}
+        <div className="sv-section">
+          <div className="sv-sep" />
+          <div className="sv-activity">
+            <div className="sv-activity-graph">
+              {[...Array(16)].map((_, i) => (
+                <div key={i} className="sv-activity-bar" style={{ animationDelay: `${i * 0.08}s` }} />
+              ))}
+            </div>
+          </div>
+        </div>
         {/* Power area */}
         <div className="sv-section sv-power-area">
           <div className="sv-sep" />

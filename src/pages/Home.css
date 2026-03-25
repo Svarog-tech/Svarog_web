@@ -194,8 +194,8 @@
 /* Floating animation */
 .sv-tower {
   position: relative;
-  width: 300px;
-  height: 520px;
+  width: 360px;
+  height: 480px;
   margin: 0 auto;
   transform-style: preserve-3d;
   transform: rotateX(-6deg) rotateY(-25deg);
@@ -215,11 +215,11 @@
 
 /* ============ FRONT FACE ============ */
 .sv-front {
-  width: 300px;
-  height: 520px;
+  width: 360px;
+  height: 480px;
   background: linear-gradient(180deg, #0f172a 0%, #0c1222 100%);
   border-radius: 10px;
-  transform: translateZ(65px);
+  transform: translateZ(75px);
   display: flex;
   flex-direction: column;
   padding: 0;
@@ -640,6 +640,115 @@
   box-shadow: 0 0 4px rgba(16, 185, 129, 0.3);
 }
 
+/* ---- USB & Ports row ---- */
+.sv-usb-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.sv-usb-ports {
+  display: flex;
+  gap: 4px;
+}
+
+.sv-usb {
+  width: 18px;
+  height: 10px;
+  background: #080e18;
+  border: 1px solid rgba(30, 41, 59, 0.5);
+  border-radius: 2px;
+  position: relative;
+}
+
+.sv-usb::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 3px;
+  right: 3px;
+  height: 2px;
+  background: #1e293b;
+  border-radius: 1px;
+}
+
+.sv-usb.active::after {
+  background: #3b82f6;
+  box-shadow: 0 0 4px rgba(59, 130, 246, 0.5);
+}
+
+.sv-status-leds {
+  display: flex;
+  gap: 6px;
+}
+
+.sv-status-led {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #1e293b;
+}
+
+.sv-status-led.green {
+  background: #10b981;
+  box-shadow: 0 0 6px rgba(16, 185, 129, 0.5);
+  animation: sv-led-blink 2s ease-in-out infinite;
+}
+
+.sv-status-led.orange {
+  background: #f59e0b;
+  box-shadow: 0 0 6px rgba(245, 158, 11, 0.5);
+  animation: sv-led-blink 1.5s ease-in-out infinite 0.3s;
+}
+
+.sv-status-led.off {
+  background: #1e293b;
+}
+
+/* ---- Activity monitor ---- */
+.sv-activity {
+  background: #030712;
+  border: 1px solid rgba(30, 41, 59, 0.3);
+  border-radius: 4px;
+  padding: 6px 8px;
+  height: 28px;
+}
+
+.sv-activity-graph {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 100%;
+}
+
+.sv-activity-bar {
+  flex: 1;
+  background: linear-gradient(180deg, #22d3ee, #0891b2);
+  border-radius: 1px;
+  animation: sv-activity-dance 1.5s ease-in-out infinite;
+  min-height: 2px;
+}
+
+@keyframes sv-activity-dance {
+  0%, 100% { height: 20%; opacity: 0.4; }
+  25% { height: 70%; opacity: 0.8; }
+  50% { height: 40%; opacity: 0.6; }
+  75% { height: 90%; opacity: 1; }
+}
+
+.sv-activity-bar:nth-child(odd) {
+  animation-duration: 1.2s;
+}
+
+.sv-activity-bar:nth-child(3n) {
+  animation-duration: 1.8s;
+}
+
+.sv-activity-bar:nth-child(4n) {
+  animation-duration: 2.1s;
+}
+
 /* ---- Power area ---- */
 .sv-power-area {
   margin-top: auto;
@@ -697,11 +806,11 @@
 
 /* ============ RIGHT FACE ============ */
 .sv-right {
-  width: 130px;
-  height: 520px;
+  width: 150px;
+  height: 480px;
   background: linear-gradient(180deg, #0c1425 0%, #0a101e 100%);
   border-radius: 0 10px 10px 0;
-  transform: rotateY(90deg) translateZ(65px) translateX(-65px);
+  transform: rotateY(90deg) translateZ(75px) translateX(-75px);
   transform-origin: left center;
   display: flex;
   flex-direction: column;
@@ -762,11 +871,11 @@
 
 /* ============ TOP FACE ============ */
 .sv-top {
-  width: 300px;
-  height: 130px;
+  width: 360px;
+  height: 150px;
   background: linear-gradient(135deg, #111c2e 0%, #0d1524 100%);
   border-radius: 10px 10px 0 0;
-  transform: rotateX(90deg) translateZ(0px) translateY(-65px);
+  transform: rotateX(90deg) translateZ(0px) translateY(-75px);
   transform-origin: top center;
   display: flex;
   align-items: center;
@@ -797,8 +906,8 @@
 }
 
 .sv-ring-1 {
-  width: 380px;
-  height: 380px;
+  width: 420px;
+  height: 420px;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%) rotateX(70deg);
@@ -807,8 +916,8 @@
 }
 
 .sv-ring-2 {
-  width: 440px;
-  height: 440px;
+  width: 500px;
+  height: 500px;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%) rotateX(70deg);
@@ -1739,27 +1848,27 @@
   }
 
   .sv-tower {
-    width: 340px;
-    height: 570px;
+    width: 400px;
+    height: 520px;
   }
 
   .sv-front {
-    width: 340px;
-    height: 570px;
+    width: 400px;
+    height: 520px;
   }
 
   .sv-right {
-    height: 570px;
-    width: 145px;
+    height: 520px;
+    width: 160px;
   }
 
   .sv-top {
-    width: 340px;
-    height: 145px;
+    width: 400px;
+    height: 160px;
   }
 
-  .sv-ring-1 { width: 440px; height: 440px; }
-  .sv-ring-2 { width: 510px; height: 510px; }
+  .sv-ring-1 { width: 480px; height: 480px; }
+  .sv-ring-2 { width: 560px; height: 560px; }
 
   .landing-hero .hero-text-content {
     text-align: left;
