@@ -334,15 +334,6 @@ const NetworkDisplay: React.FC = () => {
         {/* Nodes */}
         {nodes.map((node, i) => (
           <g key={node.id}>
-            {node.size >= 9 && (
-              <circle
-                cx={node.x}
-                cy={node.y}
-                r={node.size}
-                className={`node-pulse ${node.primary ? 'primary' : ''}`}
-                style={{ animationDelay: `${i * 0.2}s` }}
-              />
-            )}
             <circle
               cx={node.x}
               cy={node.y}

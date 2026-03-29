@@ -159,28 +159,7 @@
   fill: #3b82f6;
 }
 
-/* Pulse animation */
-.node-pulse {
-  fill: none;
-  stroke: rgba(59, 130, 246, 0.5);
-  stroke-width: 1.5;
-  animation: pulse 4s ease-out infinite;
-}
 
-.node-pulse.primary {
-  stroke: rgba(59, 130, 246, 0.7);
-  animation: pulse-primary 3s ease-out infinite;
-}
-
-@keyframes pulse {
-  0% { transform: scale(1); opacity: 0.7; }
-  100% { transform: scale(2.5); opacity: 0; }
-}
-
-@keyframes pulse-primary {
-  0% { transform: scale(1); opacity: 0.8; }
-  100% { transform: scale(3); opacity: 0; }
-}
 
 /* Light Theme */
 [data-theme="light"] .hosting-hero {
@@ -219,15 +198,6 @@
 
 [data-theme="light"] .node-core {
   fill: #2563eb;
-}
-
-[data-theme="light"] .node-pulse {
-  stroke: rgba(59, 130, 246, 0.6);
-  stroke-width: 2;
-}
-
-[data-theme="light"] .node-pulse.primary {
-  stroke: rgba(59, 130, 246, 0.8);
 }
 
 [data-theme="light"] .network-line {
@@ -1130,16 +1100,11 @@
   .conn-line,
   .server-pulse,
   .ring,
-  .network-line,
-  .node-pulse {
+  .network-line {
     animation: none;
   }
 
   .network-line {
     stroke-dashoffset: 0;
-  }
-
-  .node-pulse {
-    display: none;
   }
 }
