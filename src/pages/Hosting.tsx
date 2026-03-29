@@ -72,12 +72,12 @@ const ServerDiagram: React.FC = () => {
 
       <svg className="connection-lines" viewBox="0 0 400 400" preserveAspectRatio="none">
         {/* Connection lines from server edges to each feature */}
-        <line x1="165" y1="165" x2="80" y2="80" stroke="var(--primary-color)" strokeWidth="2" strokeOpacity="0.5" className="conn-line" />
-        <line x1="235" y1="165" x2="320" y2="80" stroke="var(--primary-color)" strokeWidth="2" strokeOpacity="0.5" className="conn-line" />
-        <line x1="240" y1="200" x2="363" y2="200" stroke="var(--primary-color)" strokeWidth="2" strokeOpacity="0.5" className="conn-line" />
-        <line x1="230" y1="220" x2="320" y2="320" stroke="var(--primary-color)" strokeWidth="2" strokeOpacity="0.5" className="conn-line" />
-        <line x1="170" y1="220" x2="80" y2="320" stroke="var(--primary-color)" strokeWidth="2" strokeOpacity="0.5" className="conn-line" />
-        <line x1="160" y1="200" x2="37" y2="200" stroke="var(--primary-color)" strokeWidth="2" strokeOpacity="0.5" className="conn-line" />
+        <line x1="165" y1="165" x2="80" y2="80" stroke="var(--primary-color)" strokeWidth="2.5" strokeOpacity="0.7" className="conn-line" />
+        <line x1="235" y1="165" x2="320" y2="80" stroke="var(--primary-color)" strokeWidth="2.5" strokeOpacity="0.7" className="conn-line" />
+        <line x1="240" y1="200" x2="363" y2="200" stroke="var(--primary-color)" strokeWidth="2.5" strokeOpacity="0.7" className="conn-line" />
+        <line x1="230" y1="220" x2="320" y2="320" stroke="var(--primary-color)" strokeWidth="2.5" strokeOpacity="0.7" className="conn-line" />
+        <line x1="170" y1="220" x2="80" y2="320" stroke="var(--primary-color)" strokeWidth="2.5" strokeOpacity="0.7" className="conn-line" />
+        <line x1="160" y1="200" x2="37" y2="200" stroke="var(--primary-color)" strokeWidth="2.5" strokeOpacity="0.7" className="conn-line" />
       </svg>
 
       {features.map((feature, index) => (
@@ -299,12 +299,12 @@ const NetworkDisplay: React.FC = () => {
       <svg className="network-svg" viewBox="0 0 400 400">
         <defs>
           <linearGradient id="lineGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.15" />
-            <stop offset="50%" stopColor="#3b82f6" stopOpacity="0.5" />
-            <stop offset="100%" stopColor="#3b82f6" stopOpacity="0.15" />
+            <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.3" />
+            <stop offset="50%" stopColor="#3b82f6" stopOpacity="0.7" />
+            <stop offset="100%" stopColor="#3b82f6" stopOpacity="0.3" />
           </linearGradient>
           <filter id="nodeGlow">
-            <feGaussianBlur stdDeviation="2" result="blur" />
+            <feGaussianBlur stdDeviation="3" result="blur" />
             <feMerge>
               <feMergeNode in="blur" />
               <feMergeNode in="SourceGraphic" />
