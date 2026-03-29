@@ -652,38 +652,75 @@ const Hosting: React.FC = () => {
 
       {/* CTA */}
       <section className="hosting-cta">
+        <div className="cta-noise"></div>
         <div className="container">
-          <motion.div
-            className="cta-content"
-            initial={{ opacity: 0, scale: 0.95 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true }}
-          >
-            <div className="cta-visual">
-              <div className="cta-rings">
-                <div className="ring ring-1"></div>
-                <div className="ring ring-2"></div>
-                <div className="ring ring-3"></div>
+          <div className="cta-layout">
+            <motion.div
+              className="cta-terminal"
+              initial={{ opacity: 0, x: -40 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+              viewport={{ once: true }}
+            >
+              <div className="terminal-bar">
+                <div className="terminal-dots">
+                  <span></span><span></span><span></span>
+                </div>
+                <span className="terminal-title">alatyr-deploy</span>
               </div>
-              <FontAwesomeIcon icon={faRocket} className="cta-icon" />
-            </div>
-            <h2>Ready to Launch?</h2>
-            <p>Join thousands of satisfied customers with professional hosting</p>
-            <div className="cta-buttons">
-              <button className="btn-primary" onClick={() => navigate('/configurator')}>
-                <span>Get Started</span>
-                <FontAwesomeIcon icon={faArrowRight} />
-              </button>
-              <button className="btn-secondary" onClick={() => navigate('/support')}>
-                <span>Talk to Sales</span>
-              </button>
-            </div>
-            <div className="cta-guarantees">
-              <span><FontAwesomeIcon icon={faCheck} /> 30-day money back</span>
-              <span><FontAwesomeIcon icon={faCheck} /> Free migration</span>
-              <span><FontAwesomeIcon icon={faCheck} /> 5-min setup</span>
-            </div>
-          </motion.div>
+              <div className="terminal-body">
+                <motion.div className="terminal-line" initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} transition={{ delay: 0.3 }} viewport={{ once: true }}>
+                  <span className="t-prompt">$</span>
+                  <span className="t-cmd">alatyr deploy --production</span>
+                </motion.div>
+                <motion.div className="terminal-line t-output" initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} transition={{ delay: 0.6 }} viewport={{ once: true }}>
+                  <span className="t-check">&#10003;</span>
+                  <span>SSL certificate provisioned</span>
+                </motion.div>
+                <motion.div className="terminal-line t-output" initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} transition={{ delay: 0.8 }} viewport={{ once: true }}>
+                  <span className="t-check">&#10003;</span>
+                  <span>NVMe storage allocated</span>
+                </motion.div>
+                <motion.div className="terminal-line t-output" initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} transition={{ delay: 1.0 }} viewport={{ once: true }}>
+                  <span className="t-check">&#10003;</span>
+                  <span>DDoS protection active</span>
+                </motion.div>
+                <motion.div className="terminal-line t-success" initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} transition={{ delay: 1.3 }} viewport={{ once: true }}>
+                  <span className="t-arrow">&rarr;</span>
+                  <span>Live at <strong>yoursite.cz</strong></span>
+                </motion.div>
+                <motion.div className="terminal-line" initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} transition={{ delay: 1.6 }} viewport={{ once: true }}>
+                  <span className="t-prompt">$</span>
+                  <span className="t-cursor"></span>
+                </motion.div>
+              </div>
+            </motion.div>
+
+            <motion.div
+              className="cta-text"
+              initial={{ opacity: 0, x: 40 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.7, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
+              viewport={{ once: true }}
+            >
+              <h2>{t('hosting.cta.title')}</h2>
+              <p>{t('hosting.cta.subtitle')}</p>
+              <div className="cta-buttons">
+                <button className="btn-cta-primary" onClick={() => navigate('/configurator')}>
+                  <span>{t('hosting.cta.getStarted')}</span>
+                  <FontAwesomeIcon icon={faArrowRight} />
+                </button>
+                <button className="btn-cta-secondary" onClick={() => navigate('/support')}>
+                  <span>{t('hosting.cta.talkToSales')}</span>
+                </button>
+              </div>
+              <div className="cta-guarantees">
+                <span><FontAwesomeIcon icon={faCheck} /> {t('hosting.cta.guarantee1')}</span>
+                <span><FontAwesomeIcon icon={faCheck} /> {t('hosting.cta.guarantee2')}</span>
+                <span><FontAwesomeIcon icon={faCheck} /> {t('hosting.cta.guarantee3')}</span>
+              </div>
+            </motion.div>
+          </div>
         </div>
       </section>
     </main>

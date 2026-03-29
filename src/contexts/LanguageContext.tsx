@@ -705,6 +705,15 @@ const translations = {
     'hosting.tech.titleHighlight': ' špičkovými technologiemi',
     'hosting.tech.subtitle': 'Standardní nástroje, vše předkonfigurované',
 
+    // Hosting CTA
+    'hosting.cta.title': 'Spusťte svůj web ještě dnes',
+    'hosting.cta.subtitle': 'Připojte se k tisícům spokojených zákazníků s profesionálním hostingem.',
+    'hosting.cta.getStarted': 'Začít',
+    'hosting.cta.talkToSales': 'Kontaktovat nás',
+    'hosting.cta.guarantee1': '30denní garance vrácení peněz',
+    'hosting.cta.guarantee2': 'Migrace zdarma',
+    'hosting.cta.guarantee3': 'Nastavení do 5 minut',
+
     // Landing page - Hero badge
     'landing.hero.badgeVps': 'Dedikovaný VPS • Plný Root přístup',
 
@@ -1446,6 +1455,15 @@ const translations = {
     'hosting.tech.title': 'Powered by',
     'hosting.tech.titleHighlight': ' Leading Tech',
     'hosting.tech.subtitle': 'Industry-standard tools, all pre-configured',
+
+    // Hosting CTA
+    'hosting.cta.title': 'Launch your website today',
+    'hosting.cta.subtitle': 'Join thousands of satisfied customers with professional hosting.',
+    'hosting.cta.getStarted': 'Get Started',
+    'hosting.cta.talkToSales': 'Talk to Sales',
+    'hosting.cta.guarantee1': '30-day money back',
+    'hosting.cta.guarantee2': 'Free migration',
+    'hosting.cta.guarantee3': '5-min setup',
 
     // Landing page - Hero badge
     'landing.hero.badgeVps': 'Dedicated VPS • Full Root Access',
