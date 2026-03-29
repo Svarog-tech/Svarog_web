@@ -177,6 +177,15 @@
   max-width: 280px;
 }
 
+/* Hero Visual Content */
+.landing-hero .hero-visual-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 400px;
+}
+
 /* ============================================
    3D SERVER — PURE CSS
    ============================================ */
@@ -1989,6 +1998,10 @@
   .landing-hero .hero-content-wrapper {
     grid-template-columns: 1fr 1fr;
     gap: 3rem;
+  }
+
+  .landing-hero .hero-visual-content {
+    min-height: 520px;
   }
 
   .sv-scene {
